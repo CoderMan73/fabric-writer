@@ -9,3 +9,4 @@ serde = { version = "1", features = ["derive"] }
 serde_yaml = "0.9"
 tera = "1"
 anyhow = "1"
+which = "7"

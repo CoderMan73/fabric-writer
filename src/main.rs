@@ -1,4 +1,20 @@
+mod commands;
+mod state;
+
 use clap::{Parser, Subcommand};
+
+fn main() -> anyhow::Result<()> {
+    let cli = Cli::parse();
+    match cli.command {
+        Commands::Init {
+            name,
+            version,
+            options,
+            dangerous,
+            dir,
+        } => commands::init::run(name, version, options, dangerous, dir),
+    }
+}
 
 #[derive(Parser)]
 #[command(name = "fw")]
@@ -11,27 +27,14 @@ struct Cli {
 #[derive(Subcommand)]
 enum Commands {
     Init {
-        #[arg(short, long)]
-        mod_id: String,
+        name: String,
+        #[arg(long)]
+        version: String,
+        #[arg(short = 'o', long = "option", action = clap::ArgAction::Append)]
+        options: Vec<String>,
+        #[arg(long)]
+        dangerous: bool,
+        #[arg(long)]
+        dir: Option<String>,
     },
-    ItemAdd {
-        id: String,
-        #[arg(long)]
-        material: String,
-        #[arg(long)]
-        damage: i32,
-        #[arg(long)]
-        durability: i32,
-    }
-}
-
-fn main() {
-    let cli = Cli::parse();
-
-    match cli.command {
-        Commands::Init { mod_id } => println!("Init for {mod_id}"),
-        Commands::ItemAdd { id, material, damage, durability } => {
-            println!("Add item {id}: {material}, {damage}, {durability}")
-        }
-    }
 }

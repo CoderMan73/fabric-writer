@@ -27,4 +27,6 @@ rustc-ice-*.txt
 
 ### Own stuff
 
+AGENTS.md
 spec.md
+testing/
