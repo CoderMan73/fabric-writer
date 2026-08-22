@@ -92,6 +92,7 @@ pub fn run(
         package_name,
         minecraft_version: version,
         advanced_options,
+        ..Default::default()
     };
 
     let state_path = fw_dir.join("fabric-writer.yml");

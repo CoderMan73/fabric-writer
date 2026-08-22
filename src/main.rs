@@ -13,6 +13,9 @@ fn main() -> anyhow::Result<()> {
             dangerous,
             dir,
         } => commands::init::run(name, version, options, dangerous, dir),
+        Commands::Add { subcommand } => match subcommand {
+            AddSubcommand::Item(args) => commands::add::run_item(args),
+        },
     }
 }
 
@@ -37,4 +40,13 @@ enum Commands {
         #[arg(long)]
         dir: Option<String>,
     },
+    Add {
+        #[command(subcommand)]
+        subcommand: AddSubcommand,
+    },
+}
+
+#[derive(Subcommand)]
+enum AddSubcommand {
+    Item(commands::add::ItemAddArgs),
 }
