@@ -12,7 +12,8 @@ fn main() -> anyhow::Result<()> {
             options,
             dangerous,
             dir,
-        } => commands::init::run(name, version, options, dangerous, dir),
+            java_path,
+        } => commands::init::run(name, version, options, dangerous, dir, java_path),
         Commands::Add { subcommand } => match subcommand {
             AddSubcommand::Item(args) => commands::add::run_item(args),
         },
@@ -39,6 +40,8 @@ enum Commands {
         dangerous: bool,
         #[arg(long)]
         dir: Option<String>,
+        #[arg(long)]
+        java_path: String,
     },
     Add {
         #[command(subcommand)]

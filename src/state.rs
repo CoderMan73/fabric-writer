@@ -14,6 +14,7 @@ pub struct ModState {
     pub advanced_options: Vec<String>,
     #[serde(default)]
     pub items: Vec<Item>,
+    pub java_path: String,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

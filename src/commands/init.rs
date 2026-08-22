@@ -10,6 +10,7 @@ pub fn run(
     options: Vec<String>,
     dangerous: bool,
     dir: Option<String>,
+    java_path: String,
 ) -> anyhow::Result<()> {
     let base_dir = match dir {
         Some(d) => std::path::PathBuf::from(d),
@@ -25,6 +26,8 @@ pub fn run(
              Install it from https://deno.land/manual/getting_started/installation"
         );
     }
+
+    validate_java(&java_path)?;
 
     let mod_id = to_mod_id(&name);
     let package_name = to_package_name(&name);
@@ -85,6 +88,35 @@ pub fn run(
     let fw_dir = target_dir.join(".fw");
     std::fs::create_dir_all(&fw_dir).context("Failed to create .fw directory")?;
 
+    let gradle_properties = target_dir.join("gradle.properties");
+    let java_home_line = format!("org.gradle.java.home={}", java_path);
+
+    let managed_block = format!(
+        "\n# ============================================\n\
+         # FABRIC-WRITER — MANAGED SECTION\n\
+         # ============================================\n\
+         {}\n\
+         # ============================================\n\
+         # END FABRIC-WRITER MANAGED\n\
+         # ============================================\n",
+        java_home_line
+    );
+
+    let existing_raw = std::fs::read_to_string(&gradle_properties).unwrap_or_default();
+    let existing = existing_raw.replace("\r\n", "\n");
+    let begin_marker = "# ============================================\n# FABRIC-WRITER — MANAGED SECTION";
+    let end_marker = "# ============================================\n# END FABRIC-WRITER MANAGED";
+
+    let new_contents = if existing.contains(begin_marker) {
+        let before = existing.split(begin_marker).next().unwrap_or_default();
+        let after = existing.split(end_marker).nth(1).unwrap_or_default();
+        format!("{}{}{}", before, managed_block, after)
+    } else {
+        format!("{}{}", existing, managed_block)
+    };
+
+    std::fs::write(&gradle_properties, new_contents).context("Failed to write gradle.properties")?;
+
     let state = ModState {
         mod_name: name,
         mod_id: mod_id.clone(),
@@ -92,6 +124,7 @@ pub fn run(
         package_name,
         minecraft_version: version,
         advanced_options,
+        java_path,
         ..Default::default()
     };
 
@@ -135,6 +168,51 @@ fn validate_version(version: &str, dangerous: bool) -> anyhow::Result<()> {
 
 fn deno_on_path() -> bool {
     which::which("deno").is_ok()
+}
+
+fn validate_java(java_path: &str) -> anyhow::Result<()> {
+    let path = std::path::Path::new(java_path);
+    let java_bin = if cfg!(windows) {
+        path.join("bin").join("java.exe")
+    } else {
+        path.join("bin").join("java")
+    };
+
+    if !java_bin.exists() {
+        bail!(
+            "Java runtime not found at: {}\n\
+             Download a JDK from https://adoptium.net/",
+            java_bin.display()
+        );
+    }
+
+    let output = Command::new(&java_bin)
+        .arg("-version")
+        .stderr(std::process::Stdio::piped())
+        .stdout(std::process::Stdio::null())
+        .output()
+        .context("Failed to run java -version")?;
+
+    if !output.status.success() {
+        bail!(
+            "java -version failed for: {}\n\
+             Download a JDK from https://adoptium.net/",
+            java_bin.display()
+        );
+    }
+
+    let version_text = String::from_utf8_lossy(&output.stderr);
+    if !version_text.contains("version") {
+        bail!(
+            "Could not detect Java version from: {}\n\
+             Download a JDK from https://adoptium.net/",
+            java_bin.display()
+        );
+    }
+
+    println!("Using Java: {}", version_text.trim());
+
+    Ok(())
 }
 
 // Fabric modid: lowercase, keep alphanumeric + `_` + `-`.
