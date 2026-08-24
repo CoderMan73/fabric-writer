@@ -7,6 +7,6 @@ edition = "2024"
 clap = { version = "4", features = ["derive"] }
 serde = { version = "1", features = ["derive"] }
 serde_yaml = "0.9"
-tera = "1"
+genco = "0.19"
 anyhow = "1"
 which = "7"
