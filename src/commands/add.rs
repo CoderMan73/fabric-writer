@@ -14,6 +14,7 @@ pub struct ItemAddArgs {
     pub durability: i32,
 }
 
+//TODO: actually makle this work https://docs.fabricmc.net/develop/items/first-item
 pub fn run_item(args: ItemAddArgs) -> anyhow::Result<()> {
     let mut state = match state::load() {
         Ok(s) => s,

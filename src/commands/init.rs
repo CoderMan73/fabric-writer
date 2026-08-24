@@ -1,8 +1,12 @@
+use crate::commands::file_util;
 use crate::state::{self, ModState};
 use anyhow::{Context, bail};
+use std::path::PathBuf;
 use std::process::Command;
 
 const SUPPORTED_VERSIONS: &[&str] = &["26.2"];
+
+const MIN_JAVA_BY_VERSION: &[(&str, u32)] = &[("26.2", 25)];
 
 pub fn run(
     name: String,
@@ -27,7 +31,7 @@ pub fn run(
         );
     }
 
-    validate_java(&java_path)?;
+    validate_java(&java_path, &version)?;
 
     let mod_id = to_mod_id(&name);
     let package_name = to_package_name(&name);
@@ -91,31 +95,8 @@ pub fn run(
     let gradle_properties = target_dir.join("gradle.properties");
     let java_home_line = format!("org.gradle.java.home={}", java_path);
 
-    let managed_block = format!(
-        "\n# ============================================\n\
-         # FABRIC-WRITER — MANAGED SECTION\n\
-         # ============================================\n\
-         {}\n\
-         # ============================================\n\
-         # END FABRIC-WRITER MANAGED\n\
-         # ============================================\n",
-        java_home_line
-    );
-
-    let existing_raw = std::fs::read_to_string(&gradle_properties).unwrap_or_default();
-    let existing = existing_raw.replace("\r\n", "\n");
-    let begin_marker = "# ============================================\n# FABRIC-WRITER — MANAGED SECTION";
-    let end_marker = "# ============================================\n# END FABRIC-WRITER MANAGED";
-
-    let new_contents = if existing.contains(begin_marker) {
-        let before = existing.split(begin_marker).next().unwrap_or_default();
-        let after = existing.split(end_marker).nth(1).unwrap_or_default();
-        format!("{}{}{}", before, managed_block, after)
-    } else {
-        format!("{}{}", existing, managed_block)
-    };
-
-    std::fs::write(&gradle_properties, new_contents).context("Failed to write gradle.properties")?;
+    file_util::write_managed_section(&gradle_properties, &java_home_line)
+        .context("Failed to write gradle.properties")?;
 
     let state = ModState {
         mod_name: name,
@@ -170,8 +151,8 @@ fn deno_on_path() -> bool {
     which::which("deno").is_ok()
 }
 
-fn validate_java(java_path: &str) -> anyhow::Result<()> {
-    let path = std::path::Path::new(java_path);
+fn validate_java(java_path: &str, minecraft_version: &str) -> anyhow::Result<()> {
+    let path = PathBuf::from(java_path);
     let java_bin = if cfg!(windows) {
         path.join("bin").join("java.exe")
     } else {
@@ -212,7 +193,51 @@ fn validate_java(java_path: &str) -> anyhow::Result<()> {
 
     println!("Using Java: {}", version_text.trim());
 
+    if let Some(major) = parse_java_major_version(&version_text) {
+        let min_java = MIN_JAVA_BY_VERSION
+            .iter()
+            .find(|(v, _)| *v == minecraft_version)
+            .map(|(_, min)| *min);
+
+        let min_java = match min_java {
+            Some(v) => v,
+            None => bail!(
+                "Unsupported Minecraft version: {mc}\n\
+                 Supported versions for this build: {list}\n\
+                 Use --dangerous to skip validation while testing.",
+                mc = minecraft_version,
+                list = SUPPORTED_VERSIONS.join(", ")
+            ),
+        };
+
+        if major < min_java {
+            bail!(
+                "Java {major} is too old for Minecraft {mc}.\n\
+                 Minimum required: Java {min_java}.\n\
+                 Download a compatible JDK from https://adoptium.net/",
+                major = major,
+                mc = minecraft_version,
+                min_java = min_java
+            );
+        }
+    }
+
     Ok(())
+}
+
+fn parse_java_major_version(version_text: &str) -> Option<u32> {
+    let version_str = version_text
+        .lines()
+        .next()?
+        .split('"')
+        .nth(1)?;
+
+    let full = version_str.split('.').next()?;
+    if let Ok(v) = full.parse::<u32>() {
+        return Some(v);
+    }
+
+    None
 }
 
 // Fabric modid: lowercase, keep alphanumeric + `_` + `-`.
