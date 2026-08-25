@@ -1,8 +1,9 @@
-use crate::commands::file_util;
 use crate::state::{self, Item, ModState};
 use anyhow::{bail, Context};
 use clap::Parser;
 use genco::prelude::*;
+use genco::fmt;
+use std::collections::HashSet;
 use std::path::PathBuf;
 
 #[derive(Parser)]
@@ -21,8 +22,18 @@ pub fn run_item(args: ItemAddArgs) -> anyhow::Result<()> {
         }
     };
 
+    let id = args.id.trim().to_lowercase();
+    if id.is_empty() {
+        bail!("Item id cannot be empty.");
+    }
+
+    let existing: HashSet<_> = state.items.iter().map(|i| i.id.as_str()).collect();
+    if existing.contains(id.as_str()) {
+        bail!("Item '{}' already exists.", id);
+    }
+
     let item = Item {
-        id: args.id.clone(),
+        id: id.clone(),
         material: "minecraft:air".to_string(),
         damage: 0,
         durability: 0,
@@ -34,48 +45,15 @@ pub fn run_item(args: ItemAddArgs) -> anyhow::Result<()> {
     state::save_to(&state_path, &state)?;
 
     let java_root = PathBuf::from("src/main/java").join(state.package_name.replace('.', "/"));
-
-    ensure_java_template(
-        &java_root,
-        "ModItemIds.java",
-        "templates/java/ModItemIds.java",
-        &state,
-    )?;
-    ensure_java_template(
-        &java_root,
-        "ModItems.java",
-        "templates/java/ModItems.java",
-        &state,
-    )?;
-    ensure_java_template(
-        &java_root,
-        &format!("{}.java", state.mod_name),
-        "templates/java/__MOD_CLASS__.java",
-        &state,
-    )?;
-
-    let mut item_id_entries = java::Tokens::new();
-    for i in &state.items {
-        let name = to_upper(i);
-        let id = i.id.as_str();
-        quote_in!(item_id_entries => public static final ResourceKey<Item> $name = create($id););
-    }
-    let item_id_content = item_id_entries.to_file_string()?;
-
-    let mut item_entries = java::Tokens::new();
-    for i in &state.items {
-        let name = to_upper(i);
-        quote_in!(item_entries => public static final Item $name = register(ModItemIds.$&name, Item::new, new Item.Properties()););
-    }
-    let item_content = item_entries.to_file_string()?;
+    std::fs::create_dir_all(&java_root).context("Failed to create Java source directory")?;
 
     let item_ids_path = java_root.join("ModItemIds.java");
     let items_path = java_root.join("ModItems.java");
+    let mod_class_path = java_root.join(format!("{}.java", state.mod_name));
 
-    file_util::write_managed_section(&item_ids_path, &item_id_content)
-        .context("Failed to update ModItemIds.java")?;
-    file_util::write_managed_section(&items_path, &item_content)
-        .context("Failed to update ModItems.java")?;
+    write_mod_item_ids(&item_ids_path, &state)?;
+    write_mod_items(&items_path, &state)?;
+    write_main_mod_class(&mod_class_path, &state)?;
 
     println!("Added item: {}", item.id);
 
@@ -86,25 +64,109 @@ fn to_upper(item: &Item) -> String {
     item.id.to_uppercase().replace('-', "_")
 }
 
-fn ensure_java_template(
-    dir: &PathBuf,
-    filename: &str,
-    template_rel: &str,
-    state: &ModState,
-) -> anyhow::Result<()> {
-    let dest = dir.join(filename);
-    if dest.exists() {
-        return Ok(());
-    }
+fn write_mod_item_ids(path: &PathBuf, state: &ModState) -> anyhow::Result<()> {
+    let registries = &java::import("net.minecraft.core.registries", "Registries");
+    let identifier = &java::import("net.minecraft.resources", "Identifier");
+    let resource_key = &java::import("net.minecraft.resources", "ResourceKey");
+    let item = &java::import("net.minecraft.world.item", "Item");
 
-    let template_path = PathBuf::from(template_rel);
-    let mut content = std::fs::read_to_string(&template_path)
-        .with_context(|| format!("Failed to read template {}", template_rel))?;
+    let mod_namespace = quoted(state.mod_name.as_str());
 
-    content = content.replace("__PACKAGE__", &state.package_name);
-    content = content.replace("__MOD_CLASS__", &state.mod_name);
-    content = content.replace("__MOD_ID__", &state.mod_id);
+    let t: java::Tokens = quote! {
+        public class ModItemIds {
+            public static $resource_key<$item> create(String name) {
+                return $resource_key.create($registries.ITEM, $identifier.fromNamespaceAndPath($mod_namespace, name));
+            }
 
-    std::fs::write(&dest, content).with_context(|| format!("Failed to write {}", dest.display()))?;
+            $("// Item Resource Keys")
+            $(for i in &state.items =>
+                public static final $resource_key<$item> $(to_upper(i)) = create($(quoted(i.id.as_str()))); $['\r']
+            )
+        }
+    };
+
+    let config = java::Config::default().with_package(state.package_name.as_str());
+    let fmt_config = fmt::Config::from_lang::<java::Java>();
+    let mut buf = Vec::new();
+    let mut writer = fmt::IoWriter::new(&mut buf);
+    t.format_file(&mut writer.as_formatter(&fmt_config), &config)?;
+
+    std::fs::write(path, buf).context("Failed to write ModItemIds.java")?;
+
+    Ok(())
+}
+
+fn write_mod_items(path: &PathBuf, state: &ModState) -> anyhow::Result<()> {
+    let function = &java::import("java.util.function", "Function");
+    let registry = &java::import("net.minecraft.core", "Registry");
+    let built_in_registries = &java::import("net.minecraft.core.registries", "BuiltInRegistries");
+    let resource_key = &java::import("net.minecraft.resources", "ResourceKey");
+    let item = &java::import("net.minecraft.world.item", "Item");
+
+    let t: java::Tokens = quote! {
+        public class ModItems {
+            public static $item register($resource_key<Item> itemKey, $function<Item.Properties, Item> itemFactory, Item.Properties settings) {
+                $item item = itemFactory.apply(settings.setId(itemKey));
+                $registry.register($built_in_registries.ITEM, itemKey, item);
+                return item;
+            }
+
+            public static void initialize() {}
+
+            $(for i in &state.items =>
+                public static final $item $(to_upper(i)) = register(ModItemIds.$(to_upper(i)), $item::new, new $item.Properties());$['\r'])
+        }
+    };
+
+    let config = java::Config::default().with_package(state.package_name.as_str());
+    let fmt_config = fmt::Config::from_lang::<java::Java>();
+    let mut buf = Vec::new();
+    let mut writer = fmt::IoWriter::new(&mut buf);
+    t.format_file(&mut writer.as_formatter(&fmt_config), &config)?;
+
+    std::fs::write(path, buf).context("Failed to write ModItems.java")?;
+
+    Ok(())
+}
+
+fn write_main_mod_class(path: &PathBuf, state: &ModState) -> anyhow::Result<()> {
+    let mod_class = state.mod_name.as_str();
+    let mod_id = state.mod_id.as_str();
+
+    let mod_initializer = &java::import("net.fabricmc.api", "ModInitializer");
+    let identifier = &java::import("net.minecraft.resources", "Identifier");
+    let logger = &java::import("org.slf4j", "Logger");
+    let logger_factory = &java::import("org.slf4j", "LoggerFactory");
+
+    let mod_id_literal = quoted(mod_id);
+
+    let t: java::Tokens = quote! {
+        public class $mod_class implements $mod_initializer {
+            public static final String MOD_ID = $mod_id_literal;
+
+            public static final $logger LOGGER = $logger_factory.getLogger(MOD_ID);
+
+            @Override
+            public void onInitialize() {
+                LOGGER.info("Hello Fabric world!");
+
+                $("// Initializing items")
+                ModItems.initialize();
+            }
+
+            public static $identifier id(String path) {
+                return Identifier.fromNamespaceAndPath(MOD_ID, path);
+            }
+        }
+    };
+
+    let config = java::Config::default().with_package(state.package_name.as_str());
+    let fmt_config = fmt::Config::from_lang::<java::Java>();
+    let mut buf = Vec::new();
+    let mut writer = fmt::IoWriter::new(&mut buf);
+    t.format_file(&mut writer.as_formatter(&fmt_config), &config)?;
+
+    std::fs::write(path, buf).context("Failed to write main mod class")?;
+
     Ok(())
 }
