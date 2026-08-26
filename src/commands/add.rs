@@ -1,8 +1,8 @@
+use crate::java_codegen::JavaCodegen;
 use crate::state::{self, Item, ModState};
 use anyhow::{bail, Context};
 use clap::Parser;
 use genco::prelude::*;
-use genco::fmt;
 use std::collections::HashSet;
 use std::path::PathBuf;
 
@@ -51,9 +51,11 @@ pub fn run_item(args: ItemAddArgs) -> anyhow::Result<()> {
     let items_path = java_root.join("ModItems.java");
     let mod_class_path = java_root.join(format!("{}.java", state.mod_name));
 
-    write_mod_item_ids(&item_ids_path, &state)?;
-    write_mod_items(&items_path, &state)?;
-    write_main_mod_class(&mod_class_path, &state)?;
+    let codegen = JavaCodegen::new();
+
+    write_mod_item_ids(&item_ids_path, &state, &codegen)?;
+    write_mod_items(&items_path, &state, &codegen)?;
+    write_main_mod_class(&mod_class_path, &state, &codegen)?;
 
     println!("Added item: {}", item.id);
 
@@ -64,11 +66,11 @@ fn to_upper(item: &Item) -> String {
     item.id.to_uppercase().replace('-', "_")
 }
 
-fn write_mod_item_ids(path: &PathBuf, state: &ModState) -> anyhow::Result<()> {
-    let registries = &java::import("net.minecraft.core.registries", "Registries");
-    let identifier = &java::import("net.minecraft.resources", "Identifier");
-    let resource_key = &java::import("net.minecraft.resources", "ResourceKey");
-    let item = &java::import("net.minecraft.world.item", "Item");
+fn write_mod_item_ids(path: &PathBuf, state: &ModState, codegen: &JavaCodegen) -> anyhow::Result<()> {
+    let registries = &codegen.registries;
+    let identifier = &codegen.identifier;
+    let resource_key = &codegen.resource_key;
+    let item = &codegen.item;
 
     let mod_namespace = quoted(state.mod_name.as_str());
 
@@ -85,27 +87,23 @@ fn write_mod_item_ids(path: &PathBuf, state: &ModState) -> anyhow::Result<()> {
         }
     };
 
-    let config = java::Config::default().with_package(state.package_name.as_str());
-    let fmt_config = fmt::Config::from_lang::<java::Java>();
-    let mut buf = Vec::new();
-    let mut writer = fmt::IoWriter::new(&mut buf);
-    t.format_file(&mut writer.as_formatter(&fmt_config), &config)?;
-
-    std::fs::write(path, buf).context("Failed to write ModItemIds.java")?;
-
-    Ok(())
+    JavaCodegen::write(path, t, state.package_name.as_str())
 }
 
-fn write_mod_items(path: &PathBuf, state: &ModState) -> anyhow::Result<()> {
-    let function = &java::import("java.util.function", "Function");
-    let registry = &java::import("net.minecraft.core", "Registry");
-    let built_in_registries = &java::import("net.minecraft.core.registries", "BuiltInRegistries");
-    let resource_key = &java::import("net.minecraft.resources", "ResourceKey");
-    let item = &java::import("net.minecraft.world.item", "Item");
+fn write_mod_items(
+    path: &PathBuf,
+    state: &ModState,
+    codegen: &JavaCodegen,
+) -> anyhow::Result<()> {
+    let function = &codegen.function;
+    let registry = &codegen.registry;
+    let built_in_registries = &codegen.built_in_registries;
+    let resource_key = &codegen.resource_key;
+    let item = &codegen.item;
 
     let t: java::Tokens = quote! {
         public class ModItems {
-            public static $item register($resource_key<Item> itemKey, $function<Item.Properties, Item> itemFactory, Item.Properties settings) {
+            public static $item register($resource_key<$item> itemKey, $function<$item.Properties, $item> itemFactory, $item.Properties settings) {
                 $item item = itemFactory.apply(settings.setId(itemKey));
                 $registry.register($built_in_registries.ITEM, itemKey, item);
                 return item;
@@ -113,36 +111,32 @@ fn write_mod_items(path: &PathBuf, state: &ModState) -> anyhow::Result<()> {
 
             public static void initialize() {}
 
+            $("// Item Registration")
             $(for i in &state.items =>
-                public static final $item $(to_upper(i)) = register(ModItemIds.$(to_upper(i)), $item::new, new $item.Properties());$['\r'])
+                public static final $item $(to_upper(i)) = register(ModItemIds.$(to_upper(i)), $item::new, new $item.Properties());$['\r']
+            )
         }
     };
 
-    let config = java::Config::default().with_package(state.package_name.as_str());
-    let fmt_config = fmt::Config::from_lang::<java::Java>();
-    let mut buf = Vec::new();
-    let mut writer = fmt::IoWriter::new(&mut buf);
-    t.format_file(&mut writer.as_formatter(&fmt_config), &config)?;
-
-    std::fs::write(path, buf).context("Failed to write ModItems.java")?;
-
-    Ok(())
+    JavaCodegen::write(path, t, state.package_name.as_str())
 }
 
-fn write_main_mod_class(path: &PathBuf, state: &ModState) -> anyhow::Result<()> {
+fn write_main_mod_class(
+    path: &PathBuf,
+    state: &ModState,
+    codegen: &JavaCodegen,
+) -> anyhow::Result<()> {
     let mod_class = state.mod_name.as_str();
     let mod_id = state.mod_id.as_str();
 
-    let mod_initializer = &java::import("net.fabricmc.api", "ModInitializer");
-    let identifier = &java::import("net.minecraft.resources", "Identifier");
-    let logger = &java::import("org.slf4j", "Logger");
-    let logger_factory = &java::import("org.slf4j", "LoggerFactory");
-
-    let mod_id_literal = quoted(mod_id);
+    let mod_initializer = &codegen.mod_initializer;
+    let identifier = &codegen.identifier;
+    let logger = &codegen.logger;
+    let logger_factory = &codegen.logger_factory;
 
     let t: java::Tokens = quote! {
         public class $mod_class implements $mod_initializer {
-            public static final String MOD_ID = $mod_id_literal;
+            public static final String MOD_ID = $(quoted(mod_id));
 
             public static final $logger LOGGER = $logger_factory.getLogger(MOD_ID);
 
@@ -160,13 +154,5 @@ fn write_main_mod_class(path: &PathBuf, state: &ModState) -> anyhow::Result<()> 
         }
     };
 
-    let config = java::Config::default().with_package(state.package_name.as_str());
-    let fmt_config = fmt::Config::from_lang::<java::Java>();
-    let mut buf = Vec::new();
-    let mut writer = fmt::IoWriter::new(&mut buf);
-    t.format_file(&mut writer.as_formatter(&fmt_config), &config)?;
-
-    std::fs::write(path, buf).context("Failed to write main mod class")?;
-
-    Ok(())
+    JavaCodegen::write(path, t, state.package_name.as_str())
 }
