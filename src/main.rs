@@ -1,5 +1,6 @@
 mod commands;
 mod java_codegen;
+mod item;
 mod state;
 
 use clap::{Parser, Subcommand};

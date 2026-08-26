@@ -1,9 +1,9 @@
+use crate::item::Item;
 use crate::java_codegen::JavaCodegen;
-use crate::state::{self, Item, ModState};
-use anyhow::{bail, Context};
+use crate::state::{self, ModState};
+use anyhow::Context;
 use clap::Parser;
 use genco::prelude::*;
-use std::collections::HashSet;
 use std::path::PathBuf;
 
 #[derive(Parser)]
@@ -12,37 +12,13 @@ pub struct ItemAddArgs {
 }
 
 pub fn run_item(args: ItemAddArgs) -> anyhow::Result<()> {
-    let mut state = match state::load() {
-        Ok(s) => s,
-        Err(_) => {
-            bail!("A fabric-writer project doesn't seem to exist here.\n\
-                   Did you forget to cd into your project after initiation?\n\
-                   Are you running from the correct directory?\n\
-                   Please either move to the correct directory, or initialize a new project, and try again.")
-        }
-    };
+    let mut state = state::load().context(
+        "No fabric-writer project found. Are you in the right directory?",
+    )?;
 
-    let id = args.id.trim().to_lowercase();
-    if id.is_empty() {
-        bail!("Item id cannot be empty.");
-    }
-
-    let existing: HashSet<_> = state.items.iter().map(|i| i.id.as_str()).collect();
-    if existing.contains(id.as_str()) {
-        bail!("Item '{}' already exists.", id);
-    }
-
-    let item = Item {
-        id: id.clone(),
-        material: "minecraft:air".to_string(),
-        damage: 0,
-        durability: 0,
-    };
-
-    state.items.push(item.clone());
-
-    let state_path = PathBuf::from(".fw/fabric-writer.yml");
-    state::save_to(&state_path, &state)?;
+    let item = Item::new(&args.id)?;
+    state.add_item(item.clone())?;
+    state.save()?;
 
     let java_root = PathBuf::from("src/main/java").join(state.package_name.replace('.', "/"));
     std::fs::create_dir_all(&java_root).context("Failed to create Java source directory")?;
@@ -90,11 +66,7 @@ fn write_mod_item_ids(path: &PathBuf, state: &ModState, codegen: &JavaCodegen) -
     JavaCodegen::write(path, t, state.package_name.as_str())
 }
 
-fn write_mod_items(
-    path: &PathBuf,
-    state: &ModState,
-    codegen: &JavaCodegen,
-) -> anyhow::Result<()> {
+fn write_mod_items(path: &PathBuf, state: &ModState, codegen: &JavaCodegen) -> anyhow::Result<()> {
     let function = &codegen.function;
     let registry = &codegen.registry;
     let built_in_registries = &codegen.built_in_registries;
@@ -121,11 +93,7 @@ fn write_mod_items(
     JavaCodegen::write(path, t, state.package_name.as_str())
 }
 
-fn write_main_mod_class(
-    path: &PathBuf,
-    state: &ModState,
-    codegen: &JavaCodegen,
-) -> anyhow::Result<()> {
+fn write_main_mod_class(path: &PathBuf, state: &ModState, codegen: &JavaCodegen) -> anyhow::Result<()> {
     let mod_class = state.mod_name.as_str();
     let mod_id = state.mod_id.as_str();
 

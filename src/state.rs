@@ -1,6 +1,9 @@
 use anyhow::Result;
+use crate::item::Item;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
+
+const STATE_FILE: &str = ".fw/fabric-writer.yml";
 
 /// Persistent project state for a Fabric mod scaffolded by `fw init`.
 /// Stored in `.fw/fabric-writer.yml` inside the mod project root.
@@ -17,25 +20,35 @@ pub struct ModState {
     pub java_path: String,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct Item {
-    pub id: String,
-    pub material: String,
-    pub damage: i32,
-    pub durability: i32,
+impl ModState {
+    pub fn has_item_id(&self, id: &str) -> bool {
+        self.items.iter().any(|i| i.id == id)
+    }
+
+    pub fn add_item(&mut self, item: Item) -> Result<()> {
+        if self.has_item_id(&item.id) {
+            anyhow::bail!("Item '{}' already exists.", item.id);
+        }
+        self.items.push(item);
+        Ok(())
+    }
+
+    pub fn save(&self) -> Result<()> {
+        save_to(&PathBuf::from(STATE_FILE), self)
+    }
 }
 
 /// Save state to an absolute path.
 pub fn save_to(path: &PathBuf, state: &ModState) -> Result<()> {
     let yaml = serde_yaml::to_string(state)?;
     std::fs::write(path, yaml)?;
-    
+
     Ok(())
 }
 
 /// Load state from the current project's `.fw/fabric-writer.yml`.
 pub fn load() -> Result<ModState> {
-    let path = PathBuf::from(".fw/fabric-writer.yml");
+    let path = PathBuf::from(STATE_FILE);
     if !path.exists() {
         anyhow::bail!("fabric-writer.yml not found, are you in a fw-init project?");
     }
