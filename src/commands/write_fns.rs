@@ -12,16 +12,16 @@ fn to_upper(id: &str) -> String {
 fn item_properties(item: &Item) -> java::Tokens {
     let mut out: java::Tokens = quote! { new Item.Properties() };
 
-    if item.kind == ItemKind::Tool {
-        if let Some(ref mat) = item.material {
-            let snippet = format!(
-                "sword({}, {}, {})",
-                mat,
-                item.attack_damage.unwrap_or(1.0),
-                item.attack_speed.unwrap_or(1.6)
-            );
-            quote_in! { out => .$(snippet) }
-        }
+    if item.kind == ItemKind::Tool
+        && let Some(ref mat) = item.material
+    {
+        let snippet = format!(
+            "sword({}, {}, {})",
+            mat,
+            item.attack_damage.unwrap_or(1.0),
+            item.attack_speed.unwrap_or(1.6)
+        );
+        quote_in! { out => .$(snippet) }
     }
 
     if let Some(dur) = item.durability {
@@ -156,10 +156,10 @@ pub(crate) fn write_lang_provider(
             @Override
             public void generateTranslations($holder_lookup.Provider holderLookup, TranslationBuilder translationBuilder) {
                 $(for i in &state.items =>
-                    translationBuilder.add($(quoted("item.".to_owned() + &state.mod_id.as_str() + "." + i.id.as_str())), $(quoted(to_upper(&i.id))));$['\r']
+                    translationBuilder.add($(quoted("item.".to_owned() + state.mod_id.as_str() + "." + i.id.as_str())), $(quoted(to_upper(&i.id))));$['\r']
                 )
                 $(for b in &state.blocks =>
-                    translationBuilder.add($(quoted("block.".to_owned() + &state.mod_id.as_str() + "." + b.id.as_str())), $(quoted(to_upper(&b.id))));$['\r']
+                    translationBuilder.add($(quoted("block.".to_owned() + state.mod_id.as_str() + "." + b.id.as_str())), $(quoted(to_upper(&b.id))));$['\r']
                 )
             }
         }
