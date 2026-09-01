@@ -1,25 +1,20 @@
 use anyhow::Result;
 use std::path::PathBuf;
 
-pub const BEGIN_MARKER: &str =
-    "# ============================================\n\
+pub const BEGIN_MARKER: &str = "# ============================================\n\
      # FABRIC-WRITER — MANAGED SECTION\n\
      # ============================================";
-pub const END_MARKER: &str =
-    "# ============================================\n\
+pub const END_MARKER: &str = "# ============================================\n\
      # END FABRIC-WRITER MANAGED\n\
      # ============================================";
 
+// TODO: this code is kind of cringe and I should probably deprecate it
+// and get rid of it lol
 /// Replace or append a managed section in a text file using explicit markers.
 ///
 /// If `begin` exists, everything between `begin` and `end` is replaced.
 /// If `begin` does not exist, the full managed block is appended.
-pub fn update_managed_section(
-    path: &PathBuf,
-    begin: &str,
-    end: &str,
-    block: &str,
-) -> Result<()> {
+pub fn update_managed_section(path: &PathBuf, begin: &str, end: &str, block: &str) -> Result<()> {
     let existing_raw = std::fs::read_to_string(path).unwrap_or_default();
     let existing = existing_raw.replace("\r\n", "\n");
 

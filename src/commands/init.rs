@@ -1,24 +1,57 @@
-use crate::commands::file_util;
-use crate::state::{self, ModState};
-use anyhow::{Context, bail};
+use crate::commands::file_util::write_managed_section;
+use crate::state::{ModState, save_to};
+use anyhow::{Context, Result, bail};
+use clap::{ArgAction, Parser};
+use std::env::current_dir;
+use std::fs::create_dir_all;
 use std::path::PathBuf;
 use std::process::Command;
+use std::process::Stdio;
 
 const SUPPORTED_VERSIONS: &[&str] = &["26.2"];
 
 const MIN_JAVA_BY_VERSION: &[(&str, u32)] = &[("26.2", 25)];
 
-pub fn run(
-    name: String,
-    version: String,
-    options: Vec<String>,
-    dangerous: bool,
-    dir: Option<String>,
-    java_path: String,
-) -> anyhow::Result<()> {
+#[derive(Parser)]
+pub struct InitArgs {
+    /// Name of your Minecraft Mod
+    #[arg(short = 'n', long)]
+    pub name: String,
+
+    /// Minecraft Version
+    #[arg(short = 'v', long)]
+    pub version: String,
+
+    /// Advanced Options, usually not recommended.
+    #[arg(short = 'o', long = "option", action = ArgAction::Append)]
+    pub options: Vec<String>,
+
+    /// Subdirectory to create the mod in. Defaults to cwd
+    #[arg(short = 'd', long)]
+    pub dir: Option<String>,
+
+    /// Path to the java install.
+    #[arg(short = 'j', long)]
+    pub java_path: String,
+
+    /// Ignores various safety checks in the code. Not recommended.
+    #[arg(long)]
+    pub dangerous: bool,
+}
+
+pub fn run(args: InitArgs) -> Result<()> {
+    let InitArgs {
+        name,
+        version,
+        options,
+        dangerous,
+        dir,
+        java_path,
+    } = args;
+
     let base_dir = match dir {
-        Some(d) => std::path::PathBuf::from(d),
-        None => std::env::current_dir()?,
+        Some(d) => PathBuf::from(d),
+        None => current_dir()?,
     };
 
     validate_name(&name)?;
@@ -74,9 +107,9 @@ pub fn run(
     println!("Running: deno {}", args.join(" "));
     let status = Command::new("deno")
         .args(&args[1..])
-        .stdin(std::process::Stdio::inherit())
-        .stdout(std::process::Stdio::inherit())
-        .stderr(std::process::Stdio::inherit())
+        .stdin(Stdio::inherit())
+        .stdout(Stdio::inherit())
+        .stderr(Stdio::inherit())
         .status()
         .context("Failed to spawn deno process")?;
 
@@ -90,12 +123,12 @@ pub fn run(
     }
 
     let fw_dir = target_dir.join(".fw");
-    std::fs::create_dir_all(&fw_dir).context("Failed to create .fw directory")?;
+    create_dir_all(&fw_dir).context("Failed to create .fw directory")?;
 
     let gradle_properties = target_dir.join("gradle.properties");
     let java_home_line = format!("org.gradle.java.home={}", java_path);
 
-    file_util::write_managed_section(&gradle_properties, &java_home_line)
+    write_managed_section(&gradle_properties, &java_home_line)
         .context("Failed to write gradle.properties")?;
 
     let state = ModState {
@@ -110,7 +143,7 @@ pub fn run(
     };
 
     let state_path = fw_dir.join("fabric-writer.yml");
-    state::save_to(&state_path, &state)?;
+    save_to(&state_path, &state)?;
 
     println!("\nDone! Your mod project is at: {}", target_dir.display());
     println!("Next step: cd {}", target_dir.display());
@@ -118,7 +151,7 @@ pub fn run(
     Ok(())
 }
 
-fn validate_name(name: &str) -> anyhow::Result<()> {
+fn validate_name(name: &str) -> Result<()> {
     if name.trim().is_empty() {
         bail!("Mod name cannot be empty.");
     }
@@ -130,7 +163,7 @@ fn validate_name(name: &str) -> anyhow::Result<()> {
     Ok(())
 }
 
-fn validate_version(version: &str, dangerous: bool) -> anyhow::Result<()> {
+fn validate_version(version: &str, dangerous: bool) -> Result<()> {
     if dangerous {
         return Ok(());
     }
@@ -151,7 +184,7 @@ fn deno_on_path() -> bool {
     which::which("deno").is_ok()
 }
 
-fn validate_java(java_path: &str, minecraft_version: &str) -> anyhow::Result<()> {
+fn validate_java(java_path: &str, minecraft_version: &str) -> Result<()> {
     let path = PathBuf::from(java_path);
     let java_bin = if cfg!(windows) {
         path.join("bin").join("java.exe")
@@ -169,8 +202,8 @@ fn validate_java(java_path: &str, minecraft_version: &str) -> anyhow::Result<()>
 
     let output = Command::new(&java_bin)
         .arg("-version")
-        .stderr(std::process::Stdio::piped())
-        .stdout(std::process::Stdio::null())
+        .stderr(Stdio::piped())
+        .stdout(Stdio::null())
         .output()
         .context("Failed to run java -version")?;
 
@@ -226,11 +259,7 @@ fn validate_java(java_path: &str, minecraft_version: &str) -> anyhow::Result<()>
 }
 
 fn parse_java_major_version(version_text: &str) -> Option<u32> {
-    let version_str = version_text
-        .lines()
-        .next()?
-        .split('"')
-        .nth(1)?;
+    let version_str = version_text.lines().next()?.split('"').nth(1)?;
 
     let full = version_str.split('.').next()?;
     if let Ok(v) = full.parse::<u32>() {

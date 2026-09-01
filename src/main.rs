@@ -1,24 +1,30 @@
+use crate::commands::{block, doctor, init, item, recipe, run, status};
+use clap::{Parser, Subcommand};
+
 mod commands;
 mod java_codegen;
-mod item;
 mod state;
-
-use clap::{Parser, Subcommand};
 
 fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
     match cli.command {
-        Commands::Init {
-            name,
-            version,
-            options,
-            dangerous,
-            dir,
-            java_path,
-        } => commands::init::run(name, version, options, dangerous, dir, java_path),
+        Commands::Init(args) => init::run(args),
         Commands::Add { subcommand } => match subcommand {
-            AddSubcommand::Item(args) => commands::add::run_item(args),
+            AddSubcommand::Item(args) => item::add(args),
+            AddSubcommand::Block(args) => block::add(args),
+            AddSubcommand::Recipe(args) => recipe::add(args),
         },
+        Commands::Remove { subcommand } => match subcommand {
+            RemoveSubcommand::Item(args) => item::remove(args),
+            RemoveSubcommand::Block(args) => block::remove(args),
+            RemoveSubcommand::Recipe(args) => recipe::remove(args),
+        },
+        Commands::Run { subcommand } => match subcommand {
+            RunSubcommand::Datagen => run::datagen(),
+            RunSubcommand::Client => run::client(),
+        },
+        Commands::Status(args) => status::run(args),
+        // TODO: finish Commands::Doctor => doctor::run(),
     }
 }
 
@@ -32,26 +38,39 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
-    Init {
-        name: String,
-        #[arg(long)]
-        version: String,
-        #[arg(short = 'o', long = "option", action = clap::ArgAction::Append)]
-        options: Vec<String>,
-        #[arg(long)]
-        dangerous: bool,
-        #[arg(long)]
-        dir: Option<String>,
-        #[arg(long)]
-        java_path: String,
-    },
+    Init(init::InitArgs),
     Add {
         #[command(subcommand)]
         subcommand: AddSubcommand,
     },
+    Remove {
+        #[command(subcommand)]
+        subcommand: RemoveSubcommand,
+    },
+    Run {
+        #[command(subcommand)]
+        subcommand: RunSubcommand,
+    },
+    Status(status::StatusArgs),
+    // TODO: finish Doctor
 }
 
 #[derive(Subcommand)]
 enum AddSubcommand {
-    Item(commands::add::ItemAddArgs),
+    Item(item::ItemAddArgs),
+    Block(block::BlockAddArgs),
+    Recipe(recipe::RecipeAddArgs),
+}
+
+#[derive(Subcommand)]
+enum RemoveSubcommand {
+    Item(item::ItemRemoveArgs),
+    Block(block::BlockRemoveArgs),
+    Recipe(recipe::RecipeRemoveArgs),
+}
+
+#[derive(Subcommand)]
+enum RunSubcommand {
+    Datagen,
+    Client,
 }

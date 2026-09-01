@@ -1,6 +1,7 @@
-use genco::lang::java::{self, Import};
-use genco::fmt;
 use anyhow::Context;
+use genco::fmt;
+use genco::lang::java::{self, Config, Import, Tokens, import};
+use std::fs::{create_dir_all, write};
 use std::path::PathBuf;
 
 pub struct JavaCodegen {
@@ -20,40 +21,62 @@ pub struct JavaCodegen {
     pub completable_future: Import,
     pub data_generator_entrypoint: Import,
     pub fabric_data_generator: Import,
+    pub fabric_model_provider: Import,
+    pub model_templates: Import,
+    pub block: Import,
+    pub block_item: Import,
+    pub block_behaviour: Import,
 }
 
 impl JavaCodegen {
     pub fn new() -> Self {
         Self {
-            registries: java::import("net.minecraft.core.registries", "Registries"),
-            identifier: java::import("net.minecraft.resources", "Identifier"),
-            resource_key: java::import("net.minecraft.resources", "ResourceKey"),
-            item: java::import("net.minecraft.world.item", "Item"),
-            function: java::import("java.util.function", "Function"),
-            registry: java::import("net.minecraft.core", "Registry"),
-            built_in_registries: java::import("net.minecraft.core.registries", "BuiltInRegistries"),
-            mod_initializer: java::import("net.fabricmc.api", "ModInitializer"),
-            logger: java::import("org.slf4j", "Logger"),
-            logger_factory: java::import("org.slf4j", "LoggerFactory"),
-            holder_lookup: java::import("net.minecraft.core", "HolderLookup"),
-            completable_future: java::import("java.util.concurrent", "CompletableFuture"),
-            fabric_pack_output: java::import("net.fabricmc.fabric.api.datagen.v1", "FabricPackOutput"),
-            fabric_language_provider: java::import("net.fabricmc.fabric.api.datagen.v1.provider", "FabricLanguageProvider"),
-            data_generator_entrypoint: java::import("net.fabricmc.fabric.api.datagen.v1", "DataGeneratorEntrypoint"),
-            fabric_data_generator: java::import("net.fabricmc.fabric.api.datagen.v1", "FabricDataGenerator"),
+            registries: import("net.minecraft.core.registries", "Registries"),
+            identifier: import("net.minecraft.resources", "Identifier"),
+            resource_key: import("net.minecraft.resources", "ResourceKey"),
+            item: import("net.minecraft.world.item", "Item"),
+            function: import("java.util.function", "Function"),
+            registry: import("net.minecraft.core", "Registry"),
+            built_in_registries: import("net.minecraft.core.registries", "BuiltInRegistries"),
+            mod_initializer: import("net.fabricmc.api", "ModInitializer"),
+            logger: import("org.slf4j", "Logger"),
+            logger_factory: import("org.slf4j", "LoggerFactory"),
+            holder_lookup: import("net.minecraft.core", "HolderLookup"),
+            completable_future: import("java.util.concurrent", "CompletableFuture"),
+            fabric_pack_output: import("net.fabricmc.fabric.api.datagen.v1", "FabricPackOutput"),
+            fabric_language_provider: import(
+                "net.fabricmc.fabric.api.datagen.v1.provider",
+                "FabricLanguageProvider",
+            ),
+            data_generator_entrypoint: import(
+                "net.fabricmc.fabric.api.datagen.v1",
+                "DataGeneratorEntrypoint",
+            ),
+            fabric_data_generator: import(
+                "net.fabricmc.fabric.api.datagen.v1",
+                "FabricDataGenerator",
+            ),
+            fabric_model_provider: import(
+                "net.fabricmc.fabric.api.datagen.v1.provider",
+                "FabricModelProvider",
+            ),
+            model_templates: import("net.minecraft.data.client", "ModelTemplates"),
+            block: import("net.minecraft.world.level.block", "Block"),
+            block_item: import("net.minecraft.world.item", "BlockItem"),
+            block_behaviour: import("net.minecraft.world.level.block", "BlockBehaviour"),
         }
     }
 
-    pub fn write(path: &PathBuf, tokens: genco::lang::java::Tokens, package: &str) -> anyhow::Result<()> {
+    pub fn write(path: &PathBuf, tokens: Tokens, package: &str) -> anyhow::Result<()> {
         if let Some(parent) = path.parent() {
-            std::fs::create_dir_all(parent).context("Failed to create Java output directory")?;
+            create_dir_all(parent).context("Failed to create Java output directory")?;
         }
         let config = java::Config::default().with_package(package);
         let fmt_config = fmt::Config::from_lang::<java::Java>();
         let mut buf = Vec::new();
         let mut writer = fmt::IoWriter::new(&mut buf);
         tokens.format_file(&mut writer.as_formatter(&fmt_config), &config)?;
-        std::fs::write(path, buf).context("Failed to write Java file")?;
+        write(path, buf).context("Failed to write Java file")?;
         Ok(())
     }
 }
