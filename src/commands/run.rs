@@ -1,4 +1,4 @@
-use crate::state::{self, ModState};
+use crate::state::{self};
 use anyhow::{Context, Result, bail};
 use std::process::Command;
 

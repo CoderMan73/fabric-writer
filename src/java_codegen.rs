@@ -1,6 +1,6 @@
 use anyhow::Context;
 use genco::fmt;
-use genco::lang::java::{self, Config, Import, Tokens, import};
+use genco::lang::java::{self, Import, Tokens, import};
 use std::fs::{create_dir_all, write};
 use std::path::PathBuf;
 

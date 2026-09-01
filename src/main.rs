@@ -1,4 +1,4 @@
-use crate::commands::{block, doctor, init, item, recipe, run, status};
+use crate::commands::{block, init, item, recipe, run, status};
 use clap::{Parser, Subcommand};
 
 mod commands;
