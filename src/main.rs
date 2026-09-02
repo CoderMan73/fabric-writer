@@ -1,5 +1,12 @@
 use clap::{Parser, Subcommand};
-use fabric_writer::commands::{block, init, item, recipe, run, status};
+use fabric_writer::commands::{
+    block::{self, BlockAddArgs, BlockRemoveArgs},
+    init::{self, InitArgs},
+    item::{self, ItemAddArgs, ItemRemoveArgs},
+    recipe::{self, RecipeAddArgs, RecipeRemoveArgs},
+    regen, run,
+    status::{self, StatusArgs},
+};
 
 fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
@@ -18,9 +25,10 @@ fn main() -> anyhow::Result<()> {
         Commands::Run { subcommand } => match subcommand {
             RunSubcommand::Datagen => run::datagen(),
             RunSubcommand::Client => run::client(),
+            RunSubcommand::Server => run::server(),
         },
         Commands::Status(args) => status::run(args),
-        // TODO: finish Commands::Doctor => doctor::run(),
+        Commands::Regen => regen::run(),
     }
 }
 
@@ -34,39 +42,78 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
-    Init(init::InitArgs),
+    /// Initialize a fabric-writer project
+    Init(InitArgs),
+
+    /// Subcommand for adding things to a project [alias: a]
+    #[command(alias = "a")]
     Add {
         #[command(subcommand)]
         subcommand: AddSubcommand,
     },
+
+    /// Subcommand for removing things from a project [alias: r]
+    #[command(alias = "r")]
     Remove {
         #[command(subcommand)]
         subcommand: RemoveSubcommand,
     },
+
+    /// Subcommand for running project
     Run {
         #[command(subcommand)]
         subcommand: RunSubcommand,
     },
-    Status(status::StatusArgs),
-    // TODO: finish Doctor
+
+    /// Prints project status [alias: s]
+    #[command(alias = "s")]
+    Status(StatusArgs),
+    /// Regenerate all Java files from current state [alias: g]
+    #[command(alias = "g")]
+    Regen,
 }
 
 #[derive(Subcommand)]
 enum AddSubcommand {
-    Item(item::ItemAddArgs),
-    Block(block::BlockAddArgs),
-    Recipe(recipe::RecipeAddArgs),
+    /// Add an item [alias: i]
+    #[command(alias = "i")]
+    Item(ItemAddArgs),
+
+    /// Add a block [alias: b]
+    #[command(alias = "b")]
+    Block(BlockAddArgs),
+
+    /// Add a recipe [alias: r]
+    #[command(alias = "r")]
+    Recipe(RecipeAddArgs),
 }
 
 #[derive(Subcommand)]
 enum RemoveSubcommand {
-    Item(item::ItemRemoveArgs),
-    Block(block::BlockRemoveArgs),
-    Recipe(recipe::RecipeRemoveArgs),
+    /// Remove a item [alias: i]
+    #[command(alias = "i")]
+    Item(ItemRemoveArgs),
+
+    /// Remove a block [alias: b]
+    #[command(alias = "b")]
+    Block(BlockRemoveArgs),
+
+    /// Remove a recipe [alias: r]
+    #[command(alias = "r")]
+    Recipe(RecipeRemoveArgs),
 }
 
 #[derive(Subcommand)]
 enum RunSubcommand {
+    /// Run datagen [alias: d]
+    #[command(alias = "d")]
     Datagen,
+
+    /// Run client [alias: c]
+    #[command(alias = "c")]
     Client,
+
+    /// Run server [alias: s]
+    #[command(alias = "s")]
+    Server,
 }

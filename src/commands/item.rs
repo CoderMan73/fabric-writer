@@ -50,7 +50,10 @@ fn kind_label(item: &Item) -> &'static str {
 
 #[derive(Parser)]
 pub struct ItemAddArgs {
+    /// Item ID
+    #[arg(short = 'i', long)]
     pub id: String,
+
     #[arg(long)]
     pub kind: Option<String>,
     #[arg(long)]

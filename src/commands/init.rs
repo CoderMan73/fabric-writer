@@ -10,33 +10,6 @@ const SUPPORTED_VERSIONS: &[&str] = &["26.2"];
 
 const MIN_JAVA_BY_VERSION: &[(&str, u32)] = &[("26.2", 25)];
 
-#[derive(Parser)]
-pub struct InitArgs {
-    /// Name of your Minecraft Mod
-    #[arg(short = 'n', long)]
-    pub name: String,
-
-    /// Minecraft Version
-    #[arg(short = 'v', long)]
-    pub version: String,
-
-    /// Advanced Options, usually not recommended.
-    #[arg(short = 'o', long = "option", action = ArgAction::Append)]
-    pub options: Vec<String>,
-
-    /// Subdirectory to create the mod in. Defaults to cwd
-    #[arg(short = 'd', long)]
-    pub dir: Option<String>,
-
-    /// Path to the java install.
-    #[arg(short = 'j', long)]
-    pub java_path: String,
-
-    /// Ignores various safety checks in the code. Not recommended.
-    #[arg(long)]
-    pub dangerous: bool,
-}
-
 pub fn run(args: InitArgs) -> Result<()> {
     let InitArgs {
         name,
@@ -285,4 +258,31 @@ fn to_package_name(name: &str) -> String {
         .chars()
         .filter(|c| c.is_ascii_alphanumeric() || *c == '_')
         .collect()
+}
+
+#[derive(Parser)]
+pub struct InitArgs {
+    /// Name of your Minecraft Mod
+    #[arg(short = 'n', long)]
+    pub name: String,
+
+    /// Minecraft Version
+    #[arg(short = 'v', long)]
+    pub version: String,
+
+    /// Advanced Options, usually not recommended.
+    #[arg(short = 'o', long = "option", action = ArgAction::Append)]
+    pub options: Vec<String>,
+
+    /// Subdirectory to create the mod in. Defaults to cwd
+    #[arg(short = 'd', long)]
+    pub dir: Option<String>,
+
+    /// Path to the java install.
+    #[arg(short = 'j', long)]
+    pub java_path: String,
+
+    /// Ignores various safety checks in the code. Not recommended.
+    #[arg(long)]
+    pub dangerous: bool,
 }

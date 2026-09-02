@@ -2,12 +2,6 @@ use crate::state::{self};
 use anyhow::Result;
 use clap::Parser;
 
-#[derive(Parser)]
-pub struct StatusArgs {
-    #[arg(long)]
-    pub verbose: bool,
-}
-
 pub fn run(args: StatusArgs) -> Result<()> {
     let state = state::load()?;
 
@@ -27,4 +21,11 @@ pub fn run(args: StatusArgs) -> Result<()> {
     }
 
     Ok(())
+}
+
+#[derive(Parser)]
+pub struct StatusArgs {
+    /// Print verbose status
+    #[arg(short = 'v', long)]
+    pub verbose: bool,
 }

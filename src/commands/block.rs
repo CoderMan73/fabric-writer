@@ -28,10 +28,14 @@ pub fn remove(args: BlockRemoveArgs) -> Result<()> {
 
 #[derive(Parser)]
 pub struct BlockAddArgs {
+    /// Block ID
+    #[arg(short = 'i', long)]
     pub id: String,
 }
 
 #[derive(Parser)]
 pub struct BlockRemoveArgs {
+    /// Block ID
+    #[arg(short = 'i', long)]
     pub id: String,
 }

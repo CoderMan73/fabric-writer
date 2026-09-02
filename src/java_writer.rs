@@ -1,6 +1,6 @@
-use anyhow::Context;
-use genco::fmt;
-use genco::lang::java::{self, Import, Tokens, import};
+use anyhow::{Context, Result};
+use genco::fmt::{self, IoWriter};
+use genco::lang::java::{self, Import, Java, Tokens, import};
 use std::fs::{create_dir_all, write};
 use std::path::PathBuf;
 
@@ -73,14 +73,14 @@ impl JavaWriter {
         }
     }
 
-    pub fn write(path: &PathBuf, tokens: Tokens, package: &str) -> anyhow::Result<()> {
+    pub fn write(path: &PathBuf, tokens: Tokens, package: &str) -> Result<()> {
         if let Some(parent) = path.parent() {
             create_dir_all(parent).context("Failed to create Java output directory")?;
         }
         let config = java::Config::default().with_package(package);
-        let fmt_config = fmt::Config::from_lang::<java::Java>();
+        let fmt_config = fmt::Config::from_lang::<Java>();
         let mut buf = Vec::new();
-        let mut writer = fmt::IoWriter::new(&mut buf);
+        let mut writer = IoWriter::new(&mut buf);
         tokens.format_file(&mut writer.as_formatter(&fmt_config), &config)?;
         write(path, buf).context("Failed to write Java file")?;
         Ok(())
@@ -93,7 +93,7 @@ impl Default for JavaWriter {
     }
 }
 
-pub(crate) fn regenerate_all(state: &ModState) -> anyhow::Result<()> {
+pub fn regenerate_all(state: &ModState) -> Result<()> {
     let java_root = PathBuf::from("src/main/java").join(state.package_name.replace('.', "/"));
     let client_root = PathBuf::from("src/client/java").join(state.package_name.replace('.', "/"));
     std::fs::create_dir_all(&java_root).context("Failed to create Java source directory")?;

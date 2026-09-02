@@ -1,6 +1,6 @@
 use anyhow::{Context, Result};
 use std::env::var;
-use std::fs::{self, copy, create_dir_all, read_dir};
+use std::fs::{copy, create_dir_all, read_dir};
 use std::path::{Path, PathBuf};
 use tempfile::{TempDir, tempdir};
 
