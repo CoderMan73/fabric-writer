@@ -1,4 +1,4 @@
-use crate::commands::write_fns::regenerate_all;
+use crate::java_writer::regenerate_all;
 use crate::state::{self, Entity, Item, ItemKind};
 use anyhow::Result;
 use clap::Parser;

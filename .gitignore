@@ -30,5 +30,7 @@ rustc-ice-*.txt
 AGENTS.md
 spec.md
 testing/
+.testing-cache/
 .vscode/
 IDEA.md
+.env

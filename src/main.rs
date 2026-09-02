@@ -1,9 +1,5 @@
-use crate::commands::{block, init, item, recipe, run, status};
 use clap::{Parser, Subcommand};
-
-mod commands;
-mod java_codegen;
-mod state;
+use fabric_writer::commands::{block, init, item, recipe, run, status};
 
 fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();

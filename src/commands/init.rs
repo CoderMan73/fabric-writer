@@ -1,12 +1,10 @@
-use crate::commands::file_util::write_managed_section;
 use crate::state::{ModState, save_to};
 use anyhow::{Context, Result, bail};
 use clap::{ArgAction, Parser};
 use std::env::current_dir;
-use std::fs::create_dir_all;
+use std::fs::{create_dir_all, read_to_string};
 use std::path::PathBuf;
-use std::process::Command;
-use std::process::Stdio;
+use std::process::{Command, Stdio};
 
 const SUPPORTED_VERSIONS: &[&str] = &["26.2"];
 
@@ -128,8 +126,12 @@ pub fn run(args: InitArgs) -> Result<()> {
     let gradle_properties = target_dir.join("gradle.properties");
     let java_home_line = format!("org.gradle.java.home={}", java_path);
 
-    write_managed_section(&gradle_properties, &java_home_line)
-        .context("Failed to write gradle.properties")?;
+    let existing = read_to_string(&gradle_properties).unwrap_or_default();
+    if !existing.contains("org.gradle.java.home") {
+        let new_contents = format!("{existing}{java_home_line}\n");
+        std::fs::write(&gradle_properties, new_contents)
+            .context("Failed to write gradle.properties")?;
+    }
 
     let state = ModState {
         mod_name: name,
