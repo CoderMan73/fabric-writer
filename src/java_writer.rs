@@ -1,7 +1,7 @@
 use anyhow::{Context, Result};
 use genco::fmt::{self, IoWriter};
-use genco::lang::java::{self, Import, Java, Tokens, import};
-use std::fs::{create_dir_all, write};
+use genco::lang::java::{self, Java, Tokens};
+use std::fs::{create_dir_all, write as fs_write};
 use std::path::PathBuf;
 
 use crate::state::ModState;
@@ -11,95 +11,17 @@ use crate::tokengen::{
     build_mod_items, build_model_provider,
 };
 
-pub struct JavaWriter {
-    pub registries: Import,
-    pub identifier: Import,
-    pub resource_key: Import,
-    pub item: Import,
-    pub function: Import,
-    pub registry: Import,
-    pub built_in_registries: Import,
-    pub mod_initializer: Import,
-    pub logger: Import,
-    pub logger_factory: Import,
-    pub fabric_pack_output: Import,
-    pub fabric_language_provider: Import,
-    pub holder_lookup: Import,
-    pub completable_future: Import,
-    pub data_generator_entrypoint: Import,
-    pub fabric_data_generator: Import,
-    pub fabric_model_provider: Import,
-    pub model_templates: Import,
-    pub block: Import,
-    pub block_item: Import,
-    pub block_behaviour: Import,
-    pub block_item_id: Import,
-    pub blocks: Import,
-    pub block_model_generators: Import,
-    pub item_model_generators: Import,
-}
-
-impl JavaWriter {
-    pub fn new() -> Self {
-        Self {
-            registries: import("net.minecraft.core.registries", "Registries"),
-            identifier: import("net.minecraft.resources", "Identifier"),
-            resource_key: import("net.minecraft.resources", "ResourceKey"),
-            item: import("net.minecraft.world.item", "Item"),
-            function: import("java.util.function", "Function"),
-            registry: import("net.minecraft.core", "Registry"),
-            built_in_registries: import("net.minecraft.core.registries", "BuiltInRegistries"),
-            mod_initializer: import("net.fabricmc.api", "ModInitializer"),
-            logger: import("org.slf4j", "Logger"),
-            logger_factory: import("org.slf4j", "LoggerFactory"),
-            holder_lookup: import("net.minecraft.core", "HolderLookup"),
-            completable_future: import("java.util.concurrent", "CompletableFuture"),
-            fabric_pack_output: import("net.fabricmc.fabric.api.datagen.v1", "FabricPackOutput"),
-            fabric_language_provider: import(
-                "net.fabricmc.fabric.api.datagen.v1.provider",
-                "FabricLanguageProvider",
-            ),
-            data_generator_entrypoint: import(
-                "net.fabricmc.fabric.api.datagen.v1",
-                "DataGeneratorEntrypoint",
-            ),
-            fabric_data_generator: import(
-                "net.fabricmc.fabric.api.datagen.v1",
-                "FabricDataGenerator",
-            ),
-            fabric_model_provider: import(
-                "net.fabricmc.fabric.api.client.datagen.v1.provider",
-                "FabricModelProvider",
-            ),
-            model_templates: import("net.minecraft.client.data.models.model", "ModelTemplates"),
-            block: import("net.minecraft.world.level.block", "Block"),
-            block_item: import("net.minecraft.world.item", "BlockItem"),
-            block_behaviour: import("net.minecraft.world.level.block.state", "BlockBehaviour"),
-            block_item_id: import("net.minecraft.references", "BlockItemId"),
-            blocks: import("net.minecraft.world.level.block", "Blocks"),
-            block_model_generators: import("net.minecraft.client.data.models", "BlockModelGenerators"),
-            item_model_generators: import("net.minecraft.client.data.models", "ItemModelGenerators"),
-        }
+pub fn write(path: &PathBuf, tokens: Tokens, package: &str) -> Result<()> {
+    if let Some(parent) = path.parent() {
+        create_dir_all(parent).context("Failed to create Java output directory")?;
     }
-
-    pub fn write(path: &PathBuf, tokens: Tokens, package: &str) -> Result<()> {
-        if let Some(parent) = path.parent() {
-            create_dir_all(parent).context("Failed to create Java output directory")?;
-        }
-        let config = java::Config::default().with_package(package);
-        let fmt_config = fmt::Config::from_lang::<Java>();
-        let mut buf = Vec::new();
-        let mut writer = IoWriter::new(&mut buf);
-        tokens.format_file(&mut writer.as_formatter(&fmt_config), &config)?;
-        write(path, buf).context("Failed to write Java file")?;
-        Ok(())
-    }
-}
-
-impl Default for JavaWriter {
-    fn default() -> Self {
-        Self::new()
-    }
+    let config = java::Config::default().with_package(package);
+    let fmt_config = fmt::Config::from_lang::<Java>();
+    let mut buf = Vec::new();
+    let mut writer = IoWriter::new(&mut buf);
+    tokens.format_file(&mut writer.as_formatter(&fmt_config), &config)?;
+    fs_write(path, buf).context("Failed to write Java file")?;
+    Ok(())
 }
 
 pub fn regenerate_all(state: &ModState) -> Result<()> {
@@ -109,7 +31,6 @@ pub fn regenerate_all(state: &ModState) -> Result<()> {
     std::fs::create_dir_all(&client_root)
         .context("Failed to create client Java source directory")?;
 
-    let codegen = JavaWriter::new();
     let package = state.package_name.as_str();
     let client_package = package.to_owned() + ".client";
 
@@ -138,7 +59,7 @@ pub fn regenerate_all(state: &ModState) -> Result<()> {
     ];
 
     for (path, build, pkg) in to_write {
-        JavaWriter::write(path, build(state, &codegen), pkg)?;
+        write(path, build(state), pkg)?;
     }
 
     Ok(())
