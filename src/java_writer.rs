@@ -6,8 +6,9 @@ use std::path::PathBuf;
 
 use crate::state::ModState;
 use crate::tokengen::{
-    BuildFn, build_datagen_entrypoint, build_lang_provider, build_main_mod_class, build_mod_blocks,
-    build_mod_item_ids, build_mod_items, build_model_provider,
+    BuildFn, build_datagen_entrypoint, build_lang_provider, build_main_mod_class,
+    build_mod_block_ids, build_mod_block_item_ids, build_mod_blocks, build_mod_item_ids,
+    build_mod_items, build_model_provider,
 };
 
 pub struct JavaWriter {
@@ -32,6 +33,10 @@ pub struct JavaWriter {
     pub block: Import,
     pub block_item: Import,
     pub block_behaviour: Import,
+    pub block_item_id: Import,
+    pub blocks: Import,
+    pub block_model_generators: Import,
+    pub item_model_generators: Import,
 }
 
 impl JavaWriter {
@@ -63,13 +68,17 @@ impl JavaWriter {
                 "FabricDataGenerator",
             ),
             fabric_model_provider: import(
-                "net.fabricmc.fabric.api.datagen.v1.provider",
+                "net.fabricmc.fabric.api.client.datagen.v1.provider",
                 "FabricModelProvider",
             ),
-            model_templates: import("net.minecraft.data.client", "ModelTemplates"),
+            model_templates: import("net.minecraft.client.data.models.model", "ModelTemplates"),
             block: import("net.minecraft.world.level.block", "Block"),
             block_item: import("net.minecraft.world.item", "BlockItem"),
-            block_behaviour: import("net.minecraft.world.level.block", "BlockBehaviour"),
+            block_behaviour: import("net.minecraft.world.level.block.state", "BlockBehaviour"),
+            block_item_id: import("net.minecraft.references", "BlockItemId"),
+            blocks: import("net.minecraft.world.level.block", "Blocks"),
+            block_model_generators: import("net.minecraft.client.data.models", "BlockModelGenerators"),
+            item_model_generators: import("net.minecraft.client.data.models", "ItemModelGenerators"),
         }
     }
 
@@ -108,9 +117,11 @@ pub fn regenerate_all(state: &ModState) -> Result<()> {
     let items = java_root.join("ModItems.java");
     let mod_class = java_root.join(format!("{}.java", state.mod_name));
     let lang = client_root.join("client/LangProvider.java");
-    let datagen = client_root.join("client/DataGeneratorEntrypoint.java");
+    let datagen = client_root.join(format!("client/{}DataGenerator.java", state.mod_name));
     let models = client_root.join("client/ModelProvider.java");
     let blocks = java_root.join("ModBlocks.java");
+    let block_ids = java_root.join("ModBlockIds.java");
+    let block_item_ids = java_root.join("ModBlockItemIds.java");
 
     // TODO: extract somewhere and add a
     // dirty bit so we only rewrite changed files instead of everything
@@ -122,6 +133,8 @@ pub fn regenerate_all(state: &ModState) -> Result<()> {
         (&datagen, build_datagen_entrypoint, &client_package),
         (&models, build_model_provider, &client_package),
         (&blocks, build_mod_blocks, package),
+        (&block_ids, build_mod_block_ids, package),
+        (&block_item_ids, build_mod_block_item_ids, package),
     ];
 
     for (path, build, pkg) in to_write {
