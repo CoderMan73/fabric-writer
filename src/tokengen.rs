@@ -32,12 +32,22 @@ pub(crate) fn build_mod_items(state: &ModState) -> Tokens {
                 return item;
             }
 
-            public static void initialize() {}
-
-            // Item Registration
+            $("// Item Registration")
             $(for i in &state.items =>
                 public static final $(item()) $(to_upper(&i.id)) = register(ModItemIds.$(to_upper(&i.id)), $(item())::new, $(item_properties(i)));$['\r']
             )
+
+            public static void initialize() {
+                $(if !&state.items.is_empty() =>
+                    $(creative_mode_tab_events()).modifyOutputEvent($(creative_mode_tabs()).INGREDIENTS)
+                        .register((creativeTab) ->
+                        {
+                            $(for i in &state.items =>
+                                creativeTab.accept($(mod_items(state)).$(to_upper(&i.id)));$['\r']
+                            )
+                        });
+                )
+            }
         }
     }
 }
@@ -66,7 +76,17 @@ pub(crate) fn build_mod_blocks(state: &ModState) -> Tokens {
                 );$['\r']
             )
 
-            public static void initialize() {}
+            public static void initialize() {
+                $(if !&state.blocks.is_empty() =>
+                    $(creative_mode_tab_events()).modifyOutputEvent($(creative_mode_tabs()).INGREDIENTS)
+                        .register((creativeTab) ->
+                        {
+                            $(for b in &state.blocks =>
+                                creativeTab.accept($(mod_blocks(state)).$(to_upper(&b.id)));$['\r']
+                            )
+                        });
+                )
+            }
         }
     }
 }
@@ -174,7 +194,7 @@ pub(crate) fn build_model_provider(state: &ModState) -> Tokens {
             @Override
             public void generateItemModels($(item_model_generators()) itemModelGenerator) {
                 $(for i in &state.items =>
-                    itemModelGenerator.generateFlatItem($(&mod_items(state)).$(to_upper(&i.id)), $(model_templates()).FLAT_ITEM);$['\r']
+                    itemModelGenerator.generateFlatItem($(&mod_items(state)).$(to_upper(&i.id)), $(items()).WHEAT, $(model_templates()).FLAT_ITEM);$['\r']
                 )
             }
 
