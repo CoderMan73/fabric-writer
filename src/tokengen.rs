@@ -1,5 +1,6 @@
 use crate::imports::*;
 use crate::state::{Item, ItemKind, ModState};
+use heck::ToTitleCase;
 use genco::lang::java::Tokens;
 use genco::prelude::*;
 
@@ -153,10 +154,10 @@ pub(crate) fn build_lang_provider(state: &ModState) -> Tokens {
             @Override
             public void generateTranslations($(holder_lookup()).Provider holderLookup, TranslationBuilder translationBuilder) {
                 $(for i in &state.items =>
-                    translationBuilder.add($(quoted(&format!("item.{}.{}", state.mod_id, i.id))), $(quoted(&to_upper(&i.id))));$['\r']
+                    translationBuilder.add($(quoted(&format!("item.{}.{}", state.mod_id, i.id))), $(quoted(&display_name(&i.id))));$['\r']
                 )
                 $(for b in &state.blocks =>
-                    translationBuilder.add($(quoted(&format!("block.{}.{}", state.mod_id, b.id))), $(quoted(&to_upper(&b.id))));$['\r']
+                    translationBuilder.add($(quoted(&format!("block.{}.{}", state.mod_id, b.id))), $(quoted(&display_name(&b.id))));$['\r']
                 )
             }
         }
@@ -231,4 +232,8 @@ fn item_properties(item: &Item) -> Tokens {
 
 fn to_upper(id: &str) -> String {
     id.to_uppercase().replace('-', "_")
+}
+
+fn display_name(id: &str) -> String {
+    id.replace('_', " ").to_title_case()
 }

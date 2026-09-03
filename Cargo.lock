@@ -146,6 +146,7 @@ dependencies = [
  "clap",
  "dotenvy",
  "genco",
+ "heck",
  "serde",
  "serde_yaml",
  "serial_test",
