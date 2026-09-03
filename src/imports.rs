@@ -51,6 +51,8 @@ mod special_imports {
         };
     }
 
+    // TODO: lowkey realized, could I have just done this for both sets of imports?
+    // Thats a question for another day. Its functional now.
     import_fn!(mod_blocks, "ModBlocks");
     import_fn!(mod_items, "ModItems");
 }
