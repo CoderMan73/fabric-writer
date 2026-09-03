@@ -158,8 +158,6 @@ pub(crate) fn build_datagen_entrypoint(state: &ModState) -> Tokens {
 }
 
 pub(crate) fn build_model_provider(state: &ModState) -> Tokens {
-    let mod_blocks = &mod_blocks(state);
-    let mod_items = &mod_items(state);
     quote! {
         public class ModelProvider extends $(fabric_model_provider()) {
             protected ModelProvider($(fabric_pack_output()) output) {
@@ -169,14 +167,14 @@ pub(crate) fn build_model_provider(state: &ModState) -> Tokens {
             @Override
             public void generateBlockStateModels($(block_model_generators()) blockStateModelGenerator) {
                 $(for b in &state.blocks =>
-                    blockStateModelGenerator.createTrivialCube($mod_blocks.$(to_upper(&b.id)));$['\r']
+                    blockStateModelGenerator.createTrivialCube($(&mod_blocks(state)).$(to_upper(&b.id)));$['\r']
                 )
             }
 
             @Override
             public void generateItemModels($(item_model_generators()) itemModelGenerator) {
                 $(for i in &state.items =>
-                    itemModelGenerator.generateFlatItem($mod_items.$(to_upper(&i.id)), $(model_templates()).FLAT_ITEM);$['\r']
+                    itemModelGenerator.generateFlatItem($(&mod_items(state)).$(to_upper(&i.id)), $(model_templates()).FLAT_ITEM);$['\r']
                 )
             }
 
