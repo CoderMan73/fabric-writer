@@ -2,7 +2,7 @@ use anyhow::{Context, Result};
 use genco::fmt::{self, IoWriter};
 use genco::lang::java::{self, Java, Tokens};
 use std::fs::{create_dir_all, write as fs_write};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use crate::state::ModState;
 use crate::tokengen::{
@@ -11,18 +11,8 @@ use crate::tokengen::{
     build_mod_items, build_model_provider,
 };
 
-pub fn write(path: &PathBuf, tokens: Tokens, package: &str) -> Result<()> {
-    if let Some(parent) = path.parent() {
-        create_dir_all(parent).context("Failed to create Java output directory")?;
-    }
-    let config = java::Config::default().with_package(package);
-    let fmt_config = fmt::Config::from_lang::<Java>();
-    let mut buf = Vec::new();
-    let mut writer = IoWriter::new(&mut buf);
-    tokens.format_file(&mut writer.as_formatter(&fmt_config), &config)?;
-    fs_write(path, buf).context("Failed to write Java file")?;
-    Ok(())
-}
+const PLACEHOLDER_ITEM: &[u8] = include_bytes!("../assets/placeholder_item.png");
+const PLACEHOLDER_BLOCK: &[u8] = include_bytes!("../assets/placeholder_block.png");
 
 pub fn regenerate_all(state: &ModState) -> Result<()> {
     let java_root = PathBuf::from("src/main/java").join(state.package_name.replace('.', "/"));
@@ -62,5 +52,55 @@ pub fn regenerate_all(state: &ModState) -> Result<()> {
         write(path, build(state), pkg)?;
     }
 
+    copy_textures(state)?;
+
+    Ok(())
+}
+
+pub fn write(path: &PathBuf, tokens: Tokens, package: &str) -> Result<()> {
+    if let Some(parent) = path.parent() {
+        create_dir_all(parent).context("Failed to create Java output directory")?;
+    }
+    let config = java::Config::default().with_package(package);
+    let fmt_config = fmt::Config::from_lang::<Java>();
+    let mut buf = Vec::new();
+    let mut writer = IoWriter::new(&mut buf);
+    tokens.format_file(&mut writer.as_formatter(&fmt_config), &config)?;
+    fs_write(path, buf).context("Failed to write Java file")?;
+    Ok(())
+}
+
+fn copy_textures_for<'a, I>(dir: &Path, ids: I, placeholder: &[u8], kind: &str) -> Result<()>
+where
+    I: IntoIterator<Item = &'a String>,
+{
+    create_dir_all(dir).with_context(|| format!("Failed to create {} textures directory", kind))?;
+    for id in ids {
+        let dest = dir.join(format!("{}.png", id));
+        if !dest.exists() {
+            std::fs::write(&dest, placeholder).with_context(|| {
+                format!("Failed to write placeholder texture for {} '{}'", kind, id)
+            })?;
+        }
+    }
+    Ok(())
+}
+
+fn copy_textures(state: &ModState) -> Result<()> {
+    let textures_root = PathBuf::from("src/main/resources/assets")
+        .join(&state.mod_id)
+        .join("textures");
+    copy_textures_for(
+        &textures_root.join("item"),
+        state.items.iter().map(|i| &i.id),
+        PLACEHOLDER_ITEM,
+        "item",
+    )?;
+    copy_textures_for(
+        &textures_root.join("block"),
+        state.blocks.iter().map(|b| &b.id),
+        PLACEHOLDER_BLOCK,
+        "block",
+    )?;
     Ok(())
 }

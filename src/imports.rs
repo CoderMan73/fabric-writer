@@ -37,7 +37,7 @@ mod import_fns {
     import_fn!(BLOCKS, blocks, "net.minecraft.world.level.block", "Blocks");
     import_fn!(BLOCK_MODEL_GENERATORS, block_model_generators, "net.minecraft.client.data.models", "BlockModelGenerators");
     import_fn!(ITEM_MODEL_GENERATORS, item_model_generators, "net.minecraft.client.data.models", "ItemModelGenerators");
-    import_fn!(ITEMS, items, "net.minecraft.world.item", "Items");
+    // import_fn!(ITEMS, items, "net.minecraft.world.item", "Items");
     import_fn!(CREATIVE_MODE_TAB_EVENTS, creative_mode_tab_events, "net.fabricmc.fabric.api.creativetab.v1", "CreativeModeTabEvents");
     import_fn!(CREATIVE_MODE_TABS, creative_mode_tabs, "net.minecraft.world.item", "CreativeModeTabs");
 }

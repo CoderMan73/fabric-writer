@@ -1,8 +1,8 @@
 use crate::imports::*;
 use crate::state::{Item, ItemKind, ModState};
-use heck::ToTitleCase;
 use genco::lang::java::Tokens;
 use genco::prelude::*;
+use heck::ToTitleCase;
 
 pub(crate) type BuildFn = fn(&ModState) -> Tokens;
 
@@ -195,7 +195,7 @@ pub(crate) fn build_model_provider(state: &ModState) -> Tokens {
             @Override
             public void generateItemModels($(item_model_generators()) itemModelGenerator) {
                 $(for i in &state.items =>
-                    itemModelGenerator.generateFlatItem($(&mod_items(state)).$(to_upper(&i.id)), $(items()).WHEAT, $(model_templates()).FLAT_ITEM);$['\r']
+                    itemModelGenerator.generateFlatItem($(&mod_items(state)).$(to_upper(&i.id)), $(model_templates()).FLAT_ITEM);$['\r']
                 )
             }
 
