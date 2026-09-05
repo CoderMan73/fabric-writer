@@ -1,5 +1,3 @@
-//! Command implementations for `fw`.
-
 /// Block related commands.
 pub mod block;
 /// Project initialization via the Fabric CLI.

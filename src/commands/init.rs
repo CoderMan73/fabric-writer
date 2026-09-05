@@ -1,5 +1,5 @@
-use crate::state::{ModState, save_to};
-use anyhow::{Context, Result, bail};
+use crate::state::{save_to, ModState};
+use anyhow::{bail, Context, Result};
 use clap::{ArgAction, Parser};
 use std::env::current_dir;
 use std::fs::{create_dir_all, read_to_string};

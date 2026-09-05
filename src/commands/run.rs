@@ -1,5 +1,5 @@
-use crate::state::{self};
-use anyhow::{Context, Result, bail};
+use crate::state;
+use anyhow::{bail, Context, Result};
 use std::env::current_dir;
 use std::path::PathBuf;
 use std::process::Command;
