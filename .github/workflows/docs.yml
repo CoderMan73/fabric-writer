@@ -27,7 +27,7 @@ jobs:
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./target/doc
+          publish_dir: ./target/doc/fabric_writer
       - name: Set up GitHub Pages source
         if: github.ref == 'refs/heads/main'
         run: echo "Docs deployed to https://coder-man-73.github.io/fabric-writer/"
