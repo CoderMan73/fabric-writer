@@ -1,4 +1,4 @@
-use crate::java_writer::{regenerate_all, DirtyFlags};
+use crate::java_writer::{DirtyFlags, regenerate_all};
 use crate::state::{self, Entity, Item, ItemKind};
 use anyhow::Result;
 use clap::Parser;
