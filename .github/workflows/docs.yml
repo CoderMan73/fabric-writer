@@ -20,7 +20,7 @@ jobs:
           components: rustfmt, clippy
 
       - name: Build docs
-        run: cargo rustdoc --no-deps -- --html-in-header .github/header.html
+        run: cargo rustdoc -- --html-in-header .github/header.html
 
       - name: Create root redirect
         run: |
