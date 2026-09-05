@@ -4,17 +4,22 @@ use std::env::current_dir;
 use std::path::PathBuf;
 use std::process::Command;
 
+/// Runs the `runDatagen` Gradle task for the current mod project.
 pub fn datagen() -> Result<()> {
     run_gradle("runDatagen")
 }
 
+/// Runs the `runClient` Gradle task for the current mod project.
 pub fn client() -> Result<()> {
     run_gradle("runClient")
 }
 
+/// Runs the `runServer` Gradle task for the current mod project.
 pub fn server() -> Result<()> {
     run_gradle("runServer")
 }
+
+// TODO: Make a command that runs both runDatagen then runClient in succession.
 
 fn run_gradle(task: &str) -> Result<()> {
     let state = state::load()?;

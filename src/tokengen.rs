@@ -133,8 +133,8 @@ pub(crate) fn build_main_mod_class(state: &ModState) -> Tokens {
                 LOGGER.info("Hello Fabric world!");
 
                 $("// Initialize Mod")
-                ModItems.initialize();
-                ModBlocks.initialize();
+                $(if !&state.items.is_empty() => $(mod_items(state)).initialize();)
+                $(if !&state.blocks.is_empty() => $(mod_blocks(state)).initialize();)
             }
 
             public static $(identifier()) id(String path) {

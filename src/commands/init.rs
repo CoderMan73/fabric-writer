@@ -10,6 +10,8 @@ const SUPPORTED_VERSIONS: &[&str] = &["26.2"];
 
 const MIN_JAVA_BY_VERSION: &[(&str, u32)] = &[("26.2", 25)];
 
+/// Creates a new Fabric mod project via the official Fabric CLI, then writes
+/// `.fw/fabric-writer.yml` and injects `org.gradle.java.home`.
 pub fn run(args: InitArgs) -> Result<()> {
     let InitArgs {
         name,
@@ -260,6 +262,7 @@ fn to_package_name(name: &str) -> String {
         .collect()
 }
 
+/// CLI arguments for `fw init`.
 #[derive(Parser)]
 pub struct InitArgs {
     /// Name of your Minecraft Mod

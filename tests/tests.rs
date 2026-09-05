@@ -1,3 +1,6 @@
+//! Integration tests for fabric-writer.
+#![allow(missing_docs)]
+
 mod common;
 
 use anyhow::Result;

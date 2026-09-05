@@ -1,3 +1,6 @@
+//! Shared test infrastructure for integration tests.
+#![allow(missing_docs)]
+
 use anyhow::{Context, Result};
 use std::env::var;
 use std::fs::{copy, create_dir_all, read_dir};

@@ -1,10 +1,18 @@
+#![warn(rustdoc::all, missing_docs)]
+
+//! CLI binary for the fabric-writer crate.
+//!
+//! Most logic lives in the [`fabric_writer`] library crate; this binary
+//! provides the clap CLI front-end and command dispatch.
+
 use clap::{Parser, Subcommand};
 use fabric_writer::commands::{
     block::{self, BlockAddArgs, BlockRemoveArgs},
     init::{self, InitArgs},
     item::{self, ItemAddArgs, ItemRemoveArgs},
     recipe::{self, RecipeAddArgs, RecipeRemoveArgs},
-    regen, run,
+    regen::{self, RegenArgs},
+    run,
     status::{self, StatusArgs},
 };
 
@@ -28,7 +36,7 @@ fn main() -> anyhow::Result<()> {
             RunSubcommand::Server => run::server(),
         },
         Commands::Status(args) => status::run(args),
-        Commands::Regen => regen::run(),
+        Commands::Regen(args) => regen::run(args),
     }
 }
 
@@ -70,7 +78,7 @@ enum Commands {
     Status(StatusArgs),
     /// Regenerate all Java files from current state [alias: g]
     #[command(alias = "g")]
-    Regen,
+    Regen(RegenArgs),
 }
 
 #[derive(Subcommand)]

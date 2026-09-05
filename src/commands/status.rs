@@ -2,6 +2,7 @@ use crate::state::{self};
 use anyhow::Result;
 use clap::Parser;
 
+/// Prints a summary of the current mod project.
 pub fn run(args: StatusArgs) -> Result<()> {
     let state = state::load()?;
 
@@ -23,6 +24,7 @@ pub fn run(args: StatusArgs) -> Result<()> {
     Ok(())
 }
 
+/// CLI arguments for `fw status`.
 #[derive(Parser)]
 pub struct StatusArgs {
     /// Print verbose status
