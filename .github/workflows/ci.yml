@@ -28,7 +28,9 @@ jobs:
         run: cargo clippy --all-targets --all-features -- -D warnings -W rustdoc::all -W missing_docs
 
       - name: Doc
-        run: RUSTDOCFLAGS="-D rustdoc::all -D missing-docs" cargo doc --no-deps
+        run: cargo doc --no-deps
+        env:
+          RUSTDOCFLAGS: "-D rustdoc::all -D missing-docs"
 
       - name: Test
         run: cargo test
