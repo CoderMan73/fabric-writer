@@ -20,7 +20,9 @@ jobs:
           components: rustfmt, clippy
 
       - name: Build docs
-        run: cargo doc --no-deps
+        run: |
+          cargo doc --no-deps \
+            --config rustdoc.base_url="https://coderman73.github.io/fabric-writer/"
 
       - name: Deploy to GitHub Pages
         if: github.ref == 'refs/heads/main'
@@ -30,4 +32,4 @@ jobs:
           publish_dir: ./target/doc/fabric_writer
       - name: Set up GitHub Pages source
         if: github.ref == 'refs/heads/main'
-        run: echo "Docs deployed to https://coder-man-73.github.io/fabric-writer/"
+        run: echo "Docs deployed to https://coderman73.github.io/fabric-writer/"
