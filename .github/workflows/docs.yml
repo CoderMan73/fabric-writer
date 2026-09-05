@@ -20,16 +20,18 @@ jobs:
           components: rustfmt, clippy
 
       - name: Build docs
+        run: cargo rustdoc -- --html-in-header .github/header.html --no-deps
+
+      - name: Create root redirect
         run: |
-          cargo doc --no-deps \
-            --config rustdoc.base_url="https://coderman73.github.io/fabric-writer/"
+          printf '<meta http-equiv="refresh" content="0; url=fabric_writer/index.html">\n' > target/doc/index.html
 
       - name: Deploy to GitHub Pages
         if: github.ref == 'refs/heads/main'
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./target/doc/fabric_writer
+          publish_dir: ./target/doc
       - name: Set up GitHub Pages source
         if: github.ref == 'refs/heads/main'
         run: echo "Docs deployed to https://coderman73.github.io/fabric-writer/"
