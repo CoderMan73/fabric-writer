@@ -1,9 +1,0 @@
-(function() {
-    const implementors = Object.fromEntries([["fabric_writer",[["impl Parser for <a class=\"struct\" href=\"fabric_writer/commands/block/struct.BlockAddArgs.html\" title=\"struct fabric_writer::commands::block::BlockAddArgs\">BlockAddArgs</a>",0],["impl Parser for <a class=\"struct\" href=\"fabric_writer/commands/block/struct.BlockRemoveArgs.html\" title=\"struct fabric_writer::commands::block::BlockRemoveArgs\">BlockRemoveArgs</a>",0],["impl Parser for <a class=\"struct\" href=\"fabric_writer/commands/init/struct.InitArgs.html\" title=\"struct fabric_writer::commands::init::InitArgs\">InitArgs</a>",0],["impl Parser for <a class=\"struct\" href=\"fabric_writer/commands/item/struct.ItemAddArgs.html\" title=\"struct fabric_writer::commands::item::ItemAddArgs\">ItemAddArgs</a>",0],["impl Parser for <a class=\"struct\" href=\"fabric_writer/commands/item/struct.ItemRemoveArgs.html\" title=\"struct fabric_writer::commands::item::ItemRemoveArgs\">ItemRemoveArgs</a>",0],["impl Parser for <a class=\"struct\" href=\"fabric_writer/commands/recipe/struct.RecipeAddArgs.html\" title=\"struct fabric_writer::commands::recipe::RecipeAddArgs\">RecipeAddArgs</a>",0],["impl Parser for <a class=\"struct\" href=\"fabric_writer/commands/recipe/struct.RecipeRemoveArgs.html\" title=\"struct fabric_writer::commands::recipe::RecipeRemoveArgs\">RecipeRemoveArgs</a>",0],["impl Parser for <a class=\"struct\" href=\"fabric_writer/commands/regen/struct.RegenArgs.html\" title=\"struct fabric_writer::commands::regen::RegenArgs\">RegenArgs</a>",0],["impl Parser for <a class=\"struct\" href=\"fabric_writer/commands/status/struct.StatusArgs.html\" title=\"struct fabric_writer::commands::status::StatusArgs\">StatusArgs</a>",0]]]]);
-    if (window.register_implementors) {
-        window.register_implementors(implementors);
-    } else {
-        window.pending_implementors = implementors;
-    }
-})()
-//{"start":59,"fragment_lengths":[1675]}

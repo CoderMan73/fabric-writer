@@ -1,2 +1,0 @@
-createSrcSidebar('[["fabric_writer",["",[["commands",[],["block.rs","init.rs","item.rs","mod.rs","recipe.rs","regen.rs","run.rs","status.rs"]]],["imports.rs","java_writer.rs","lib.rs","state.rs","tokengen.rs"]]]]');
-//{"start":19,"fragment_lengths":[192]}

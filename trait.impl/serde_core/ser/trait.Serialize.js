@@ -1,9 +1,0 @@
-(function() {
-    const implementors = Object.fromEntries([["fabric_writer",[["impl <a class=\"trait\" href=\"https://docs.rs/serde_core/1.0.229/serde_core/ser/trait.Serialize.html\" title=\"trait serde_core::ser::Serialize\">Serialize</a> for <a class=\"struct\" href=\"fabric_writer/state/struct.Block.html\" title=\"struct fabric_writer::state::Block\">Block</a>",0],["impl <a class=\"trait\" href=\"https://docs.rs/serde_core/1.0.229/serde_core/ser/trait.Serialize.html\" title=\"trait serde_core::ser::Serialize\">Serialize</a> for <a class=\"struct\" href=\"fabric_writer/state/struct.Item.html\" title=\"struct fabric_writer::state::Item\">Item</a>",0],["impl <a class=\"trait\" href=\"https://docs.rs/serde_core/1.0.229/serde_core/ser/trait.Serialize.html\" title=\"trait serde_core::ser::Serialize\">Serialize</a> for <a class=\"enum\" href=\"fabric_writer/state/enum.ItemKind.html\" title=\"enum fabric_writer::state::ItemKind\">ItemKind</a>",0],["impl <a class=\"trait\" href=\"https://docs.rs/serde_core/1.0.229/serde_core/ser/trait.Serialize.html\" title=\"trait serde_core::ser::Serialize\">Serialize</a> for <a class=\"struct\" href=\"fabric_writer/state/struct.ModState.html\" title=\"struct fabric_writer::state::ModState\">ModState</a>",0],["impl <a class=\"trait\" href=\"https://docs.rs/serde_core/1.0.229/serde_core/ser/trait.Serialize.html\" title=\"trait serde_core::ser::Serialize\">Serialize</a> for <a class=\"struct\" href=\"fabric_writer/state/struct.Recipe.html\" title=\"struct fabric_writer::state::Recipe\">Recipe</a>",0]]]]);
-    if (window.register_implementors) {
-        window.register_implementors(implementors);
-    } else {
-        window.pending_implementors = implementors;
-    }
-})()
-//{"start":59,"fragment_lengths":[1496]}
