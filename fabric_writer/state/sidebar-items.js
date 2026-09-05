@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Entity","ItemKind"],"fn":["load","save_to"],"struct":["Block","Item","ModState","Recipe"]};
