@@ -9,7 +9,7 @@ use crate::state::{Entity, ModState};
 use crate::tokengen::{
     BuildFn, build_datagen_entrypoint, build_lang_provider, build_main_mod_class,
     build_mod_block_ids, build_mod_block_item_ids, build_mod_blocks, build_mod_item_ids,
-    build_mod_items, build_model_provider,
+    build_mod_items, build_model_provider, build_recipe_provider,
 };
 
 const PLACEHOLDER_ITEM: &[u8] = include_bytes!("../assets/placeholder_item.png");
@@ -46,6 +46,9 @@ pub struct DirtyFlags {
 
     /// ModBlockItemIds.java
     pub mod_block_item_ids: bool,
+
+    /// `<ModName>RecipeProvider.java`
+    pub recipe_provider: bool,
 }
 
 impl DirtyFlags {
@@ -61,6 +64,7 @@ impl DirtyFlags {
             mod_blocks: true,
             mod_block_ids: true,
             mod_block_item_ids: true,
+            recipe_provider: true,
         }
     }
 
@@ -70,6 +74,7 @@ impl DirtyFlags {
             Entity::Item(_) => Self {
                 mod_item_ids: true,
                 mod_items: true,
+                mod_class: true,
                 lang_provider: true,
                 model_provider: true,
                 datagen_entrypoint: true,
@@ -79,14 +84,14 @@ impl DirtyFlags {
                 mod_blocks: true,
                 mod_block_ids: true,
                 mod_block_item_ids: true,
+                mod_class: true,
                 lang_provider: true,
                 model_provider: true,
                 datagen_entrypoint: true,
                 ..Default::default()
             },
             Entity::Recipe(_) => Self {
-                lang_provider: true,
-                model_provider: true,
+                recipe_provider: true,
                 datagen_entrypoint: true,
                 ..Default::default()
             },
@@ -104,6 +109,7 @@ impl DirtyFlags {
             "mod_blocks" => self.mod_blocks,
             "mod_block_ids" => self.mod_block_ids,
             "mod_block_item_ids" => self.mod_block_item_ids,
+            "recipe_provider" => self.recipe_provider,
             _ => false,
         }
     }
@@ -129,6 +135,10 @@ fn blocks_exist(state: &ModState) -> bool {
 
 fn providers_exist(state: &ModState) -> bool {
     items_exist(state) || blocks_exist(state)
+}
+
+fn recipes_exist(state: &ModState) -> bool {
+    !state.recipes.is_empty()
 }
 
 fn file_specs() -> &'static [(&'static str, FileSpec)] {
@@ -182,6 +192,14 @@ fn file_specs() -> &'static [(&'static str, FileSpec)] {
             },
         ),
         (
+            "<ModName>RecipeProvider.java",
+            FileSpec {
+                field: "recipe_provider",
+                build: build_recipe_provider,
+                should_exist: recipes_exist,
+            },
+        ),
+        (
             "ModBlocks.java",
             FileSpec {
                 field: "mod_blocks",
@@ -223,6 +241,7 @@ pub fn regenerate_all(state: &ModState, dirty: DirtyFlags, verbose: bool) -> Res
 
     let mod_class_name = format!("{}.java", state.mod_name);
     let datagen_class_name = format!("{}DataGenerator.java", state.mod_name);
+    let recipe_provider_class_name = format!("{}RecipeProvider.java", state.mod_name);
 
     for (name, spec) in file_specs() {
         let path = resolve_path(
@@ -231,6 +250,7 @@ pub fn regenerate_all(state: &ModState, dirty: DirtyFlags, verbose: bool) -> Res
             &client_root,
             &mod_class_name,
             &datagen_class_name,
+            &recipe_provider_class_name,
         );
         let dirty_bit = dirty.is_set(spec.field);
 
@@ -274,6 +294,7 @@ fn resolve_path(
     client_root: &Path,
     mod_class_name: &str,
     datagen_class_name: &str,
+    recipe_provider_class_name: &str,
 ) -> PathBuf {
     match name {
         "ModItemIds.java" => java_root.join(name),
@@ -282,6 +303,7 @@ fn resolve_path(
         "LangProvider.java" => client_root.join(name),
         "<ModName>DataGenerator.java" => client_root.join(datagen_class_name),
         "ModelProvider.java" => client_root.join(name),
+        "<ModName>RecipeProvider.java" => client_root.join(recipe_provider_class_name),
         "ModBlocks.java" => java_root.join(name),
         "ModBlockIds.java" => java_root.join(name),
         "ModBlockItemIds.java" => java_root.join(name),

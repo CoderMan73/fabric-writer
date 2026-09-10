@@ -31,15 +31,22 @@ mod import_fns {
     import_fn!(FABRIC_MODEL_PROVIDER, fabric_model_provider, "net.fabricmc.fabric.api.client.datagen.v1.provider", "FabricModelProvider");
     import_fn!(MODEL_TEMPLATES, model_templates, "net.minecraft.client.data.models.model", "ModelTemplates");
     import_fn!(BLOCK, block, "net.minecraft.world.level.block", "Block");
+    import_fn!(BLOCKS, blocks, "net.minecraft.world.level.block", "Blocks");
     import_fn!(BLOCK_ITEM, block_item, "net.minecraft.world.item", "BlockItem");
     import_fn!(BLOCK_BEHAVIOUR, block_behaviour, "net.minecraft.world.level.block.state", "BlockBehaviour");
     import_fn!(BLOCK_ITEM_ID, block_item_id, "net.minecraft.references", "BlockItemId");
-    import_fn!(BLOCKS, blocks, "net.minecraft.world.level.block", "Blocks");
     import_fn!(BLOCK_MODEL_GENERATORS, block_model_generators, "net.minecraft.client.data.models", "BlockModelGenerators");
     import_fn!(ITEM_MODEL_GENERATORS, item_model_generators, "net.minecraft.client.data.models", "ItemModelGenerators");
     // import_fn!(ITEMS, items, "net.minecraft.world.item", "Items");
     import_fn!(CREATIVE_MODE_TAB_EVENTS, creative_mode_tab_events, "net.fabricmc.fabric.api.creativetab.v1", "CreativeModeTabEvents");
     import_fn!(CREATIVE_MODE_TABS, creative_mode_tabs, "net.minecraft.world.item", "CreativeModeTabs");
+    import_fn!(FABRIC_RECIPE_PROVIDER, fabric_recipe_provider, "net.fabricmc.fabric.api.datagen.v1.provider", "FabricRecipeProvider");
+    import_fn!(RECIPE_PROVIDER, recipe_provider, "net.minecraft.data.recipes", "RecipeProvider");
+    import_fn!(RECIPE_OUTPUT, recipe_output, "net.minecraft.data.recipes", "RecipeOutput");
+    import_fn!(RECIPE_CATEGORY, recipe_category, "net.minecraft.data.recipes", "RecipeCategory");
+    import_fn!(INGREDIENT, ingredient, "net.minecraft.world.item.crafting", "Ingredient");
+    import_fn!(ITEMS, items, "net.minecraft.world.item", "Items");
+    import_fn!(TOOL_MATERIALS, tool_materials, "net.minecraft.world.item", "ToolMaterial");
 }
 
 mod special_imports {
@@ -58,6 +65,11 @@ mod special_imports {
     // Thats a question for another day. Its functional now.
     import_fn!(mod_blocks, "ModBlocks");
     import_fn!(mod_items, "ModItems");
+
+    /// Creates an import for the main mod class (e.g. `import testmod.TestMod;`).
+    pub fn mod_class(state: &ModState) -> Import {
+        import(&state.mod_id, &state.mod_name)
+    }
 }
 
 pub(crate) use import_fns::*;

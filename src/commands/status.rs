@@ -1,4 +1,4 @@
-use crate::state::{self};
+use crate::state::{self, ItemKind};
 use anyhow::Result;
 use clap::Parser;
 
@@ -9,19 +9,90 @@ pub fn run(args: StatusArgs) -> Result<()> {
     println!("Mod: {} ({})", state.mod_name, state.mod_id);
     println!("Package: {}", state.package_name);
     println!("MC: {}", state.minecraft_version);
-    println!("Items: {}", state.items.len());
-    for item in &state.items {
-        println!("  - {}", item.id);
-    }
-    println!("Blocks: {}", state.blocks.len());
-    for block in &state.blocks {
-        println!("  - {}", block.id);
-    }
+
+    print_items(&state.items, args.verbose);
+    print_blocks(&state.blocks, args.verbose);
+    print_recipes(&state.recipes, args.verbose);
+
     if args.verbose {
         println!("Advanced options: {:?}", state.advanced_options);
     }
 
     Ok(())
+}
+
+fn print_items(items: &[state::Item], verbose: bool) {
+    println!("Items: {}", items.len());
+    for item in items {
+        if verbose {
+            print_item(item);
+        } else {
+            println!("  - {}", item.id);
+        }
+    }
+}
+
+fn print_item(item: &state::Item) {
+    let kind = match item.kind {
+        ItemKind::Basic => "basic",
+        ItemKind::Tool => "tool",
+    };
+    let mut detail = format!("  - {} ({kind}", item.id);
+    if let Some(material) = &item.material {
+        detail.push_str(format!(", material={material}").as_str());
+    }
+    if let Some(damage) = item.attack_damage {
+        detail.push_str(format!(", damage={damage}").as_str());
+    }
+    if let Some(speed) = item.attack_speed {
+        detail.push_str(format!(", speed={speed}").as_str());
+    }
+    if let Some(durability) = item.durability {
+        detail.push_str(format!(", durability={durability}").as_str());
+    }
+    detail.push(')');
+    println!("{detail}");
+}
+
+fn print_blocks(blocks: &[state::Block], verbose: bool) {
+    println!("Blocks: {}", blocks.len());
+    if verbose {
+        for block in blocks {
+            println!("  - {} (block)", block.id);
+        }
+    } else {
+        for block in blocks {
+            println!("  - {}", block.id);
+        }
+    }
+}
+
+fn print_recipes(recipes: &[state::Recipe], verbose: bool) {
+    println!("Recipes: {}", recipes.len());
+    for recipe in recipes {
+        if verbose {
+            print_recipe(recipe);
+        } else {
+            println!("  - {} ({})", recipe.id, recipe.kind);
+        }
+    }
+}
+
+fn print_recipe(recipe: &state::Recipe) {
+    print!("  - {} ({})", recipe.id, recipe.kind);
+    if !recipe.pattern.is_empty() {
+        let grid = recipe.pattern.join(" / ");
+        print!(" pattern=[{grid}]");
+    }
+    if !recipe.ingredients.is_empty() {
+        let keys: Vec<String> = recipe
+            .ingredients
+            .keys()
+            .map(|k| format!("{k}={}", recipe.ingredients[k]))
+            .collect();
+        print!(" ingredients=[{}]", keys.join(", "));
+    }
+    println!(" -> {} x{}", recipe.result, recipe.count);
 }
 
 /// CLI arguments for `fw status`.

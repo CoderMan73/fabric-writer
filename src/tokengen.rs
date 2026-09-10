@@ -1,5 +1,5 @@
 use crate::imports::*;
-use crate::state::{Item, ItemKind, ModState};
+use crate::state::{Item, ItemKind, ModState, Recipe};
 use genco::lang::java::Tokens;
 use genco::prelude::*;
 use heck::ToTitleCase;
@@ -171,8 +171,13 @@ pub(crate) fn build_datagen_entrypoint(state: &ModState) -> Tokens {
             public void onInitializeDataGenerator($(fabric_data_generator()) fabricDataGenerator) {
                 $(fabric_data_generator()).Pack pack = fabricDataGenerator.createPack();
 
-                pack.addProvider(LangProvider::new);
-                pack.addProvider(ModelProvider::new);
+                $(if !(state.items.is_empty() && state.blocks.is_empty()) =>
+                    pack.addProvider(LangProvider::new);
+                    pack.addProvider(ModelProvider::new);
+                )
+                $(if !&state.recipes.is_empty() =>
+                    pack.addProvider($(format!("{}RecipeProvider", state.mod_name))::new);
+                )
             }
         }
     }
@@ -207,19 +212,116 @@ pub(crate) fn build_model_provider(state: &ModState) -> Tokens {
     }
 }
 
+pub(crate) fn build_recipe_provider(state: &ModState) -> Tokens {
+    quote! {
+        public class $(format!("{}RecipeProvider", state.mod_name)) extends $(fabric_recipe_provider()) {
+            public $(format!("{}RecipeProvider", state.mod_name))($(fabric_pack_output()) output, $(completable_future())<$(holder_lookup()).Provider> registriesFuture) {
+                super(output, registriesFuture);
+            }
+
+            @Override
+            protected $(recipe_provider()) createRecipeProvider($(holder_lookup()).Provider registryLookup, $(recipe_output()) exporter) {
+                return new $(recipe_provider())(registryLookup, exporter) {
+                    @Override
+                    public void buildRecipes() {
+                        $(for r in &state.recipes =>
+                            $(recipe_call(r, state))$['\r']
+                        )
+                    }
+                };
+            }
+
+            @Override
+            public String getName() {
+                return $(quoted(&format!("{}RecipeProvider", state.mod_name)));
+            }
+        }
+    }
+}
+
+fn recipe_call(recipe: &Recipe, state: &ModState) -> Tokens {
+    let result_ref = result_item(recipe, state);
+    let count = recipe.count;
+    let recipe_id = strip_namespace(&recipe.id);
+    let full_id = format!("{}:{}", state.mod_id, recipe_id);
+    match recipe.kind.as_str() {
+        "crafting_shaped" => {
+            let pattern_lines = &recipe.pattern;
+            let defines = &recipe.ingredients;
+            let result_ref2 = result_ref.clone();
+            let result_ref3 = result_ref.clone();
+            quote! {
+                shaped($(recipe_category()).MISC, $(result_ref), $(count))
+                    $(for p in pattern_lines => .pattern($(quoted(p))))
+                    $(for (k, v) in defines => .define($(format!("'{}'", k.chars().next().unwrap_or('?'))), $(ingredient_ref(v, state))))
+                    .unlockedBy(getHasName($(result_ref2)), has($(result_ref3)))
+                    .save(exporter, $(quoted(&full_id)));
+            }
+        }
+        "crafting_shapeless" => {
+            let ingredients = &recipe.ingredients;
+            let result_ref2 = result_ref.clone();
+            let result_ref3 = result_ref.clone();
+            quote! {
+                shapeless($(recipe_category()).MISC, $(result_ref), $(count))
+                    $(for (_, v) in ingredients => .requires($(ingredient_ref(v, state))))
+                    .unlockedBy(getHasName($(result_ref2)), has($(result_ref3)))
+                    .save(exporter, $(quoted(&full_id)));
+            }
+        }
+        _ => quote! { /* unsupported recipe type: $(quoted(&recipe.kind)) */ },
+    }
+}
+
+fn result_item(recipe: &Recipe, state: &ModState) -> Tokens {
+    let id = &recipe.result;
+    if let Some(vanilla) = id.strip_prefix("minecraft:") {
+        let mc_constant = vanilla.to_uppercase().replace('-', "_");
+        quote! { $(items()).$(mc_constant) }
+    } else {
+        let item_id = strip_namespace(id);
+        quote! { $(mod_items(state)).$(to_upper(item_id)) }
+    }
+}
+
+fn ingredient_ref(value: &str, state: &ModState) -> Tokens {
+    if let Some(vanilla) = value.strip_prefix("minecraft:") {
+        let mc_constant = vanilla.to_uppercase().replace('-', "_");
+        quote! { $(ingredient()).of($(items()).$(mc_constant)) }
+    } else {
+        let item_id = strip_namespace(value);
+        let const_name = to_upper(item_id);
+        if state.items.iter().any(|i| i.id == item_id) {
+            quote! { $(ingredient()).of($(mod_items(state)).$(const_name)) }
+        } else if state.blocks.iter().any(|b| b.id == item_id) {
+            quote! { $(ingredient()).of($(mod_blocks(state)).$(const_name)) }
+        } else {
+            let id_ref: Tokens = quote! {
+                $(identifier()).fromNamespaceAndPath(
+                    $(mod_class(state)).MOD_ID,
+                    $(quoted(item_id))
+                )
+            };
+            quote! { $(ingredient()).of($id_ref) }
+        }
+    }
+}
+
+/// Strips the `namespace:` prefix from an item identifier, returning the bare id.
+fn strip_namespace(id: &str) -> &str {
+    id.split_once(':').map_or(id, |(_, path)| path)
+}
+
 fn item_properties(item: &Item) -> Tokens {
     let mut out: Tokens = quote! { new Item.Properties() };
 
     if item.kind == ItemKind::Tool
         && let Some(mat) = &item.material
     {
-        let snippet = format!(
-            "sword({}, {}, {})",
-            mat,
-            item.attack_damage.unwrap_or(1.0),
-            item.attack_speed.unwrap_or(1.6)
-        );
-        quote_in! { out => .$(snippet) }
+        let material_const = mat.to_uppercase().replace('-', "_");
+        let damage = format!("{}f", item.attack_damage.unwrap_or(1.0));
+        let speed = format!("{}f", item.attack_speed.unwrap_or(1.6));
+        quote_in! { out => .sword($(tool_materials()).$(material_const), $(damage), $(speed)) }
     }
 
     if let Some(dur) = item.durability {

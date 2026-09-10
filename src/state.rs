@@ -249,7 +249,6 @@ pub struct Block {
 }
 
 /// A crafting recipe tracked in [`ModState::recipes`].
-/// Currently unimplemented in codegen.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct Recipe {
     /// Lowercase recipe identifier.

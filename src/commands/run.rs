@@ -31,6 +31,7 @@ fn run_gradle(task: &str) -> Result<()> {
 
     let status = Command::new(&gradle_wrapper)
         .arg(task)
+        .arg("--no-daemon")
         .env("JAVA_HOME", &state.java_path)
         .status()
         .with_context(|| format!("Failed to spawn {:?} for task {}", gradle_wrapper, task))?;

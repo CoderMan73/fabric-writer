@@ -21,9 +21,11 @@ run:
 	docker run $(DOCKER_ARGS) fabric-writer sh -c "$(CMD)"
 
 # Run the full CI-style check suite (fmt + clippy + doc + test + build)
+# Includes ignored tests (cache copy + datagen) since Docker has Java/Deno.
+# Cache is removed first so it's rebuilt with Linux paths inside the container.
 .PHONY: test
 test:
-	docker run $(CARGO_CACHE) $(GIT_CACHE) $(TARGET_CACHE) $(SOURCE) fabric-writer
+	docker run $(CARGO_CACHE) $(GIT_CACHE) $(TARGET_CACHE) $(SOURCE) fabric-writer sh -c "rm -rf .testing-cache && cargo fmt -- --check && cargo clippy --all-targets --all-features -- -D warnings -W rustdoc::all -W missing_docs && cargo doc --no-deps && cargo test -- --ignored && cargo build"
 
 # Run the build directly without CI checks
 .PHONY: build
