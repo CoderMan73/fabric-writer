@@ -63,54 +63,7 @@ fw run server
 
 ## Commands
 
-| Command | Alias | Description |
-|---|---|---|
-| `fw init <name> --version <ver> --java-path <path>` | | Create a new Fabric mod project |
-| `fw add item <id> [...]` | `fw a i` | Add an item |
-| `fw add block <id> [...]` | `fw a b` | Add a block |
-| `fw add recipe <id> [...]` | `fw a r` | Add a crafting recipe |
-| `fw remove item <id>` | `fw r i` | Remove an item |
-| `fw remove block <id>` | `fw r b` | Remove a block |
-| `fw remove recipe <id>` | `fw r r` | Remove a recipe |
-| `fw regen [-v]` | `fw g` | Regenerate all Java from state |
-| `fw status [-v]` | `fw s` | Print mod summary |
-| `fw run datagen` | `fw d` | Run Gradle datagen |
-| `fw run client` | `fw c` | Run the Minecraft client |
-| `fw run server` | `fw s` | Run a local server |
-
-### `fw init`
-
-```
-fw init <name> --version 26.2 --java-path <path> [--dir <dir>] [--option <opt>] [--dangerous]
-```
-
-- Validates the mod name (no spaces), Minecraft version (currently only `26.2`), and Java version (JDK 25+)
-- Requires Deno on your `PATH` to run the Fabric CLI
-- Derives `mod_id` (lowercase, alphanumeric + `_` + `-`) and `package_name` (drops `-`) from the name
-- Defaults to `["datagen", "splitSources"]` advanced options
-- Writes `.fw/fabric-writer.yml` and injects `org.gradle.java.home` into `gradle.properties`
-
-### `fw add item`
-
-```
-fw add item <id> [--kind tool|basic] [--material <MATERIAL>] [--attack-damage <f32>] [--attack-speed <f32>] [--durability <i32>] [-v]
-```
-
-- Basic items generate `Item.Properties` with no special properties
-- Tool items with `--material` generate `.sword(material, damage, speed)` with sensible defaults
-- `--durability` overrides the material's default durability
-
-### `fw add recipe`
-
-```
-fw add recipe <id> [--kind crafting_shaped|crafting_shapeless] [--result <item>] [--count <u32>]
-  [--pattern <line>...] [--ingredients <key=value>...] [-v]
-```
-
-- Defaults to `crafting_shaped`
-- `--pattern` accepts one line per row (repeatable flag)
-- `--ingredients` accepts `key=value` pairs where key is a single character matching the pattern and value is an item ID (`minecraft:dirt` for vanilla, `mymod:ingot` for mod items)
-- Generates a `FabricRecipeProvider` subclass with `shaped()` or `shapeless()` calls
+See [COMMANDS.md](COMMANDS.md) for the full auto-generated command reference.
 
 ## State Management
 

@@ -11,6 +11,7 @@ genco = "0.19"
 anyhow = "1"
 heck = "0.5.0"
 which = "8"
+clap-markdown = "0.1"
 
 [dev-dependencies]
 tempfile = "3"

@@ -18,7 +18,14 @@ use fabric_writer::commands::{
 
 fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
-    match cli.command {
+    if cli.markdown_help {
+        clap_markdown::print_help_markdown::<Cli>();
+        return Ok(());
+    }
+    let command = cli
+        .command
+        .ok_or_else(|| anyhow::anyhow!("A subcommand is required"))?;
+    match command {
         Commands::Init(args) => init::run(args),
         Commands::Add { subcommand } => match subcommand {
             AddSubcommand::Item(args) => item::add(args),
@@ -45,7 +52,11 @@ fn main() -> anyhow::Result<()> {
 #[command(about = "Create basic fabric mods efficiently and easily")]
 struct Cli {
     #[command(subcommand)]
-    command: Commands,
+    command: Option<Commands>,
+
+    /// Generate Markdown command reference and print to stdout
+    #[arg(long, hide = true)]
+    markdown_help: bool,
 }
 
 #[derive(Subcommand)]

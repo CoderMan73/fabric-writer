@@ -62,14 +62,14 @@ pub fn remove(args: RecipeRemoveArgs) -> Result<()> {
 #[derive(Parser)]
 #[command(after_help = "\
 Examples:
-  # Shaped recipe: 3 sticks in a T-pattern → 1 dihh
-  fw add recipe make_dihh --kind crafting_shaped --result dihh \\
+  # Shaped recipe: 3 sticks in a T-pattern -> 1 iron_sword
+  fw add recipe craft_iron_sword --kind crafting_shaped --result iron_sword \\
       --pattern \"S S\" --pattern \" S \" --pattern \" S \" \\
       --ingredients S=minecraft:stick
 
-  # Shapeless recipe: boogers + diamond → 1 dihh
-  fw add recipe booger_to_dihh --kind crafting_shapeless --result dihh \\
-      --ingredients B=boogers --ingredients D=minecraft:diamond
+  # Shapeless recipe: copper_ingot + diamond -> 1 enchanted_apple
+  fw add recipe enchanted_apple --kind crafting_shapeless --result minecraft:enchanted_golden_apple \\
+      --ingredients C=copper_ingot --ingredients D=minecraft:diamond
 
   # Vanilla result with multiple ingredient types
   fw add recipe wood_apple --kind crafting_shaped --result minecraft:apple \\
