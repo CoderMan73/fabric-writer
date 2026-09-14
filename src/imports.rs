@@ -47,6 +47,11 @@ mod import_fns {
     import_fn!(INGREDIENT, ingredient, "net.minecraft.world.item.crafting", "Ingredient");
     import_fn!(ITEMS, items, "net.minecraft.world.item", "Items");
     import_fn!(TOOL_MATERIALS, tool_materials, "net.minecraft.world.item", "ToolMaterial");
+    import_fn!(ITEM_STACK, item_stack, "net.minecraft.world.item", "ItemStack");
+    import_fn!(COMPONENT, component, "net.minecraft.network.chat", "Component");
+    import_fn!(CHAT_FORMATTING, chat_formatting, "net.minecraft", "ChatFormatting");
+    import_fn!(TOOLTIP_FLAG, tooltip_flag, "net.minecraft.world.item", "TooltipFlag");
+    import_fn!(TOOLTIP_DISPLAY, tooltip_display, "net.minecraft.world.item.component", "TooltipDisplay");
 }
 
 mod special_imports {

@@ -6,11 +6,12 @@ mod common;
 use anyhow::Result;
 use common::TestEnv;
 use fabric_writer::commands::block::BlockAddArgs;
-use fabric_writer::commands::item::ItemAddArgs;
-use fabric_writer::commands::recipe::{RecipeAddArgs, RecipeRemoveArgs, add, remove};
+use fabric_writer::commands::item::{ItemAddArgs, add as item_add};
+use fabric_writer::commands::recipe::{RecipeAddArgs, RecipeRemoveArgs, add as recipe_add, remove};
 use serial_test::serial;
-use std::fs::read;
-use std::path::PathBuf;
+use std::env;
+use std::fs::{read, read_to_string};
+use std::path::{Path, PathBuf};
 
 /// Guard that restores the working directory on drop.
 struct DirGuard {
@@ -18,16 +19,16 @@ struct DirGuard {
 }
 
 impl DirGuard {
-    fn enter(path: &std::path::Path) -> Self {
-        let original = std::env::current_dir().unwrap_or_default();
-        std::env::set_current_dir(path).unwrap();
+    fn enter(path: &Path) -> Self {
+        let original = env::current_dir().unwrap_or_default();
+        env::set_current_dir(path).unwrap();
         Self { original }
     }
 }
 
 impl Drop for DirGuard {
     fn drop(&mut self) {
-        let _ = std::env::set_current_dir(&self.original);
+        let _ = env::set_current_dir(&self.original);
     }
 }
 
@@ -75,7 +76,7 @@ fn add_shaped_recipe_generates_provider() -> Result<()> {
         ingredients: vec!["W=minecraft:wood".into()],
         verbose: false,
     };
-    add(args)?;
+    recipe_add(args)?;
 
     let provider_path = env
         .project_dir
@@ -88,7 +89,7 @@ fn add_shaped_recipe_generates_provider() -> Result<()> {
         "RecipeProvider.java was not generated"
     );
 
-    let content = std::fs::read_to_string(&provider_path)?;
+    let content = read_to_string(&provider_path)?;
     assert!(content.contains("shaped"), "Missing shaped() call");
     assert!(content.contains("getHasName"), "Missing getHasName call");
     assert!(content.contains("has("), "Missing has() call");
@@ -112,7 +113,7 @@ fn add_shapeless_recipe_generates_provider() -> Result<()> {
         ingredients: vec!["X=minecraft:coarse_dirt".into()],
         verbose: false,
     };
-    add(args)?;
+    recipe_add(args)?;
 
     let provider_path = env
         .project_dir
@@ -125,7 +126,7 @@ fn add_shapeless_recipe_generates_provider() -> Result<()> {
         "RecipeProvider.java was not generated"
     );
 
-    let content = std::fs::read_to_string(&provider_path)?;
+    let content = read_to_string(&provider_path)?;
     assert!(content.contains("shapeless"), "Missing shapeless() call");
     assert!(content.contains("requires"), "Missing requires() call");
 
@@ -148,7 +149,7 @@ fn remove_recipe_prunes_provider() -> Result<()> {
         ingredients: vec!["D=minecraft:dirt".into()],
         verbose: false,
     };
-    add(add_args)?;
+    recipe_add(add_args)?;
 
     let provider_path = env
         .project_dir
@@ -183,24 +184,26 @@ fn datagen_succeeds_with_mixed_vanilla_and_modded_content() -> Result<()> {
     let _guard = DirGuard::enter(&env.project_dir);
 
     // Add a basic item (modded)
-    fabric_writer::commands::item::add(ItemAddArgs {
+    item_add(ItemAddArgs {
         id: "copper_ingot".into(),
         kind: None,
         material: None,
         attack_damage: None,
         attack_speed: None,
         durability: None,
+        tooltip: vec![],
         verbose: false,
     })?;
 
     // Add a tool item (modded)
-    fabric_writer::commands::item::add(ItemAddArgs {
+    item_add(ItemAddArgs {
         id: "copper_sword".into(),
         kind: Some("tool".into()),
         material: Some("copper".into()),
         attack_damage: Some(5.0),
         attack_speed: Some(1.6),
         durability: None,
+        tooltip: vec![],
         verbose: false,
     })?;
 
@@ -211,7 +214,7 @@ fn datagen_succeeds_with_mixed_vanilla_and_modded_content() -> Result<()> {
     })?;
 
     // Recipe 1: vanilla-only ingredients, vanilla result
-    add(RecipeAddArgs {
+    recipe_add(RecipeAddArgs {
         id: "vanilla_recipe".into(),
         kind: Some("crafting_shaped".into()),
         result: Some("minecraft:diamond".into()),
@@ -222,7 +225,7 @@ fn datagen_succeeds_with_mixed_vanilla_and_modded_content() -> Result<()> {
     })?;
 
     // Recipe 2: modded-only ingredients and result
-    add(RecipeAddArgs {
+    recipe_add(RecipeAddArgs {
         id: "modded_recipe".into(),
         kind: Some("crafting_shaped".into()),
         result: Some("testmod:copper_ingot".into()),
@@ -233,7 +236,7 @@ fn datagen_succeeds_with_mixed_vanilla_and_modded_content() -> Result<()> {
     })?;
 
     // Recipe 3: mixed vanilla + modded
-    add(RecipeAddArgs {
+    recipe_add(RecipeAddArgs {
         id: "mixed_recipe".into(),
         kind: Some("crafting_shapeless".into()),
         result: Some("minecraft:dirt".into()),
@@ -277,8 +280,83 @@ fn datagen_succeeds_with_mixed_vanilla_and_modded_content() -> Result<()> {
     Ok(())
 }
 
+#[test]
+#[ignore]
+#[serial]
+fn add_item_with_tooltips_generates_custom_class() -> Result<()> {
+    let env = TestEnv::new()?;
+    let _guard = DirGuard::enter(&env.project_dir);
+
+    item_add(ItemAddArgs {
+        id: "glow_berry".into(),
+        kind: None,
+        material: None,
+        attack_damage: None,
+        attack_speed: None,
+        durability: None,
+        tooltip: vec!["A glowing berry.".into(), "Consumes on use.".into()],
+        verbose: false,
+    })?;
+
+    let java_root = env.project_dir.join("src/main/java").join("testmod");
+    let item_class = java_root.join("GLOW_BERRYItem.java");
+    let mod_items = java_root.join("ModItems.java");
+    let lang_provider = env
+        .project_dir
+        .join("src/client/java")
+        .join("testmod")
+        .join("client")
+        .join("LangProvider.java");
+
+    assert!(item_class.exists(), "Expected GLOW_BERRYItem.java to exist");
+    assert!(mod_items.exists(), "Expected ModItems.java to exist");
+    assert!(
+        lang_provider.exists(),
+        "Expected LangProvider.java to exist"
+    );
+
+    let item_src = read(&item_class)?;
+    let mod_items_src = read(&mod_items)?;
+    let lang_src = read(&lang_provider)?;
+
+    let item_src_str = String::from_utf8(item_src)?;
+    let mod_items_str = String::from_utf8(mod_items_src)?;
+    let lang_str = String::from_utf8(lang_src)?;
+
+    assert!(
+        item_src_str.contains("appendHoverText"),
+        "Expected custom item class to override appendHoverText"
+    );
+    assert!(
+        item_src_str.contains("GLOW_BERRYItem"),
+        "Expected custom item class to be named GLOW_BERRYItem"
+    );
+    assert!(
+        mod_items_str.contains("GLOW_BERRYItem::new"),
+        "Expected ModItems to register GLOW_BERRY using GLOW_BERRYItem"
+    );
+    assert!(
+        lang_str.contains("itemTooltip.testmod.glow_berry.0"),
+        "Expected tooltip translation key 0 in LangProvider"
+    );
+    assert!(
+        lang_str.contains("itemTooltip.testmod.glow_berry.1"),
+        "Expected tooltip translation key 1 in LangProvider"
+    );
+    assert!(
+        lang_str.contains("A glowing berry."),
+        "Expected tooltip translation text 0 in LangProvider"
+    );
+    assert!(
+        lang_str.contains("Consumes on use."),
+        "Expected tooltip translation text 1 in LangProvider"
+    );
+
+    Ok(())
+}
+
 /// Recursively finds all `.json` files under `dir`.
-fn find_json_files(dir: &std::path::Path) -> Vec<std::path::PathBuf> {
+fn find_json_files(dir: &Path) -> Vec<std::path::PathBuf> {
     let mut results = Vec::new();
     if let Ok(entries) = std::fs::read_dir(dir) {
         for entry in entries.flatten() {

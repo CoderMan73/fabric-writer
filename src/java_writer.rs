@@ -7,9 +7,9 @@ use std::path::{Path, PathBuf};
 
 use crate::state::{Entity, ModState};
 use crate::tokengen::{
-    BuildFn, build_datagen_entrypoint, build_lang_provider, build_main_mod_class,
+    BuildFn, build_datagen_entrypoint, build_item_class, build_lang_provider, build_main_mod_class,
     build_mod_block_ids, build_mod_block_item_ids, build_mod_blocks, build_mod_item_ids,
-    build_mod_items, build_model_provider, build_recipe_provider,
+    build_mod_items, build_model_provider, build_recipe_provider, to_upper,
 };
 
 const PLACEHOLDER_ITEM: &[u8] = include_bytes!("../assets/placeholder_item.png");
@@ -284,6 +284,26 @@ pub fn regenerate_all(state: &ModState, dirty: DirtyFlags, verbose: bool) -> Res
     }
 
     copy_textures(state, verbose)?;
+
+    for i in &state.items {
+        let class_name = format!("{}Item.java", to_upper(&i.id));
+        let path = java_root.join(&class_name);
+        if i.tooltip.is_empty() {
+            if path.exists() {
+                remove_file(&path)
+                    .with_context(|| format!("Failed to prune {}", path.display()))?;
+                if verbose {
+                    vlog("pruned", &path);
+                }
+            }
+        } else {
+            let pkg = package;
+            write(&path, build_item_class(i, state), pkg)?;
+            if verbose {
+                vlog("wrote", &path);
+            }
+        }
+    }
 
     Ok(())
 }
