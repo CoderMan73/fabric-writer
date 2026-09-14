@@ -43,6 +43,7 @@ fn build_item(args: &ItemAddArgs) -> Result<Item> {
     item.attack_damage = args.attack_damage;
     item.attack_speed = args.attack_speed;
     item.durability = args.durability;
+    item.tooltip = args.tooltip.clone();
     Ok(item)
 }
 
@@ -79,6 +80,10 @@ pub struct ItemAddArgs {
     /// Durability for tool items (overrides material default).
     #[arg(long)]
     pub durability: Option<i32>,
+
+    /// Tooltip line for the item (repeatable).
+    #[arg(long)]
+    pub tooltip: Vec<String>,
 
     /// Show which files were regenerated, skipped, or pruned
     #[arg(short = 'v', long, default_value_t = false)]

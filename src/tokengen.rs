@@ -35,7 +35,12 @@ pub(crate) fn build_mod_items(state: &ModState) -> Tokens {
 
             $("// Item Registration")
             $(for i in &state.items =>
-                public static final $(item()) $(to_upper(&i.id)) = register(ModItemIds.$(to_upper(&i.id)), $(item())::new, $(item_properties(i)));$['\r']
+                $(if !i.tooltip.is_empty() =>
+                    public static final $(item()) $(to_upper(&i.id)) = register(ModItemIds.$(to_upper(&i.id)), $(to_upper(&i.id))Item::new, $(item_properties(i)));$['\r']
+                )
+                $(if i.tooltip.is_empty() =>
+                    public static final $(item()) $(to_upper(&i.id)) = register(ModItemIds.$(to_upper(&i.id)), $(item())::new, $(item_properties(i)));$['\r']
+                )
             )
 
             public static void initialize() {
@@ -158,6 +163,13 @@ pub(crate) fn build_lang_provider(state: &ModState) -> Tokens {
                 )
                 $(for b in &state.blocks =>
                     translationBuilder.add($(quoted(&format!("block.{}.{}", state.mod_id, b.id))), $(quoted(&display_name(&b.id))));$['\r']
+                )
+                $(for i in &state.items =>
+                    $(if !i.tooltip.is_empty() =>
+                        $(for idx in 0..i.tooltip.len() =>
+                            translationBuilder.add($(quoted(&format!("itemTooltip.{}.{}.{}", state.mod_id, i.id, idx))), $(quoted(&i.tooltip[idx])));$['\r']
+                        )
+                    )
                 )
             }
         }
@@ -332,7 +344,42 @@ fn item_properties(item: &Item) -> Tokens {
     out
 }
 
-fn to_upper(id: &str) -> String {
+pub(crate) fn build_item_class(item_def: &Item, state: &ModState) -> Tokens {
+    let class_name = format!("{}Item", to_upper(&item_def.id));
+    let class_name = class_name.as_str();
+    let mod_id = &state.mod_id;
+    let item_id = &item_def.id;
+    let tooltip_lines = &item_def.tooltip;
+    let mut body = quote! {};
+
+    for (idx, _line) in tooltip_lines.iter().enumerate() {
+        let key = format!("itemTooltip.{}.{}.{}", mod_id, item_id, idx);
+        quote_in! { body =>
+            textConsumer.accept($(component()).translatable($(quoted(&key))).withStyle($(chat_formatting()).GOLD));$['\r']
+        }
+    }
+
+    quote! {
+        public class $(class_name) extends $(item()) {
+            public $(class_name)($(item()).Properties properties) {
+                super(properties);
+            }
+
+            @Override
+            public void appendHoverText(
+                $(item_stack()) stack,
+                $(item()).TooltipContext context,
+                $(tooltip_display()) display,
+                $(function())<$(component())> textConsumer,
+                $(tooltip_flag()) type
+            ) {
+                $body
+            }
+        }
+    }
+}
+
+pub(crate) fn to_upper(id: &str) -> String {
     id.to_uppercase().replace('-', "_")
 }
 
