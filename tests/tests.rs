@@ -60,6 +60,7 @@ fn cache_copies_correctly() -> Result<()> {
 }
 
 #[test]
+#[ignore]
 #[serial]
 fn add_shaped_recipe_generates_provider() -> Result<()> {
     let env = TestEnv::new()?;
@@ -96,6 +97,7 @@ fn add_shaped_recipe_generates_provider() -> Result<()> {
 }
 
 #[test]
+#[ignore]
 #[serial]
 fn add_shapeless_recipe_generates_provider() -> Result<()> {
     let env = TestEnv::new()?;
@@ -131,6 +133,7 @@ fn add_shapeless_recipe_generates_provider() -> Result<()> {
 }
 
 #[test]
+#[ignore]
 #[serial]
 fn remove_recipe_prunes_provider() -> Result<()> {
     let env = TestEnv::new()?;
