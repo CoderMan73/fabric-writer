@@ -6,8 +6,8 @@ mod common;
 use anyhow::Result;
 use common::TestEnv;
 use fabric_writer::commands::block::BlockAddArgs;
-use fabric_writer::commands::item::{ItemAddArgs, add};
-use fabric_writer::commands::recipe::{RecipeAddArgs, RecipeRemoveArgs, add, remove};
+use fabric_writer::commands::item::{ItemAddArgs, add as item_add};
+use fabric_writer::commands::recipe::{RecipeAddArgs, RecipeRemoveArgs, add as recipe_add, remove};
 use serial_test::serial;
 use std::env;
 use std::fs::{read, read_to_string};
@@ -76,7 +76,7 @@ fn add_shaped_recipe_generates_provider() -> Result<()> {
         ingredients: vec!["W=minecraft:wood".into()],
         verbose: false,
     };
-    add(args)?;
+    recipe_add(args)?;
 
     let provider_path = env
         .project_dir
@@ -113,7 +113,7 @@ fn add_shapeless_recipe_generates_provider() -> Result<()> {
         ingredients: vec!["X=minecraft:coarse_dirt".into()],
         verbose: false,
     };
-    add(args)?;
+    recipe_add(args)?;
 
     let provider_path = env
         .project_dir
@@ -149,7 +149,7 @@ fn remove_recipe_prunes_provider() -> Result<()> {
         ingredients: vec!["D=minecraft:dirt".into()],
         verbose: false,
     };
-    add(add_args)?;
+    recipe_add(add_args)?;
 
     let provider_path = env
         .project_dir
@@ -184,7 +184,7 @@ fn datagen_succeeds_with_mixed_vanilla_and_modded_content() -> Result<()> {
     let _guard = DirGuard::enter(&env.project_dir);
 
     // Add a basic item (modded)
-    add(ItemAddArgs {
+    item_add(ItemAddArgs {
         id: "copper_ingot".into(),
         kind: None,
         material: None,
@@ -196,7 +196,7 @@ fn datagen_succeeds_with_mixed_vanilla_and_modded_content() -> Result<()> {
     })?;
 
     // Add a tool item (modded)
-    add(ItemAddArgs {
+    item_add(ItemAddArgs {
         id: "copper_sword".into(),
         kind: Some("tool".into()),
         material: Some("copper".into()),
@@ -214,7 +214,7 @@ fn datagen_succeeds_with_mixed_vanilla_and_modded_content() -> Result<()> {
     })?;
 
     // Recipe 1: vanilla-only ingredients, vanilla result
-    add(RecipeAddArgs {
+    recipe_add(RecipeAddArgs {
         id: "vanilla_recipe".into(),
         kind: Some("crafting_shaped".into()),
         result: Some("minecraft:diamond".into()),
@@ -225,7 +225,7 @@ fn datagen_succeeds_with_mixed_vanilla_and_modded_content() -> Result<()> {
     })?;
 
     // Recipe 2: modded-only ingredients and result
-    add(RecipeAddArgs {
+    recipe_add(RecipeAddArgs {
         id: "modded_recipe".into(),
         kind: Some("crafting_shaped".into()),
         result: Some("testmod:copper_ingot".into()),
@@ -236,7 +236,7 @@ fn datagen_succeeds_with_mixed_vanilla_and_modded_content() -> Result<()> {
     })?;
 
     // Recipe 3: mixed vanilla + modded
-    add(RecipeAddArgs {
+    recipe_add(RecipeAddArgs {
         id: "mixed_recipe".into(),
         kind: Some("crafting_shapeless".into()),
         result: Some("minecraft:dirt".into()),
@@ -287,7 +287,7 @@ fn add_item_with_tooltips_generates_custom_class() -> Result<()> {
     let env = TestEnv::new()?;
     let _guard = DirGuard::enter(&env.project_dir);
 
-    add(ItemAddArgs {
+    item_add(ItemAddArgs {
         id: "glow_berry".into(),
         kind: None,
         material: None,
