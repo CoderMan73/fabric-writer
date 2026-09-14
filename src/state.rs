@@ -127,6 +127,7 @@ impl Item {
             attack_damage: None,
             attack_speed: None,
             durability: None,
+            tooltip: Vec::new(),
         })
     }
 }
@@ -227,6 +228,10 @@ pub struct Item {
     /// Custom durability override for tool items.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub durability: Option<i32>,
+
+    /// Tooltip lines shown in item description.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub tooltip: Vec<String>,
 }
 
 /// Whether an [`Item`] is a basic item or a tool.
