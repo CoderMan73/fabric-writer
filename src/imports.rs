@@ -52,6 +52,14 @@ mod import_fns {
     import_fn!(CHAT_FORMATTING, chat_formatting, "net.minecraft", "ChatFormatting");
     import_fn!(TOOLTIP_FLAG, tooltip_flag, "net.minecraft.world.item", "TooltipFlag");
     import_fn!(TOOLTIP_DISPLAY, tooltip_display, "net.minecraft.world.item.component", "TooltipDisplay");
+    import_fn!(SPAWN_EGG_ITEM, spawn_egg_item, "net.minecraft.world.item", "SpawnEggItem");
+    import_fn!(AXE_ITEM, axe_item, "net.minecraft.world.item", "AxeItem");
+    import_fn!(SHOVEL_ITEM, shovel_item, "net.minecraft.world.item", "ShovelItem");
+    import_fn!(HOE_ITEM, hoe_item, "net.minecraft.world.item", "HoeItem");
+    import_fn!(FUEL_PROVIDER, fuel_provider, "net.fabricmc.fabric.api.datagen.v1.provider", "FabricFuelProvider");
+    import_fn!(COMPOSTABLE_PROVIDER, compostable_provider, "net.fabricmc.fabric.api.datagen.v1.provider", "FabricCompostableProvider");
+    import_fn!(FUEL_REGISTRY, fuel_registry, "net.minecraft.world.item", "FuelRegistry");
+    import_fn!(COMPOSTABLE_REGISTRY, compostable_registry, "net.minecraft.world.item", "CompostableRegistry");
 }
 
 mod special_imports {

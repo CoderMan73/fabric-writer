@@ -36,6 +36,13 @@ fn print_item(item: &state::Item) {
     let kind = match item.kind {
         ItemKind::Basic => "basic",
         ItemKind::Tool => "tool",
+        ItemKind::Axe => "axe",
+        ItemKind::Shovel => "shovel",
+        ItemKind::Hoe => "hoe",
+        ItemKind::Food => "food",
+        ItemKind::SpawnEgg => "spawn_egg",
+        ItemKind::Fuel => "fuel",
+        ItemKind::Compostable => "compostable",
     };
     let mut detail = format!("  - {} ({kind}", item.id);
     if let Some(material) = &item.material {
@@ -49,6 +56,15 @@ fn print_item(item: &state::Item) {
     }
     if let Some(durability) = item.durability {
         detail.push_str(format!(", durability={durability}").as_str());
+    }
+    if let Some(burn_time) = item.burn_time {
+        detail.push_str(format!(", burn_time={burn_time}").as_str());
+    }
+    if let Some(compost_chance) = item.compost_chance {
+        detail.push_str(format!(", compost_chance={compost_chance}").as_str());
+    }
+    if !item.tooltip.is_empty() {
+        detail.push_str(format!(", tooltip_lines={}", item.tooltip.len()).as_str());
     }
     detail.push(')');
     println!("{detail}");

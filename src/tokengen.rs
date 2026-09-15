@@ -36,10 +36,10 @@ pub(crate) fn build_mod_items(state: &ModState) -> Tokens {
             $("// Item Registration")
             $(for i in &state.items =>
                 $(if !i.tooltip.is_empty() =>
-                    public static final $(item()) $(to_upper(&i.id)) = register(ModItemIds.$(to_upper(&i.id)), $(to_upper(&i.id))Item::new, $(item_properties(i)));$['\r']
+                    public static final $(item()) $(to_upper(&i.id)) = register(ModItemIds.$(to_upper(&i.id)), $(item_factory(i, true)), $(item_properties(i, true)));$['\r']
                 )
                 $(if i.tooltip.is_empty() =>
-                    public static final $(item()) $(to_upper(&i.id)) = register(ModItemIds.$(to_upper(&i.id)), $(item())::new, $(item_properties(i)));$['\r']
+                    public static final $(item()) $(to_upper(&i.id)) = register(ModItemIds.$(to_upper(&i.id)), $(item_factory(i, false)), $(item_properties(i, false)));$['\r']
                 )
             )
 
@@ -190,6 +190,12 @@ pub(crate) fn build_datagen_entrypoint(state: &ModState) -> Tokens {
                 $(if !&state.recipes.is_empty() =>
                     pack.addProvider($(format!("{}RecipeProvider", state.mod_name))::new);
                 )
+                $(if state.items.iter().any(|i| i.kind == ItemKind::Fuel) =>
+                    pack.addProvider($(format!("{}FuelProvider", state.mod_name))::new);
+                )
+                $(if state.items.iter().any(|i| i.kind == ItemKind::Compostable) =>
+                    pack.addProvider($(format!("{}CompostableProvider", state.mod_name))::new);
+                )
             }
         }
     }
@@ -246,6 +252,62 @@ pub(crate) fn build_recipe_provider(state: &ModState) -> Tokens {
             @Override
             public String getName() {
                 return $(quoted(&format!("{}RecipeProvider", state.mod_name)));
+            }
+        }
+    }
+}
+
+pub(crate) fn build_fuel_provider(state: &ModState) -> Tokens {
+    let has_fuel = state
+        .items
+        .iter()
+        .any(|i| i.kind == ItemKind::Fuel && i.burn_time.is_some());
+    if !has_fuel {
+        return quote! {};
+    }
+    quote! {
+        public class $(format!("{}FuelProvider", state.mod_name)) extends $(fuel_provider()) {
+            public $(format!("{}FuelProvider", state.mod_name))($(fabric_pack_output()) output) {
+                super(output);
+            }
+
+            @Override
+            public void generate() {
+                $(for i in &state.items =>
+                    $(if i.kind == ItemKind::Fuel =>
+                        $(if let Some(burn_time) = i.burn_time =>
+                            $(fuel_registry()).register($(mod_items(state)).$(to_upper(&i.id)), $(burn_time));$['\r']
+                        )
+                    )
+                )
+            }
+        }
+    }
+}
+
+pub(crate) fn build_compostable_provider(state: &ModState) -> Tokens {
+    let has_compostable = state
+        .items
+        .iter()
+        .any(|i| i.kind == ItemKind::Compostable && i.compost_chance.is_some());
+    if !has_compostable {
+        return quote! {};
+    }
+    quote! {
+        public class $(format!("{}CompostableProvider", state.mod_name)) extends $(compostable_provider()) {
+            public $(format!("{}CompostableProvider", state.mod_name))($(fabric_pack_output()) output) {
+                super(output);
+            }
+
+            @Override
+            public void generate() {
+                $(for i in &state.items =>
+                    $(if i.kind == ItemKind::Compostable =>
+                        $(if let Some(chance) = i.compost_chance =>
+                            $(compostable_registry()).register($(mod_items(state)).$(to_upper(&i.id)), $(format!("{}f", chance)));$['\r']
+                        )
+                    )
+                )
             }
         }
     }
@@ -324,16 +386,62 @@ fn strip_namespace(id: &str) -> &str {
     id.split_once(':').map_or(id, |(_, path)| path)
 }
 
-fn item_properties(item: &Item) -> Tokens {
+fn item_properties(item: &Item, use_custom_class: bool) -> Tokens {
     let mut out: Tokens = quote! { new Item.Properties() };
 
-    if item.kind == ItemKind::Tool
-        && let Some(mat) = &item.material
-    {
-        let material_const = mat.to_uppercase().replace('-', "_");
-        let damage = format!("{}f", item.attack_damage.unwrap_or(1.0));
-        let speed = format!("{}f", item.attack_speed.unwrap_or(1.6));
-        quote_in! { out => .sword($(tool_materials()).$(material_const), $(damage), $(speed)) }
+    if !use_custom_class {
+        match item.kind {
+            ItemKind::Tool => {
+                if let Some(mat) = &item.material {
+                    let material_const = mat.to_uppercase().replace('-', "_");
+                    let damage = format!("{}f", item.attack_damage.unwrap_or(1.0));
+                    let speed = format!("{}f", item.attack_speed.unwrap_or(1.6));
+                    quote_in! { out => .sword($(tool_materials()).$(material_const), $(damage), $(speed)) }
+                }
+            }
+            ItemKind::Axe | ItemKind::Shovel | ItemKind::Hoe => {
+                if let Some(mat) = &item.material {
+                    let material_const = mat.to_uppercase().replace('-', "_");
+                    let speed = format!("{}f", item.attack_speed.unwrap_or(1.6));
+                    let damage = format!("{}f", item.attack_damage.unwrap_or(1.0));
+                    match item.kind {
+                        ItemKind::Axe => {
+                            quote_in! { out => .axe($(tool_materials()).$(material_const), $(damage), $(speed)) }
+                        }
+                        ItemKind::Shovel => {
+                            quote_in! { out => .shovel($(tool_materials()).$(material_const), $(damage), $(speed)) }
+                        }
+                        ItemKind::Hoe => {
+                            quote_in! { out => .hoe($(tool_materials()).$(material_const), $(damage), $(speed)) }
+                        }
+                        _ => unreachable!(),
+                    }
+                }
+            }
+            ItemKind::Food => {
+                if item.nutrition.is_some() || item.saturation.is_some() {
+                    let mut builder = quote! { new FoodProperties.Builder() };
+                    if let Some(nutrition) = item.nutrition {
+                        quote_in! { builder => .nutrition($(nutrition)) };
+                    }
+                    if let Some(saturation) = item.saturation {
+                        let sat_str = format!("{}f", saturation);
+                        quote_in! { builder => .saturationModifier($(sat_str)) };
+                    }
+                    if item.always_edible {
+                        quote_in! { builder => .alwaysEdible() };
+                    }
+                    quote_in! { out => .food($(builder).build()) };
+                }
+            }
+            ItemKind::SpawnEgg => {
+                if let Some(entity_type) = &item.entity_type {
+                    quote_in! { out => .spawnEgg($(entity_type)) };
+                }
+            }
+            ItemKind::Fuel | ItemKind::Compostable => {}
+            ItemKind::Basic => {}
+        }
     }
 
     if let Some(dur) = item.durability {
@@ -342,6 +450,52 @@ fn item_properties(item: &Item) -> Tokens {
     }
 
     out
+}
+
+fn item_factory(item_def: &Item, use_custom_class: bool) -> Tokens {
+    if use_custom_class {
+        let class_name = format!("{}Item", to_upper(&item_def.id));
+        match item_def.kind {
+            ItemKind::Axe | ItemKind::Shovel | ItemKind::Hoe => {
+                if let Some(mat) = &item_def.material {
+                    let material_const = mat.to_uppercase().replace('-', "_");
+                    let speed = format!("{}f", item_def.attack_speed.unwrap_or(1.6));
+                    let damage = format!("{}f", item_def.attack_damage.unwrap_or(1.0));
+                    quote! { settings -> new $(class_name)($(tool_materials()).$(material_const), $(damage), $(speed), settings) }
+                } else {
+                    quote! { $(item())::new }
+                }
+            }
+            _ => quote! { $(class_name)::new },
+        }
+    } else {
+        match item_def.kind {
+            ItemKind::Axe | ItemKind::Shovel | ItemKind::Hoe => {
+                if let Some(mat) = &item_def.material {
+                    let material_const = mat.to_uppercase().replace('-', "_");
+                    let speed = format!("{}f", item_def.attack_speed.unwrap_or(1.6));
+                    let damage = format!("{}f", item_def.attack_damage.unwrap_or(1.0));
+                    match item_def.kind {
+                        ItemKind::Axe => {
+                            quote! { settings -> new $(axe_item())($(tool_materials()).$(material_const), $(damage), $(speed), settings) }
+                        }
+                        ItemKind::Shovel => {
+                            quote! { settings -> new $(shovel_item())($(tool_materials()).$(material_const), $(damage), $(speed), settings) }
+                        }
+                        ItemKind::Hoe => {
+                            quote! { settings -> new $(hoe_item())($(tool_materials()).$(material_const), $(damage), $(speed), settings) }
+                        }
+                        _ => unreachable!(),
+                    }
+                } else {
+                    quote! { $(item())::new }
+                }
+            }
+            ItemKind::SpawnEgg => quote! { $(spawn_egg_item())::new },
+            ItemKind::Fuel | ItemKind::Compostable => quote! { $(item())::new },
+            _ => quote! { $(item())::new },
+        }
+    }
 }
 
 pub(crate) fn build_item_class(item_def: &Item, state: &ModState) -> Tokens {
@@ -359,21 +513,51 @@ pub(crate) fn build_item_class(item_def: &Item, state: &ModState) -> Tokens {
         }
     }
 
-    quote! {
-        public class $(class_name) extends $(item()) {
-            public $(class_name)($(item()).Properties properties) {
-                super(properties);
-            }
+    match item_def.kind {
+        ItemKind::Axe | ItemKind::Shovel | ItemKind::Hoe => {
+            let base_class = match item_def.kind {
+                ItemKind::Axe => axe_item(),
+                ItemKind::Shovel => shovel_item(),
+                ItemKind::Hoe => hoe_item(),
+                _ => unreachable!(),
+            };
+            quote! {
+                public class $(class_name) extends $(base_class) {
+                    public $(class_name)($(tool_materials()) material, float attackDamage, float attackSpeed, $(item()).Properties properties) {
+                        super(material, attackDamage, attackSpeed, properties);
+                    }
 
-            @Override
-            public void appendHoverText(
-                $(item_stack()) stack,
-                $(item()).TooltipContext context,
-                $(tooltip_display()) display,
-                $(function())<$(component())> textConsumer,
-                $(tooltip_flag()) type
-            ) {
-                $body
+                    @Override
+                    public void appendHoverText(
+                        $(item_stack()) stack,
+                        $(item()).TooltipContext context,
+                        $(tooltip_display()) display,
+                        $(function())<$(component())> textConsumer,
+                        $(tooltip_flag()) type
+                    ) {
+                        $body
+                    }
+                }
+            }
+        }
+        _ => {
+            quote! {
+                public class $(class_name) extends $(item()) {
+                    public $(class_name)($(item()).Properties properties) {
+                        super(properties);
+                    }
+
+                    @Override
+                    public void appendHoverText(
+                        $(item_stack()) stack,
+                        $(item()).TooltipContext context,
+                        $(tooltip_display()) display,
+                        $(function())<$(component())> textConsumer,
+                        $(tooltip_flag()) type
+                    ) {
+                        $body
+                    }
+                }
             }
         }
     }
