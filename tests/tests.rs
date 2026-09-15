@@ -191,6 +191,10 @@ fn datagen_succeeds_with_mixed_vanilla_and_modded_content() -> Result<()> {
         attack_damage: None,
         attack_speed: None,
         durability: None,
+        nutrition: None,
+        saturation: None,
+        always_edible: false,
+        entity_type: None,
         tooltip: vec![],
         verbose: false,
     })?;
@@ -203,6 +207,10 @@ fn datagen_succeeds_with_mixed_vanilla_and_modded_content() -> Result<()> {
         attack_damage: Some(5.0),
         attack_speed: Some(1.6),
         durability: None,
+        nutrition: None,
+        saturation: None,
+        always_edible: false,
+        entity_type: None,
         tooltip: vec![],
         verbose: false,
     })?;
@@ -294,6 +302,10 @@ fn add_item_with_tooltips_generates_custom_class() -> Result<()> {
         attack_damage: None,
         attack_speed: None,
         durability: None,
+        nutrition: None,
+        saturation: None,
+        always_edible: false,
+        entity_type: None,
         tooltip: vec!["A glowing berry.".into(), "Consumes on use.".into()],
         verbose: false,
     })?;

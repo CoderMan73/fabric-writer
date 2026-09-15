@@ -36,6 +36,11 @@ fn build_item(args: &ItemAddArgs) -> Result<Item> {
     if let Some(kind) = &args.kind {
         item.kind = match kind.to_lowercase().as_str() {
             "tool" => ItemKind::Tool,
+            "axe" => ItemKind::Axe,
+            "shovel" => ItemKind::Shovel,
+            "hoe" => ItemKind::Hoe,
+            "food" => ItemKind::Food,
+            "spawn_egg" => ItemKind::SpawnEgg,
             _ => ItemKind::Basic,
         };
     }
@@ -44,6 +49,10 @@ fn build_item(args: &ItemAddArgs) -> Result<Item> {
     item.attack_speed = args.attack_speed;
     item.durability = args.durability;
     item.tooltip = args.tooltip.clone();
+    item.nutrition = args.nutrition;
+    item.saturation = args.saturation;
+    item.always_edible = args.always_edible;
+    item.entity_type = args.entity_type.clone();
     Ok(item)
 }
 
@@ -51,6 +60,11 @@ fn kind_label(item: &Item) -> &'static str {
     match item.kind {
         ItemKind::Basic => "basic",
         ItemKind::Tool => "tool",
+        ItemKind::Axe => "axe",
+        ItemKind::Shovel => "shovel",
+        ItemKind::Hoe => "hoe",
+        ItemKind::Food => "food",
+        ItemKind::SpawnEgg => "spawn_egg",
     }
 }
 
@@ -61,11 +75,11 @@ pub struct ItemAddArgs {
     #[arg(short = 'i', long)]
     pub id: String,
 
-    /// Item kind: `tool` or `basic` (defaults to `basic`).
+    /// Item kind: `tool`, `axe`, `shovel`, `hoe`, `food`, `spawn_egg`, or `basic` (defaults to `basic`).
     #[arg(long)]
     pub kind: Option<String>,
 
-    /// Tool material (e.g. `diamond`); None for basic items.
+    /// Tool material (e.g. `diamond`); required for tool/axe/shovel/hoe.
     #[arg(long)]
     pub material: Option<String>,
 
@@ -73,13 +87,29 @@ pub struct ItemAddArgs {
     #[arg(long)]
     pub attack_damage: Option<f32>,
 
-    /// Attack speed for tool items.
+    /// Attack speed modifier for tool items.
     #[arg(long)]
     pub attack_speed: Option<f32>,
 
     /// Durability for tool items (overrides material default).
     #[arg(long)]
     pub durability: Option<i32>,
+
+    /// Nutrition value for food items.
+    #[arg(long)]
+    pub nutrition: Option<i32>,
+
+    /// Saturation modifier for food items.
+    #[arg(long)]
+    pub saturation: Option<f32>,
+
+    /// Allow eating regardless of hunger level.
+    #[arg(long, default_value_t = false)]
+    pub always_edible: bool,
+
+    /// Entity type for spawn egg items (e.g. `minecraft:cow`).
+    #[arg(long)]
+    pub entity_type: Option<String>,
 
     /// Tooltip line for the item (repeatable).
     #[arg(long)]

@@ -36,6 +36,11 @@ fn print_item(item: &state::Item) {
     let kind = match item.kind {
         ItemKind::Basic => "basic",
         ItemKind::Tool => "tool",
+        ItemKind::Axe => "axe",
+        ItemKind::Shovel => "shovel",
+        ItemKind::Hoe => "hoe",
+        ItemKind::Food => "food",
+        ItemKind::SpawnEgg => "spawn_egg",
     };
     let mut detail = format!("  - {} ({kind}", item.id);
     if let Some(material) = &item.material {
