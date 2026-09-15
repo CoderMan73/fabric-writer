@@ -195,6 +195,8 @@ fn datagen_succeeds_with_mixed_vanilla_and_modded_content() -> Result<()> {
         saturation: None,
         always_edible: false,
         entity_type: None,
+        burn_time: None,
+        compost_chance: None,
         tooltip: vec![],
         verbose: false,
     })?;
@@ -211,6 +213,8 @@ fn datagen_succeeds_with_mixed_vanilla_and_modded_content() -> Result<()> {
         saturation: None,
         always_edible: false,
         entity_type: None,
+        burn_time: None,
+        compost_chance: None,
         tooltip: vec![],
         verbose: false,
     })?;
@@ -306,6 +310,8 @@ fn add_item_with_tooltips_generates_custom_class() -> Result<()> {
         saturation: None,
         always_edible: false,
         entity_type: None,
+        burn_time: None,
+        compost_chance: None,
         tooltip: vec!["A glowing berry.".into(), "Consumes on use.".into()],
         verbose: false,
     })?;

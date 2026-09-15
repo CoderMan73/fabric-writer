@@ -190,6 +190,12 @@ pub(crate) fn build_datagen_entrypoint(state: &ModState) -> Tokens {
                 $(if !&state.recipes.is_empty() =>
                     pack.addProvider($(format!("{}RecipeProvider", state.mod_name))::new);
                 )
+                $(if state.items.iter().any(|i| i.kind == ItemKind::Fuel) =>
+                    pack.addProvider($(format!("{}FuelProvider", state.mod_name))::new);
+                )
+                $(if state.items.iter().any(|i| i.kind == ItemKind::Compostable) =>
+                    pack.addProvider($(format!("{}CompostableProvider", state.mod_name))::new);
+                )
             }
         }
     }
@@ -246,6 +252,62 @@ pub(crate) fn build_recipe_provider(state: &ModState) -> Tokens {
             @Override
             public String getName() {
                 return $(quoted(&format!("{}RecipeProvider", state.mod_name)));
+            }
+        }
+    }
+}
+
+pub(crate) fn build_fuel_provider(state: &ModState) -> Tokens {
+    let has_fuel = state
+        .items
+        .iter()
+        .any(|i| i.kind == ItemKind::Fuel && i.burn_time.is_some());
+    if !has_fuel {
+        return quote! {};
+    }
+    quote! {
+        public class $(format!("{}FuelProvider", state.mod_name)) extends $(fuel_provider()) {
+            public $(format!("{}FuelProvider", state.mod_name))($(fabric_pack_output()) output) {
+                super(output);
+            }
+
+            @Override
+            public void generate() {
+                $(for i in &state.items =>
+                    $(if i.kind == ItemKind::Fuel =>
+                        $(if let Some(burn_time) = i.burn_time =>
+                            $(fuel_registry()).register($(mod_items(state)).$(to_upper(&i.id)), $(burn_time));$['\r']
+                        )
+                    )
+                )
+            }
+        }
+    }
+}
+
+pub(crate) fn build_compostable_provider(state: &ModState) -> Tokens {
+    let has_compostable = state
+        .items
+        .iter()
+        .any(|i| i.kind == ItemKind::Compostable && i.compost_chance.is_some());
+    if !has_compostable {
+        return quote! {};
+    }
+    quote! {
+        public class $(format!("{}CompostableProvider", state.mod_name)) extends $(compostable_provider()) {
+            public $(format!("{}CompostableProvider", state.mod_name))($(fabric_pack_output()) output) {
+                super(output);
+            }
+
+            @Override
+            public void generate() {
+                $(for i in &state.items =>
+                    $(if i.kind == ItemKind::Compostable =>
+                        $(if let Some(chance) = i.compost_chance =>
+                            $(compostable_registry()).register($(mod_items(state)).$(to_upper(&i.id)), $(format!("{}f", chance)));$['\r']
+                        )
+                    )
+                )
             }
         }
     }
@@ -377,6 +439,7 @@ fn item_properties(item: &Item, use_custom_class: bool) -> Tokens {
                     quote_in! { out => .spawnEgg($(entity_type)) };
                 }
             }
+            ItemKind::Fuel | ItemKind::Compostable => {}
             ItemKind::Basic => {}
         }
     }
@@ -429,6 +492,7 @@ fn item_factory(item_def: &Item, use_custom_class: bool) -> Tokens {
                 }
             }
             ItemKind::SpawnEgg => quote! { $(spawn_egg_item())::new },
+            ItemKind::Fuel | ItemKind::Compostable => quote! { $(item())::new },
             _ => quote! { $(item())::new },
         }
     }

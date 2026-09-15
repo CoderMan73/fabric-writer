@@ -132,6 +132,8 @@ impl Item {
             saturation: None,
             always_edible: false,
             entity_type: None,
+            burn_time: None,
+            compost_chance: None,
         })
     }
 }
@@ -252,6 +254,14 @@ pub struct Item {
     /// Entity type for spawn egg items.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub entity_type: Option<String>,
+
+    /// Burn time in ticks for fuel items.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub burn_time: Option<i32>,
+
+    /// Compost chance for compostable items (0.0 to 1.0).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub compost_chance: Option<f32>,
 }
 
 /// Whether an [`Item`] is a basic item or a tool.
@@ -279,6 +289,12 @@ pub enum ItemKind {
 
     /// A spawn egg for an entity type.
     SpawnEgg,
+
+    /// A fuel item with a burn time.
+    Fuel,
+
+    /// A compostable item with a chance to increase composter level.
+    Compostable,
 }
 
 /// A block tracked in [`ModState::blocks`].

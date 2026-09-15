@@ -5,11 +5,12 @@ use std::collections::HashSet;
 use std::fs::{create_dir_all, read as fs_read, read_dir, remove_file, write as fs_write};
 use std::path::{Path, PathBuf};
 
-use crate::state::{Entity, ModState};
+use crate::state::{Entity, ItemKind, ModState};
 use crate::tokengen::{
-    BuildFn, build_datagen_entrypoint, build_item_class, build_lang_provider, build_main_mod_class,
-    build_mod_block_ids, build_mod_block_item_ids, build_mod_blocks, build_mod_item_ids,
-    build_mod_items, build_model_provider, build_recipe_provider, to_upper,
+    BuildFn, build_compostable_provider, build_datagen_entrypoint, build_fuel_provider,
+    build_item_class, build_lang_provider, build_main_mod_class, build_mod_block_ids,
+    build_mod_block_item_ids, build_mod_blocks, build_mod_item_ids, build_mod_items,
+    build_model_provider, build_recipe_provider, to_upper,
 };
 
 const PLACEHOLDER_ITEM: &[u8] = include_bytes!("../assets/placeholder_item.png");
@@ -49,6 +50,12 @@ pub struct DirtyFlags {
 
     /// `<ModName>RecipeProvider.java`
     pub recipe_provider: bool,
+
+    /// `<ModName>FuelProvider.java`
+    pub fuel_provider: bool,
+
+    /// `<ModName>CompostableProvider.java`
+    pub compostable_provider: bool,
 }
 
 impl DirtyFlags {
@@ -65,6 +72,8 @@ impl DirtyFlags {
             mod_block_ids: true,
             mod_block_item_ids: true,
             recipe_provider: true,
+            fuel_provider: true,
+            compostable_provider: true,
         }
     }
 
@@ -78,6 +87,8 @@ impl DirtyFlags {
                 lang_provider: true,
                 model_provider: true,
                 datagen_entrypoint: true,
+                fuel_provider: true,
+                compostable_provider: true,
                 ..Default::default()
             },
             Entity::Block(_) => Self {
@@ -110,6 +121,8 @@ impl DirtyFlags {
             "mod_block_ids" => self.mod_block_ids,
             "mod_block_item_ids" => self.mod_block_item_ids,
             "recipe_provider" => self.recipe_provider,
+            "fuel_provider" => self.fuel_provider,
+            "compostable_provider" => self.compostable_provider,
             _ => false,
         }
     }
@@ -200,6 +213,22 @@ fn file_specs() -> &'static [(&'static str, FileSpec)] {
             },
         ),
         (
+            "<ModName>FuelProvider.java",
+            FileSpec {
+                field: "fuel_provider",
+                build: build_fuel_provider,
+                should_exist: |state| state.items.iter().any(|i| i.kind == ItemKind::Fuel),
+            },
+        ),
+        (
+            "<ModName>CompostableProvider.java",
+            FileSpec {
+                field: "compostable_provider",
+                build: build_compostable_provider,
+                should_exist: |state| state.items.iter().any(|i| i.kind == ItemKind::Compostable),
+            },
+        ),
+        (
             "ModBlocks.java",
             FileSpec {
                 field: "mod_blocks",
@@ -242,6 +271,8 @@ pub fn regenerate_all(state: &ModState, dirty: DirtyFlags, verbose: bool) -> Res
     let mod_class_name = format!("{}.java", state.mod_name);
     let datagen_class_name = format!("{}DataGenerator.java", state.mod_name);
     let recipe_provider_class_name = format!("{}RecipeProvider.java", state.mod_name);
+    let fuel_provider_class_name = format!("{}FuelProvider.java", state.mod_name);
+    let compostable_provider_class_name = format!("{}CompostableProvider.java", state.mod_name);
 
     for (name, spec) in file_specs() {
         let path = resolve_path(
@@ -251,6 +282,8 @@ pub fn regenerate_all(state: &ModState, dirty: DirtyFlags, verbose: bool) -> Res
             &mod_class_name,
             &datagen_class_name,
             &recipe_provider_class_name,
+            &fuel_provider_class_name,
+            &compostable_provider_class_name,
         );
         let dirty_bit = dirty.is_set(spec.field);
 
@@ -308,6 +341,7 @@ pub fn regenerate_all(state: &ModState, dirty: DirtyFlags, verbose: bool) -> Res
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 fn resolve_path(
     name: &str,
     java_root: &Path,
@@ -315,6 +349,8 @@ fn resolve_path(
     mod_class_name: &str,
     datagen_class_name: &str,
     recipe_provider_class_name: &str,
+    fuel_provider_class_name: &str,
+    compostable_provider_class_name: &str,
 ) -> PathBuf {
     match name {
         "ModItemIds.java" => java_root.join(name),
@@ -324,6 +360,8 @@ fn resolve_path(
         "<ModName>DataGenerator.java" => client_root.join(datagen_class_name),
         "ModelProvider.java" => client_root.join(name),
         "<ModName>RecipeProvider.java" => client_root.join(recipe_provider_class_name),
+        "<ModName>FuelProvider.java" => client_root.join(fuel_provider_class_name),
+        "<ModName>CompostableProvider.java" => client_root.join(compostable_provider_class_name),
         "ModBlocks.java" => java_root.join(name),
         "ModBlockIds.java" => java_root.join(name),
         "ModBlockItemIds.java" => java_root.join(name),

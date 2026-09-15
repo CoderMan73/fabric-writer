@@ -41,6 +41,8 @@ fn build_item(args: &ItemAddArgs) -> Result<Item> {
             "hoe" => ItemKind::Hoe,
             "food" => ItemKind::Food,
             "spawn_egg" => ItemKind::SpawnEgg,
+            "fuel" => ItemKind::Fuel,
+            "compostable" => ItemKind::Compostable,
             _ => ItemKind::Basic,
         };
     }
@@ -53,6 +55,8 @@ fn build_item(args: &ItemAddArgs) -> Result<Item> {
     item.saturation = args.saturation;
     item.always_edible = args.always_edible;
     item.entity_type = args.entity_type.clone();
+    item.burn_time = args.burn_time;
+    item.compost_chance = args.compost_chance;
     Ok(item)
 }
 
@@ -65,6 +69,8 @@ fn kind_label(item: &Item) -> &'static str {
         ItemKind::Hoe => "hoe",
         ItemKind::Food => "food",
         ItemKind::SpawnEgg => "spawn_egg",
+        ItemKind::Fuel => "fuel",
+        ItemKind::Compostable => "compostable",
     }
 }
 
@@ -110,6 +116,14 @@ pub struct ItemAddArgs {
     /// Entity type for spawn egg items (e.g. `minecraft:cow`).
     #[arg(long)]
     pub entity_type: Option<String>,
+
+    /// Burn time in ticks for fuel items.
+    #[arg(long)]
+    pub burn_time: Option<i32>,
+
+    /// Compost chance for compostable items (0.0 to 1.0).
+    #[arg(long)]
+    pub compost_chance: Option<f32>,
 
     /// Tooltip line for the item (repeatable).
     #[arg(long)]
