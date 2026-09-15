@@ -128,6 +128,10 @@ impl Item {
             attack_speed: None,
             durability: None,
             tooltip: Vec::new(),
+            nutrition: None,
+            saturation: None,
+            always_edible: false,
+            entity_type: None,
         })
     }
 }
@@ -232,6 +236,22 @@ pub struct Item {
     /// Tooltip lines shown in item description.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub tooltip: Vec<String>,
+
+    /// Nutrition value for food items.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub nutrition: Option<i32>,
+
+    /// Saturation modifier for food items.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub saturation: Option<f32>,
+
+    /// Whether the food item can always be eaten.
+    #[serde(default)]
+    pub always_edible: bool,
+
+    /// Entity type for spawn egg items.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub entity_type: Option<String>,
 }
 
 /// Whether an [`Item`] is a basic item or a tool.
@@ -244,6 +264,21 @@ pub enum ItemKind {
 
     /// A tool item with material/damage/speed/durability properties.
     Tool,
+
+    /// An axe item.
+    Axe,
+
+    /// A shovel item.
+    Shovel,
+
+    /// A hoe item.
+    Hoe,
+
+    /// A food item with nutrition/saturation properties.
+    Food,
+
+    /// A spawn egg for an entity type.
+    SpawnEgg,
 }
 
 /// A block tracked in [`ModState::blocks`].
