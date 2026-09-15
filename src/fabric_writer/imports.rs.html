@@ -52,31 +52,39 @@
 <a href=#52 id=52 data-nosnippet>52</a>    <span class="macro">import_fn!</span>(CHAT_FORMATTING, chat_formatting, <span class="string">"net.minecraft"</span>, <span class="string">"ChatFormatting"</span>);
 <a href=#53 id=53 data-nosnippet>53</a>    <span class="macro">import_fn!</span>(TOOLTIP_FLAG, tooltip_flag, <span class="string">"net.minecraft.world.item"</span>, <span class="string">"TooltipFlag"</span>);
 <a href=#54 id=54 data-nosnippet>54</a>    <span class="macro">import_fn!</span>(TOOLTIP_DISPLAY, tooltip_display, <span class="string">"net.minecraft.world.item.component"</span>, <span class="string">"TooltipDisplay"</span>);
-<a href=#55 id=55 data-nosnippet>55</a>}
-<a href=#56 id=56 data-nosnippet>56</a>
-<a href=#57 id=57 data-nosnippet>57</a><span class="kw">mod </span>special_imports {
-<a href=#58 id=58 data-nosnippet>58</a>    <span class="kw">use </span><span class="kw">crate</span>::state::ModState;
-<a href=#59 id=59 data-nosnippet>59</a>    <span class="kw">use </span>genco::lang::java::{Import, import};
-<a href=#60 id=60 data-nosnippet>60</a>
-<a href=#61 id=61 data-nosnippet>61</a>    <span class="macro">macro_rules!</span> import_fn {
-<a href=#62 id=62 data-nosnippet>62</a>        (<span class="macro-nonterminal">$fn_name</span>:ident, <span class="macro-nonterminal">$name</span>:literal) =&gt; {
-<a href=#63 id=63 data-nosnippet>63</a>            <span class="kw">pub fn </span><span class="macro-nonterminal">$fn_name</span>(state: <span class="kw-2">&amp;</span>ModState) -&gt; Import {
-<a href=#64 id=64 data-nosnippet>64</a>                import(<span class="kw-2">&amp;</span>state.mod_id, <span class="macro-nonterminal">$name</span>)
-<a href=#65 id=65 data-nosnippet>65</a>            }
-<a href=#66 id=66 data-nosnippet>66</a>        };
-<a href=#67 id=67 data-nosnippet>67</a>    }
+<a href=#55 id=55 data-nosnippet>55</a>    <span class="macro">import_fn!</span>(SPAWN_EGG_ITEM, spawn_egg_item, <span class="string">"net.minecraft.world.item"</span>, <span class="string">"SpawnEggItem"</span>);
+<a href=#56 id=56 data-nosnippet>56</a>    <span class="macro">import_fn!</span>(AXE_ITEM, axe_item, <span class="string">"net.minecraft.world.item"</span>, <span class="string">"AxeItem"</span>);
+<a href=#57 id=57 data-nosnippet>57</a>    <span class="macro">import_fn!</span>(SHOVEL_ITEM, shovel_item, <span class="string">"net.minecraft.world.item"</span>, <span class="string">"ShovelItem"</span>);
+<a href=#58 id=58 data-nosnippet>58</a>    <span class="macro">import_fn!</span>(HOE_ITEM, hoe_item, <span class="string">"net.minecraft.world.item"</span>, <span class="string">"HoeItem"</span>);
+<a href=#59 id=59 data-nosnippet>59</a>    <span class="macro">import_fn!</span>(FUEL_PROVIDER, fuel_provider, <span class="string">"net.fabricmc.fabric.api.datagen.v1.provider"</span>, <span class="string">"FabricFuelProvider"</span>);
+<a href=#60 id=60 data-nosnippet>60</a>    <span class="macro">import_fn!</span>(COMPOSTABLE_PROVIDER, compostable_provider, <span class="string">"net.fabricmc.fabric.api.datagen.v1.provider"</span>, <span class="string">"FabricCompostableProvider"</span>);
+<a href=#61 id=61 data-nosnippet>61</a>    <span class="macro">import_fn!</span>(FUEL_REGISTRY, fuel_registry, <span class="string">"net.minecraft.world.item"</span>, <span class="string">"FuelRegistry"</span>);
+<a href=#62 id=62 data-nosnippet>62</a>    <span class="macro">import_fn!</span>(COMPOSTABLE_REGISTRY, compostable_registry, <span class="string">"net.minecraft.world.item"</span>, <span class="string">"CompostableRegistry"</span>);
+<a href=#63 id=63 data-nosnippet>63</a>}
+<a href=#64 id=64 data-nosnippet>64</a>
+<a href=#65 id=65 data-nosnippet>65</a><span class="kw">mod </span>special_imports {
+<a href=#66 id=66 data-nosnippet>66</a>    <span class="kw">use </span><span class="kw">crate</span>::state::ModState;
+<a href=#67 id=67 data-nosnippet>67</a>    <span class="kw">use </span>genco::lang::java::{Import, import};
 <a href=#68 id=68 data-nosnippet>68</a>
-<a href=#69 id=69 data-nosnippet>69</a>    <span class="comment">// TODO: lowkey realized, could I have just done this for both sets of imports?
-<a href=#70 id=70 data-nosnippet>70</a>    // Thats a question for another day. Its functional now.
-<a href=#71 id=71 data-nosnippet>71</a>    </span><span class="macro">import_fn!</span>(mod_blocks, <span class="string">"ModBlocks"</span>);
-<a href=#72 id=72 data-nosnippet>72</a>    <span class="macro">import_fn!</span>(mod_items, <span class="string">"ModItems"</span>);
-<a href=#73 id=73 data-nosnippet>73</a>
-<a href=#74 id=74 data-nosnippet>74</a>    <span class="doccomment">/// Creates an import for the main mod class (e.g. `import testmod.TestMod;`).
-<a href=#75 id=75 data-nosnippet>75</a>    </span><span class="kw">pub fn </span>mod_class(state: <span class="kw-2">&amp;</span>ModState) -&gt; Import {
-<a href=#76 id=76 data-nosnippet>76</a>        import(<span class="kw-2">&amp;</span>state.mod_id, <span class="kw-2">&amp;</span>state.mod_name)
-<a href=#77 id=77 data-nosnippet>77</a>    }
-<a href=#78 id=78 data-nosnippet>78</a>}
-<a href=#79 id=79 data-nosnippet>79</a>
-<a href=#80 id=80 data-nosnippet>80</a><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">use </span>import_fns::<span class="kw-2">*</span>;
-<a href=#81 id=81 data-nosnippet>81</a><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">use </span>special_imports::<span class="kw-2">*</span>;
+<a href=#69 id=69 data-nosnippet>69</a>    <span class="macro">macro_rules!</span> import_fn {
+<a href=#70 id=70 data-nosnippet>70</a>        (<span class="macro-nonterminal">$fn_name</span>:ident, <span class="macro-nonterminal">$name</span>:literal) =&gt; {
+<a href=#71 id=71 data-nosnippet>71</a>            <span class="kw">pub fn </span><span class="macro-nonterminal">$fn_name</span>(state: <span class="kw-2">&amp;</span>ModState) -&gt; Import {
+<a href=#72 id=72 data-nosnippet>72</a>                import(<span class="kw-2">&amp;</span>state.mod_id, <span class="macro-nonterminal">$name</span>)
+<a href=#73 id=73 data-nosnippet>73</a>            }
+<a href=#74 id=74 data-nosnippet>74</a>        };
+<a href=#75 id=75 data-nosnippet>75</a>    }
+<a href=#76 id=76 data-nosnippet>76</a>
+<a href=#77 id=77 data-nosnippet>77</a>    <span class="comment">// TODO: lowkey realized, could I have just done this for both sets of imports?
+<a href=#78 id=78 data-nosnippet>78</a>    // Thats a question for another day. Its functional now.
+<a href=#79 id=79 data-nosnippet>79</a>    </span><span class="macro">import_fn!</span>(mod_blocks, <span class="string">"ModBlocks"</span>);
+<a href=#80 id=80 data-nosnippet>80</a>    <span class="macro">import_fn!</span>(mod_items, <span class="string">"ModItems"</span>);
+<a href=#81 id=81 data-nosnippet>81</a>
+<a href=#82 id=82 data-nosnippet>82</a>    <span class="doccomment">/// Creates an import for the main mod class (e.g. `import testmod.TestMod;`).
+<a href=#83 id=83 data-nosnippet>83</a>    </span><span class="kw">pub fn </span>mod_class(state: <span class="kw-2">&amp;</span>ModState) -&gt; Import {
+<a href=#84 id=84 data-nosnippet>84</a>        import(<span class="kw-2">&amp;</span>state.mod_id, <span class="kw-2">&amp;</span>state.mod_name)
+<a href=#85 id=85 data-nosnippet>85</a>    }
+<a href=#86 id=86 data-nosnippet>86</a>}
+<a href=#87 id=87 data-nosnippet>87</a>
+<a href=#88 id=88 data-nosnippet>88</a><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">use </span>import_fns::<span class="kw-2">*</span>;
+<a href=#89 id=89 data-nosnippet>89</a><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">use </span>special_imports::<span class="kw-2">*</span>;
 </code></pre></div></section></main></body></html>
