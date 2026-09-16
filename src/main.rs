@@ -14,6 +14,7 @@ use fabric_writer::commands::{
     recipe::{self, RecipeAddArgs, RecipeRemoveArgs},
     regen::{self, RegenArgs},
     run,
+    save_load::{self, SaveLoadArgs},
     status::{self, StatusArgs},
 };
 
@@ -47,6 +48,7 @@ fn main() -> anyhow::Result<()> {
         },
         Commands::Status(args) => status::run(args),
         Commands::Regen(args) => regen::run(args),
+        Commands::SaveLoad(args) => save_load::run(args),
     }
 }
 
@@ -93,6 +95,9 @@ enum Commands {
     /// Regenerate all Java files from current state [alias: g]
     #[command(alias = "g")]
     Regen(RegenArgs),
+    /// Save or load project state [alias: sl]
+    #[command(alias = "sl")]
+    SaveLoad(SaveLoadArgs),
 }
 
 #[derive(Subcommand)]

@@ -103,6 +103,17 @@ pub fn load() -> Result<ModState> {
     Ok(state)
 }
 
+/// Loads the [`ModState`] from an arbitrary YAML file.
+///
+/// # Errors
+///
+/// Returns an error if the file cannot be read or deserialized.
+pub fn load_from(path: &PathBuf) -> Result<ModState> {
+    let text = read_to_string(path)?;
+    let state: ModState = from_str(&text)?;
+    Ok(state)
+}
+
 /// A stateful entity that can be added to or removed from a [`ModState`].
 pub enum Entity {
     /// An item entity.
