@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"mod":["block","creative_tab","init","item","recipe","regen","run","status"]};
+window.SIDEBAR_ITEMS = {"mod":["block","creative_tab","init","item","recipe","regen","run","save_load","status"]};

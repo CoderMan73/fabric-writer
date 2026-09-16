@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["Entity","ItemKind"],"fn":["load","save_to"],"struct":["Block","CreativeTab","Item","ModState","PotionEffect","Recipe"]};
+window.SIDEBAR_ITEMS = {"enum":["Entity","ItemKind"],"fn":["load","load_from","save_to"],"struct":["Block","CreativeTab","Item","ModState","PotionEffect","Recipe"]};
