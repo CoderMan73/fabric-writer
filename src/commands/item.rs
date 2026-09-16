@@ -43,6 +43,9 @@ fn build_item(args: &ItemAddArgs) -> Result<Item> {
             "spawn_egg" => ItemKind::SpawnEgg,
             "fuel" => ItemKind::Fuel,
             "compostable" => ItemKind::Compostable,
+            "armor" => ItemKind::Armor,
+            "shield" => ItemKind::Shield,
+            "potion" => ItemKind::Potion,
             _ => ItemKind::Basic,
         };
     }
@@ -58,7 +61,35 @@ fn build_item(args: &ItemAddArgs) -> Result<Item> {
     item.burn_time = args.burn_time;
     item.compost_chance = args.compost_chance;
     item.creative_tab = args.creative_tab.clone();
+    item.armor_material = args.armor_material.clone();
+    item.armor_slot = args.armor_slot.clone();
+    for effect_str in &args.effect {
+        let effect = parse_effect(effect_str)?;
+        item.effects.push(effect);
+    }
     Ok(item)
+}
+
+fn parse_effect(effect_str: &str) -> Result<crate::state::PotionEffect> {
+    let Some((effect_type, rest)) = effect_str.split_once('=') else {
+        anyhow::bail!(
+            "Invalid effect format: '{}'. Expected <type>=<duration>:<amplifier>",
+            effect_str
+        );
+    };
+    let Some((duration_str, amplifier_str)) = rest.split_once(':') else {
+        anyhow::bail!(
+            "Invalid effect format: '{}'. Expected <type>=<duration>:<amplifier>",
+            effect_str
+        );
+    };
+    let duration = duration_str.parse::<i32>()?;
+    let amplifier = amplifier_str.parse::<i32>()?;
+    Ok(crate::state::PotionEffect {
+        effect_type: effect_type.to_string(),
+        duration,
+        amplifier,
+    })
 }
 
 fn kind_label(item: &Item) -> &'static str {
@@ -72,6 +103,9 @@ fn kind_label(item: &Item) -> &'static str {
         ItemKind::SpawnEgg => "spawn_egg",
         ItemKind::Fuel => "fuel",
         ItemKind::Compostable => "compostable",
+        ItemKind::Armor => "armor",
+        ItemKind::Shield => "shield",
+        ItemKind::Potion => "potion",
     }
 }
 
@@ -133,6 +167,18 @@ pub struct ItemAddArgs {
     /// Creative tab for the item (defaults to default behavior: first custom tab or ingredients).
     #[arg(long)]
     pub creative_tab: Option<String>,
+
+    /// Armor material (e.g. `diamond`, `iron`); required for armor items.
+    #[arg(long)]
+    pub armor_material: Option<String>,
+
+    /// Armor slot (helmet, chestplate, leggings, boots); required for armor items.
+    #[arg(long)]
+    pub armor_slot: Option<String>,
+
+    /// Potion effect in `type=duration:amplifier` format (repeatable).
+    #[arg(long)]
+    pub effect: Vec<String>,
 
     /// Show which files were regenerated, skipped, or pruned
     #[arg(short = 'v', long, default_value_t = false)]

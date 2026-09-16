@@ -7,10 +7,11 @@ use std::path::{Path, PathBuf};
 
 use crate::state::{Entity, ItemKind, ModState};
 use crate::tokengen::{
-    BuildFn, build_compostable_provider, build_datagen_entrypoint, build_fuel_provider,
-    build_item_class, build_lang_provider, build_main_mod_class, build_mod_block_ids,
-    build_mod_block_item_ids, build_mod_blocks, build_mod_creative_tabs, build_mod_item_ids,
-    build_mod_items, build_model_provider, build_recipe_provider, to_upper,
+    BuildFn, build_armor_provider, build_compostable_provider, build_datagen_entrypoint,
+    build_fuel_provider, build_item_class, build_lang_provider, build_main_mod_class,
+    build_mod_block_ids, build_mod_block_item_ids, build_mod_blocks, build_mod_creative_tabs,
+    build_mod_item_ids, build_mod_items, build_model_provider, build_recipe_provider,
+    build_shield_provider, to_upper,
 };
 
 const PLACEHOLDER_ITEM: &[u8] = include_bytes!("../assets/placeholder_item.png");
@@ -57,7 +58,13 @@ pub struct DirtyFlags {
     /// `<ModName>CompostableProvider.java`
     pub compostable_provider: bool,
 
-    /// ModCreativeTabs.java
+    /// `<ModName>ArmorProvider.java`
+    pub armor_provider: bool,
+
+    /// `<ModName>ShieldProvider.java`
+    pub shield_provider: bool,
+
+    /// `ModCreativeTabs.java`
     pub creative_tabs: bool,
 }
 
@@ -77,6 +84,8 @@ impl DirtyFlags {
             recipe_provider: true,
             fuel_provider: true,
             compostable_provider: true,
+            armor_provider: true,
+            shield_provider: true,
             creative_tabs: true,
         }
     }
@@ -93,6 +102,8 @@ impl DirtyFlags {
                 datagen_entrypoint: true,
                 fuel_provider: true,
                 compostable_provider: true,
+                armor_provider: true,
+                shield_provider: true,
                 creative_tabs: true,
                 ..Default::default()
             },
@@ -136,6 +147,8 @@ impl DirtyFlags {
             "recipe_provider" => self.recipe_provider,
             "fuel_provider" => self.fuel_provider,
             "compostable_provider" => self.compostable_provider,
+            "armor_provider" => self.armor_provider,
+            "shield_provider" => self.shield_provider,
             "creative_tabs" => self.creative_tabs,
             _ => false,
         }
@@ -243,6 +256,22 @@ fn file_specs() -> &'static [(&'static str, FileSpec)] {
             },
         ),
         (
+            "<ModName>ArmorProvider.java",
+            FileSpec {
+                field: "armor_provider",
+                build: build_armor_provider,
+                should_exist: |state| state.items.iter().any(|i| i.kind == ItemKind::Armor),
+            },
+        ),
+        (
+            "<ModName>ShieldProvider.java",
+            FileSpec {
+                field: "shield_provider",
+                build: build_shield_provider,
+                should_exist: |state| state.items.iter().any(|i| i.kind == ItemKind::Shield),
+            },
+        ),
+        (
             "ModBlocks.java",
             FileSpec {
                 field: "mod_blocks",
@@ -295,6 +324,8 @@ pub fn regenerate_all(state: &ModState, dirty: DirtyFlags, verbose: bool) -> Res
     let recipe_provider_class_name = format!("{}RecipeProvider.java", state.mod_name);
     let fuel_provider_class_name = format!("{}FuelProvider.java", state.mod_name);
     let compostable_provider_class_name = format!("{}CompostableProvider.java", state.mod_name);
+    let armor_provider_class_name = format!("{}ArmorProvider.java", state.mod_name);
+    let shield_provider_class_name = format!("{}ShieldProvider.java", state.mod_name);
 
     for (name, spec) in file_specs() {
         let path = resolve_path(
@@ -306,6 +337,8 @@ pub fn regenerate_all(state: &ModState, dirty: DirtyFlags, verbose: bool) -> Res
             &recipe_provider_class_name,
             &fuel_provider_class_name,
             &compostable_provider_class_name,
+            &armor_provider_class_name,
+            &shield_provider_class_name,
         );
         let dirty_bit = dirty.is_set(spec.field);
 
@@ -373,6 +406,8 @@ fn resolve_path(
     recipe_provider_class_name: &str,
     fuel_provider_class_name: &str,
     compostable_provider_class_name: &str,
+    armor_provider_class_name: &str,
+    shield_provider_class_name: &str,
 ) -> PathBuf {
     match name {
         "ModItemIds.java" => java_root.join(name),
@@ -384,6 +419,8 @@ fn resolve_path(
         "<ModName>RecipeProvider.java" => client_root.join(recipe_provider_class_name),
         "<ModName>FuelProvider.java" => client_root.join(fuel_provider_class_name),
         "<ModName>CompostableProvider.java" => client_root.join(compostable_provider_class_name),
+        "<ModName>ArmorProvider.java" => client_root.join(armor_provider_class_name),
+        "<ModName>ShieldProvider.java" => client_root.join(shield_provider_class_name),
         "ModBlocks.java" => java_root.join(name),
         "ModBlockIds.java" => java_root.join(name),
         "ModBlockItemIds.java" => java_root.join(name),
