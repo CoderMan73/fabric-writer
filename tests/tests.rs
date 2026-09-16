@@ -199,6 +199,9 @@ fn datagen_succeeds_with_mixed_vanilla_and_modded_content() -> Result<()> {
         compost_chance: None,
         tooltip: vec![],
         creative_tab: None,
+        armor_material: None,
+        armor_slot: None,
+        effect: vec![],
         verbose: false,
     })?;
 
@@ -218,6 +221,9 @@ fn datagen_succeeds_with_mixed_vanilla_and_modded_content() -> Result<()> {
         compost_chance: None,
         tooltip: vec![],
         creative_tab: None,
+        armor_material: None,
+        armor_slot: None,
+        effect: vec![],
         verbose: false,
     })?;
 
@@ -317,6 +323,9 @@ fn add_item_with_tooltips_generates_custom_class() -> Result<()> {
         compost_chance: None,
         tooltip: vec!["A glowing berry.".into(), "Consumes on use.".into()],
         creative_tab: None,
+        armor_material: None,
+        armor_slot: None,
+        effect: vec![],
         verbose: false,
     })?;
 
@@ -372,6 +381,189 @@ fn add_item_with_tooltips_generates_custom_class() -> Result<()> {
     assert!(
         lang_str.contains("Consumes on use."),
         "Expected tooltip translation text 1 in LangProvider"
+    );
+
+    Ok(())
+}
+
+#[test]
+#[ignore]
+#[serial]
+fn add_armor_item_generates_class_and_provider() -> Result<()> {
+    let env = TestEnv::new()?;
+    let _guard = DirGuard::enter(&env.project_dir);
+
+    item_add(ItemAddArgs {
+        id: "diamond_helmet".into(),
+        kind: Some("armor".into()),
+        material: Some("diamond".into()),
+        armor_material: Some("diamond".into()),
+        armor_slot: Some("helmet".into()),
+        attack_damage: None,
+        attack_speed: None,
+        durability: None,
+        nutrition: None,
+        saturation: None,
+        always_edible: false,
+        entity_type: None,
+        burn_time: None,
+        compost_chance: None,
+        tooltip: vec![],
+        creative_tab: None,
+        effect: vec![],
+        verbose: false,
+    })?;
+
+    let java_root = env.project_dir.join("src/main/java").join("testmod");
+    let item_class = java_root.join("DIAMOND_HELMETItem.java");
+    let mod_items = java_root.join("ModItems.java");
+    let armor_provider = env
+        .project_dir
+        .join("src/client/java")
+        .join("testmod")
+        .join("client")
+        .join("TestModArmorProvider.java");
+
+    assert!(
+        item_class.exists(),
+        "Expected DIAMOND_HELMETItem.java to exist"
+    );
+    assert!(mod_items.exists(), "Expected ModItems.java to exist");
+    assert!(
+        armor_provider.exists(),
+        "Expected TestModArmorProvider.java to exist"
+    );
+
+    let item_src = read_to_string(&item_class)?;
+    let mod_items_src = read_to_string(&mod_items)?;
+    let provider_src = read_to_string(&armor_provider)?;
+
+    assert!(
+        item_src.contains("extends ArmorItem"),
+        "Expected custom armor class to extend ArmorItem"
+    );
+    assert!(
+        mod_items_src.contains("DIAMOND_HELMETItem::new"),
+        "Expected ModItems to register DIAMOND_HELMET using DIAMOND_HELMETItem"
+    );
+    assert!(
+        provider_src.contains("generateArmor"),
+        "Expected ArmorProvider to call generateArmor"
+    );
+
+    Ok(())
+}
+
+#[test]
+#[ignore]
+#[serial]
+fn add_shield_item_generates_class_and_provider() -> Result<()> {
+    let env = TestEnv::new()?;
+    let _guard = DirGuard::enter(&env.project_dir);
+
+    item_add(ItemAddArgs {
+        id: "custom_shield".into(),
+        kind: Some("shield".into()),
+        material: None,
+        armor_material: None,
+        armor_slot: None,
+        attack_damage: None,
+        attack_speed: None,
+        durability: None,
+        nutrition: None,
+        saturation: None,
+        always_edible: false,
+        entity_type: None,
+        burn_time: None,
+        compost_chance: None,
+        tooltip: vec![],
+        creative_tab: None,
+        effect: vec![],
+        verbose: false,
+    })?;
+
+    let java_root = env.project_dir.join("src/main/java").join("testmod");
+    let item_class = java_root.join("CUSTOM_SHIELDItem.java");
+    let mod_items = java_root.join("ModItems.java");
+    let shield_provider = env
+        .project_dir
+        .join("src/client/java")
+        .join("testmod")
+        .join("client")
+        .join("TestModShieldProvider.java");
+
+    assert!(
+        item_class.exists(),
+        "Expected CUSTOM_SHIELDItem.java to exist"
+    );
+    assert!(mod_items.exists(), "Expected ModItems.java to exist");
+    assert!(
+        shield_provider.exists(),
+        "Expected TestModShieldProvider.java to exist"
+    );
+
+    let item_src = read_to_string(&item_class)?;
+    let mod_items_src = read_to_string(&mod_items)?;
+    let provider_src = read_to_string(&shield_provider)?;
+
+    assert!(
+        item_src.contains("extends ShieldItem"),
+        "Expected custom shield class to extend ShieldItem"
+    );
+    assert!(
+        mod_items_src.contains("CUSTOM_SHIELDItem::new"),
+        "Expected ModItems to register CUSTOM_SHIELD using CUSTOM_SHIELDItem"
+    );
+    assert!(
+        provider_src.contains("generateShield"),
+        "Expected ShieldProvider to call generateShield"
+    );
+
+    Ok(())
+}
+
+#[test]
+#[ignore]
+#[serial]
+fn add_potion_item_generates_data_component() -> Result<()> {
+    let env = TestEnv::new()?;
+    let _guard = DirGuard::enter(&env.project_dir);
+
+    item_add(ItemAddArgs {
+        id: "speed_elixir".into(),
+        kind: Some("potion".into()),
+        material: None,
+        armor_material: None,
+        armor_slot: None,
+        attack_damage: None,
+        attack_speed: None,
+        durability: None,
+        nutrition: None,
+        saturation: None,
+        always_edible: false,
+        entity_type: None,
+        burn_time: None,
+        compost_chance: None,
+        tooltip: vec![],
+        creative_tab: None,
+        effect: vec!["minecraft:speed=3600:1".into()],
+        verbose: false,
+    })?;
+
+    let java_root = env.project_dir.join("src/main/java").join("testmod");
+    let mod_items = java_root.join("ModItems.java");
+
+    assert!(mod_items.exists(), "Expected ModItems.java to exist");
+
+    let mod_items_src = read_to_string(&mod_items)?;
+
+    assert!(
+        mod_items_src.contains("POTION_CONTENTS"),
+        "Expected ModItems to set POTION_CONTENTS data component"
+    );
+    assert!(
+        mod_items_src.contains("SPEED"),
+        "Expected ModItems to reference SPEED effect"
     );
 
     Ok(())

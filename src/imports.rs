@@ -56,6 +56,11 @@ mod import_fns {
     import_fn!(AXE_ITEM, axe_item, "net.minecraft.world.item", "AxeItem");
     import_fn!(SHOVEL_ITEM, shovel_item, "net.minecraft.world.item", "ShovelItem");
     import_fn!(HOE_ITEM, hoe_item, "net.minecraft.world.item", "HoeItem");
+    import_fn!(ARMOR_ITEM, armor_item, "net.minecraft.world.item", "ArmorItem");
+    import_fn!(ARMOR_MATERIAL, armor_material, "net.minecraft.world.item", "ArmorMaterial");
+    import_fn!(SHIELD_ITEM, shield_item, "net.minecraft.world.item", "ShieldItem");
+    import_fn!(FABRIC_EQUIPMENT_MODEL_PROVIDER, fabric_equipment_model_provider, "net.fabricmc.fabric.api.client.datagen.v1.provider", "FabricEquipmentModelProvider");
+    import_fn!(EQUIPMENT_MODEL_GENERATOR, equipment_model_generator, "net.minecraft.client.data.models", "EquipmentModelGenerator");
     import_fn!(FUEL_PROVIDER, fuel_provider, "net.fabricmc.fabric.api.datagen.v1.provider", "FabricFuelProvider");
     import_fn!(COMPOSTABLE_PROVIDER, compostable_provider, "net.fabricmc.fabric.api.datagen.v1.provider", "FabricCompostableProvider");
     import_fn!(FUEL_REGISTRY, fuel_registry, "net.minecraft.world.item", "FuelRegistry");
