@@ -206,7 +206,8 @@ pub(crate) fn build_mod_creative_tabs(state: &ModState) -> Tokens {
                 }
             }
             for block in &state.blocks {
-                if block.creative_tab.is_none() || block.creative_tab.as_deref() == Some("default") {
+                if block.creative_tab.is_none() || block.creative_tab.as_deref() == Some("default")
+                {
                     quote_in! { display_items =>
                         output.accept($(mod_blocks(state)).$(to_upper(&block.id)));$['\r']
                     }
