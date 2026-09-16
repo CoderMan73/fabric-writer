@@ -1,5 +1,7 @@
 /// Block related commands.
 pub mod block;
+/// Creative tab related commands.
+pub mod creative_tab;
 /// Project initialization via the Fabric CLI.
 pub mod init;
 /// Item related commands.

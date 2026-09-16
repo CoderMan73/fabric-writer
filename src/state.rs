@@ -16,6 +16,7 @@ impl ModState {
             Entity::Item(_) => self.items.iter().any(|i| i.id == *id),
             Entity::Block(_) => self.blocks.iter().any(|b| b.id == *id),
             Entity::Recipe(_) => self.recipes.iter().any(|r| r.id == *id),
+            Entity::CreativeTab(_) => self.creative_tabs.iter().any(|t| t.id == *id),
         }
     }
 
@@ -29,6 +30,7 @@ impl ModState {
             Entity::Item(item) => self.items.push(item),
             Entity::Block(block) => self.blocks.push(block),
             Entity::Recipe(recipe) => self.recipes.push(recipe),
+            Entity::CreativeTab(tab) => self.creative_tabs.push(tab),
         }
         Ok(())
     }
@@ -50,6 +52,21 @@ impl ModState {
                 let before = self.recipes.len();
                 self.recipes.retain(|r| r.id != recipe.id);
                 (recipe.id, "recipes", before, self.recipes.len())
+            }
+            Entity::CreativeTab(tab) => {
+                let before = self.creative_tabs.len();
+                self.creative_tabs.retain(|t| t.id != tab.id);
+                for item in &mut self.items {
+                    if item.creative_tab.as_deref() == Some(&tab.id) {
+                        item.creative_tab = None;
+                    }
+                }
+                for block in &mut self.blocks {
+                    if block.creative_tab.as_deref() == Some(&tab.id) {
+                        block.creative_tab = None;
+                    }
+                }
+                (tab.id, "creative_tabs", before, self.creative_tabs.len())
             }
         };
         if before == after {
@@ -94,6 +111,8 @@ pub enum Entity {
     Block(Block),
     /// A recipe entity.
     Recipe(Recipe),
+    /// A creative tab entity.
+    CreativeTab(CreativeTab),
 }
 
 impl Entity {
@@ -102,6 +121,7 @@ impl Entity {
             Entity::Item(i) => &i.id,
             Entity::Block(b) => &b.id,
             Entity::Recipe(r) => &r.id,
+            Entity::CreativeTab(t) => &t.id,
         }
     }
 
@@ -110,6 +130,7 @@ impl Entity {
             Entity::Item(_) => "Item",
             Entity::Block(_) => "Block",
             Entity::Recipe(_) => "Recipe",
+            Entity::CreativeTab(_) => "CreativeTab",
         }
     }
 }
@@ -134,6 +155,7 @@ impl Item {
             entity_type: None,
             burn_time: None,
             compost_chance: None,
+            creative_tab: None,
         })
     }
 }
@@ -144,7 +166,10 @@ impl Block {
         let Some(id) = normalize_id(raw) else {
             bail!("Block id cannot be empty.");
         };
-        Ok(Self { id })
+        Ok(Self {
+            id,
+            creative_tab: None,
+        })
     }
 }
 
@@ -165,7 +190,17 @@ impl Recipe {
     }
 }
 
-fn normalize_id(raw: &str) -> Option<String> {
+impl CreativeTab {
+    /// Creates a [`CreativeTab`] from a raw id string.
+    pub fn new(raw: &str) -> Result<Self> {
+        let Some(id) = normalize_id(raw) else {
+            bail!("Creative tab id cannot be empty.");
+        };
+        Ok(Self { id })
+    }
+}
+
+pub(crate) fn normalize_id(raw: &str) -> Option<String> {
     let id = raw.trim().to_lowercase();
     if id.is_empty() { None } else { Some(id) }
 }
@@ -207,6 +242,17 @@ pub struct ModState {
     /// Recipes tracked in state.
     #[serde(default)]
     pub recipes: Vec<Recipe>,
+
+    /// Creative tabs tracked in state.
+    #[serde(default)]
+    pub creative_tabs: Vec<CreativeTab>,
+}
+
+/// A creative tab tracked in [`ModState::creative_tabs`].
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct CreativeTab {
+    /// Lowercase creative tab identifier.
+    pub id: String,
 }
 
 /// An item tracked in [`ModState::items`].
@@ -262,6 +308,10 @@ pub struct Item {
     /// Compost chance for compostable items (0.0 to 1.0).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub compost_chance: Option<f32>,
+
+    /// Creative tab assignment (`None` means default to first custom tab or `ingredients`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub creative_tab: Option<String>,
 }
 
 /// Whether an [`Item`] is a basic item or a tool.
@@ -298,10 +348,14 @@ pub enum ItemKind {
 }
 
 /// A block tracked in [`ModState::blocks`].
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct Block {
     /// Lowercase block identifier.
     pub id: String,
+
+    /// Creative tab assignment (`None` means default to first custom tab or `ingredients`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub creative_tab: Option<String>,
 }
 
 /// A crafting recipe tracked in [`ModState::recipes`].

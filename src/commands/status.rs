@@ -12,6 +12,7 @@ pub fn run(args: StatusArgs) -> Result<()> {
 
     print_items(&state.items, args.verbose);
     print_blocks(&state.blocks, args.verbose);
+    print_creative_tabs(&state.creative_tabs, args.verbose);
     print_recipes(&state.recipes, args.verbose);
 
     if args.verbose {
@@ -66,6 +67,8 @@ fn print_item(item: &state::Item) {
     if !item.tooltip.is_empty() {
         detail.push_str(format!(", tooltip_lines={}", item.tooltip.len()).as_str());
     }
+    let tab = item.creative_tab.as_deref().unwrap_or("default");
+    detail.push_str(format!(", tab={tab}").as_str());
     detail.push(')');
     println!("{detail}");
 }
@@ -74,11 +77,25 @@ fn print_blocks(blocks: &[state::Block], verbose: bool) {
     println!("Blocks: {}", blocks.len());
     if verbose {
         for block in blocks {
-            println!("  - {} (block)", block.id);
+            let tab = block.creative_tab.as_deref().unwrap_or("default");
+            println!("  - {} (block, tab={})", block.id, tab);
         }
     } else {
         for block in blocks {
             println!("  - {}", block.id);
+        }
+    }
+}
+
+fn print_creative_tabs(tabs: &[state::CreativeTab], verbose: bool) {
+    println!("Creative Tabs: {}", tabs.len());
+    if verbose {
+        for tab in tabs {
+            println!("  - {} (creative_tab)", tab.id);
+        }
+    } else {
+        for tab in tabs {
+            println!("  - {}", tab.id);
         }
     }
 }
