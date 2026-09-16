@@ -44,6 +44,9 @@ fn print_item(item: &state::Item) {
         ItemKind::SpawnEgg => "spawn_egg",
         ItemKind::Fuel => "fuel",
         ItemKind::Compostable => "compostable",
+        ItemKind::Armor => "armor",
+        ItemKind::Shield => "shield",
+        ItemKind::Potion => "potion",
     };
     let mut detail = format!("  - {} ({kind}", item.id);
     if let Some(material) = &item.material {
@@ -63,6 +66,21 @@ fn print_item(item: &state::Item) {
     }
     if let Some(compost_chance) = item.compost_chance {
         detail.push_str(format!(", compost_chance={compost_chance}").as_str());
+    }
+    if let Some(armor_material) = &item.armor_material {
+        detail.push_str(format!(", armor_material={armor_material}").as_str());
+    }
+    if let Some(armor_slot) = &item.armor_slot {
+        detail.push_str(format!(", slot={armor_slot}").as_str());
+    }
+    if !item.effects.is_empty() {
+        let effects = item
+            .effects
+            .iter()
+            .map(|e| format!("{}:{}:{}", e.effect_type, e.duration, e.amplifier))
+            .collect::<Vec<_>>()
+            .join(", ");
+        detail.push_str(format!(", effects=[{effects}]").as_str());
     }
     if !item.tooltip.is_empty() {
         detail.push_str(format!(", tooltip_lines={}", item.tooltip.len()).as_str());

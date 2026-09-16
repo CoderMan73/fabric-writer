@@ -156,6 +156,9 @@ impl Item {
             burn_time: None,
             compost_chance: None,
             creative_tab: None,
+            armor_material: None,
+            armor_slot: None,
+            effects: Vec::new(),
         })
     }
 }
@@ -312,6 +315,18 @@ pub struct Item {
     /// Creative tab assignment (`None` means default to first custom tab or `ingredients`).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub creative_tab: Option<String>,
+
+    /// Armor material (e.g. "diamond", "iron", "netherite"); None for non-armor items.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub armor_material: Option<String>,
+
+    /// Armor slot (helmet, chestplate, leggings, boots); None for non-armor items.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub armor_slot: Option<String>,
+
+    /// Custom potion effects for potion items.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub effects: Vec<PotionEffect>,
 }
 
 /// Whether an [`Item`] is a basic item or a tool.
@@ -345,6 +360,31 @@ pub enum ItemKind {
 
     /// A compostable item with a chance to increase composter level.
     Compostable,
+
+    /// An armor item with material and slot properties.
+    Armor,
+
+    /// A shield item.
+    Shield,
+
+    /// A potion item with custom effects.
+    Potion,
+}
+
+/// A potion effect with type, duration, and amplifier.
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct PotionEffect {
+    /// Effect type (e.g. "minecraft:speed").
+    #[serde(default)]
+    pub effect_type: String,
+
+    /// Duration in ticks.
+    #[serde(default)]
+    pub duration: i32,
+
+    /// Amplifier (0 = level I).
+    #[serde(default)]
+    pub amplifier: i32,
 }
 
 /// A block tracked in [`ModState::blocks`].

@@ -307,6 +307,13 @@ pub(crate) fn build_lang_provider(state: &ModState) -> Tokens {
                         )
                     )
                 )
+                $(for i in &state.items =>
+                    $(if i.kind == ItemKind::Potion =>
+                        $(for effect in &i.effects =>
+                            translationBuilder.add($(quoted(&format!("potion.effect.{}.{}.{}", state.mod_id, i.id, effect.effect_type.split(':').next_back().unwrap_or(&effect.effect_type)))), $(quoted(&effect.effect_type.split(':').next_back().unwrap_or(&effect.effect_type).to_string())));$['\r']
+                        )
+                    )
+                )
             }
         }
     }
@@ -332,6 +339,12 @@ pub(crate) fn build_datagen_entrypoint(state: &ModState) -> Tokens {
                 $(if state.items.iter().any(|i| i.kind == ItemKind::Compostable) =>
                     pack.addProvider($(format!("{}CompostableProvider", state.mod_name))::new);
                 )
+                $(if state.items.iter().any(|i| i.kind == ItemKind::Armor) =>
+                    pack.addProvider($(format!("{}ArmorProvider", state.mod_name))::new);
+                )
+                $(if state.items.iter().any(|i| i.kind == ItemKind::Shield) =>
+                    pack.addProvider($(format!("{}ShieldProvider", state.mod_name))::new);
+                )
             }
         }
     }
@@ -354,7 +367,15 @@ pub(crate) fn build_model_provider(state: &ModState) -> Tokens {
             @Override
             public void generateItemModels($(item_model_generators()) itemModelGenerator) {
                 $(for i in &state.items =>
-                    itemModelGenerator.generateFlatItem($(&mod_items(state)).$(to_upper(&i.id)), $(model_templates()).FLAT_ITEM);$['\r']
+                    $(if i.kind == ItemKind::Armor =>
+                        itemModelGenerator.generateArmorModel($(&mod_items(state)).$(to_upper(&i.id)));$['\r']
+                    )
+                    $(if i.kind == ItemKind::Shield =>
+                        itemModelGenerator.generateShieldModel($(&mod_items(state)).$(to_upper(&i.id)));$['\r']
+                    )
+                    $(if !(i.kind == ItemKind::Armor || i.kind == ItemKind::Shield) =>
+                        itemModelGenerator.generateFlatItem($(&mod_items(state)).$(to_upper(&i.id)), $(model_templates()).FLAT_ITEM);$['\r']
+                    )
                 )
             }
 
@@ -442,6 +463,52 @@ pub(crate) fn build_compostable_provider(state: &ModState) -> Tokens {
                         $(if let Some(chance) = i.compost_chance =>
                             $(compostable_registry()).register($(mod_items(state)).$(to_upper(&i.id)), $(format!("{}f", chance)));$['\r']
                         )
+                    )
+                )
+            }
+        }
+    }
+}
+
+pub(crate) fn build_armor_provider(state: &ModState) -> Tokens {
+    let has_armor = state.items.iter().any(|i| i.kind == ItemKind::Armor);
+    if !has_armor {
+        return quote! {};
+    }
+    quote! {
+        public class $(format!("{}ArmorProvider", state.mod_name)) extends $(fabric_equipment_model_provider()) {
+            public $(format!("{}ArmorProvider", state.mod_name))($(fabric_pack_output()) output) {
+                super(output);
+            }
+
+            @Override
+            public void generateEquipmentModels($(equipment_model_generator()) generator) {
+                $(for i in &state.items =>
+                    $(if i.kind == ItemKind::Armor =>
+                        generator.generateArmor($(mod_items(state)).$(to_upper(&i.id)));$['\r']
+                    )
+                )
+            }
+        }
+    }
+}
+
+pub(crate) fn build_shield_provider(state: &ModState) -> Tokens {
+    let has_shield = state.items.iter().any(|i| i.kind == ItemKind::Shield);
+    if !has_shield {
+        return quote! {};
+    }
+    quote! {
+        public class $(format!("{}ShieldProvider", state.mod_name)) extends $(fabric_equipment_model_provider()) {
+            public $(format!("{}ShieldProvider", state.mod_name))($(fabric_pack_output()) output) {
+                super(output);
+            }
+
+            @Override
+            public void generateEquipmentModels($(equipment_model_generator()) generator) {
+                $(for i in &state.items =>
+                    $(if i.kind == ItemKind::Shield =>
+                        generator.generateShield($(mod_items(state)).$(to_upper(&i.id)));$['\r']
                     )
                 )
             }
@@ -577,6 +644,28 @@ fn item_properties(item: &Item, use_custom_class: bool) -> Tokens {
             }
             ItemKind::Fuel | ItemKind::Compostable => {}
             ItemKind::Basic => {}
+            ItemKind::Armor => {}
+            ItemKind::Shield => {}
+            ItemKind::Potion => {
+                if !item.effects.is_empty() {
+                    let mut component_args = quote! {};
+                    for effect in &item.effects {
+                        let effect_const = effect
+                            .effect_type
+                            .split(':')
+                            .next_back()
+                            .unwrap_or(&effect.effect_type)
+                            .to_uppercase()
+                            .replace('-', "_");
+                        let dur = effect.duration;
+                        let amp = effect.amplifier;
+                        quote_in! { component_args =>
+                            .component(DataComponents.POTION_CONTENTS, new PotionContents(List.of(new MobEffectInstance(MobEffects.$(effect_const), $(dur), $(amp), 1.0f))))
+                        }
+                    }
+                    quote_in! { out => $component_args }
+                }
+            }
         }
     }
 
@@ -598,6 +687,21 @@ fn item_factory(item_def: &Item, use_custom_class: bool) -> Tokens {
                     let speed = format!("{}f", item_def.attack_speed.unwrap_or(1.6));
                     let damage = format!("{}f", item_def.attack_damage.unwrap_or(1.0));
                     quote! { settings -> new $(class_name)($(tool_materials()).$(material_const), $(damage), $(speed), settings) }
+                } else {
+                    quote! { $(item())::new }
+                }
+            }
+            ItemKind::Armor => {
+                if let Some(mat) = &item_def.armor_material {
+                    let material_const = mat.to_uppercase().replace('-', "_");
+                    let slot = match item_def.armor_slot.as_deref() {
+                        Some("helmet") => "HELMET",
+                        Some("chestplate") => "CHESTPLATE",
+                        Some("leggings") => "LEGGINGS",
+                        Some("boots") => "BOOTS",
+                        _ => "HELMET",
+                    };
+                    quote! { settings -> new $(class_name)($(armor_material()).$(material_const), $(armor_item()).Type.$(slot), settings) }
                 } else {
                     quote! { $(item())::new }
                 }
@@ -626,6 +730,27 @@ fn item_factory(item_def: &Item, use_custom_class: bool) -> Tokens {
                 } else {
                     quote! { $(item())::new }
                 }
+            }
+            ItemKind::Armor => {
+                if let Some(mat) = &item_def.armor_material {
+                    let material_const = mat.to_uppercase().replace('-', "_");
+                    let slot = match item_def.armor_slot.as_deref() {
+                        Some("helmet") => "HELMET",
+                        Some("chestplate") => "CHESTPLATE",
+                        Some("leggings") => "LEGGINGS",
+                        Some("boots") => "BOOTS",
+                        _ => "HELMET",
+                    };
+                    quote! { settings -> new $(armor_item())($(armor_material()).$(material_const), $(armor_item()).Type.$(slot), settings) }
+                } else {
+                    quote! { $(item())::new }
+                }
+            }
+            ItemKind::Shield => {
+                quote! { $(shield_item())::new }
+            }
+            ItemKind::Potion => {
+                quote! { $(item())::new }
             }
             ItemKind::SpawnEgg => quote! { $(spawn_egg_item())::new },
             ItemKind::Fuel | ItemKind::Compostable => quote! { $(item())::new },
@@ -661,6 +786,46 @@ pub(crate) fn build_item_class(item_def: &Item, state: &ModState) -> Tokens {
                 public class $(class_name) extends $(base_class) {
                     public $(class_name)($(tool_materials()) material, float attackDamage, float attackSpeed, $(item()).Properties properties) {
                         super(material, attackDamage, attackSpeed, properties);
+                    }
+
+                    @Override
+                    public void appendHoverText(
+                        $(item_stack()) stack,
+                        $(item()).TooltipContext context,
+                        $(tooltip_display()) display,
+                        $(function())<$(component())> textConsumer,
+                        $(tooltip_flag()) type
+                    ) {
+                        $body
+                    }
+                }
+            }
+        }
+        ItemKind::Armor => {
+            quote! {
+                public class $(class_name) extends $(armor_item()) {
+                    public $(class_name)($(armor_material()) material, $(armor_item()).Type type, $(item()).Properties properties) {
+                        super(material, type, properties);
+                    }
+
+                    @Override
+                    public void appendHoverText(
+                        $(item_stack()) stack,
+                        $(item()).TooltipContext context,
+                        $(tooltip_display()) display,
+                        $(function())<$(component())> textConsumer,
+                        $(tooltip_flag()) type
+                    ) {
+                        $body
+                    }
+                }
+            }
+        }
+        ItemKind::Shield => {
+            quote! {
+                public class $(class_name) extends $(shield_item()) {
+                    public $(class_name)($(item()).Properties properties) {
+                        super(properties);
                     }
 
                     @Override
