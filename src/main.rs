@@ -8,6 +8,7 @@
 use clap::{Parser, Subcommand};
 use fabric_writer::commands::{
     block::{self, BlockAddArgs, BlockRemoveArgs},
+    creative_tab::{self, CreativeTabAddArgs, CreativeTabRemoveArgs},
     init::{self, InitArgs},
     item::{self, ItemAddArgs, ItemRemoveArgs},
     recipe::{self, RecipeAddArgs, RecipeRemoveArgs},
@@ -31,11 +32,13 @@ fn main() -> anyhow::Result<()> {
             AddSubcommand::Item(args) => item::add(args),
             AddSubcommand::Block(args) => block::add(args),
             AddSubcommand::Recipe(args) => recipe::add(args),
+            AddSubcommand::CreativeTab(args) => creative_tab::add(args),
         },
         Commands::Remove { subcommand } => match subcommand {
             RemoveSubcommand::Item(args) => item::remove(args),
             RemoveSubcommand::Block(args) => block::remove(args),
             RemoveSubcommand::Recipe(args) => recipe::remove(args),
+            RemoveSubcommand::CreativeTab(args) => creative_tab::remove(args),
         },
         Commands::Run { subcommand } => match subcommand {
             RunSubcommand::Datagen => run::datagen(),
@@ -105,6 +108,10 @@ enum AddSubcommand {
     /// Add a recipe [alias: r]
     #[command(alias = "r")]
     Recipe(RecipeAddArgs),
+
+    /// Add a creative tab [alias: t]
+    #[command(alias = "t")]
+    CreativeTab(CreativeTabAddArgs),
 }
 
 #[derive(Subcommand)]
@@ -120,6 +127,10 @@ enum RemoveSubcommand {
     /// Remove a recipe [alias: r]
     #[command(alias = "r")]
     Recipe(RecipeRemoveArgs),
+
+    /// Remove a creative tab [alias: t]
+    #[command(alias = "t")]
+    CreativeTab(CreativeTabRemoveArgs),
 }
 
 #[derive(Subcommand)]

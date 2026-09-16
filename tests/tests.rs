@@ -198,6 +198,7 @@ fn datagen_succeeds_with_mixed_vanilla_and_modded_content() -> Result<()> {
         burn_time: None,
         compost_chance: None,
         tooltip: vec![],
+        creative_tab: None,
         verbose: false,
     })?;
 
@@ -216,12 +217,14 @@ fn datagen_succeeds_with_mixed_vanilla_and_modded_content() -> Result<()> {
         burn_time: None,
         compost_chance: None,
         tooltip: vec![],
+        creative_tab: None,
         verbose: false,
     })?;
 
     // Add a block (modded)
     fabric_writer::commands::block::add(BlockAddArgs {
         id: "copper_ore".into(),
+        creative_tab: None,
         verbose: false,
     })?;
 
@@ -313,6 +316,7 @@ fn add_item_with_tooltips_generates_custom_class() -> Result<()> {
         burn_time: None,
         compost_chance: None,
         tooltip: vec!["A glowing berry.".into(), "Consumes on use.".into()],
+        creative_tab: None,
         verbose: false,
     })?;
 
