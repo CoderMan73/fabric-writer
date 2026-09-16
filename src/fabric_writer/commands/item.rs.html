@@ -57,92 +57,97 @@
 <a href=#57 id=57 data-nosnippet>57</a>    item.entity_type = args.entity_type.clone();
 <a href=#58 id=58 data-nosnippet>58</a>    item.burn_time = args.burn_time;
 <a href=#59 id=59 data-nosnippet>59</a>    item.compost_chance = args.compost_chance;
-<a href=#60 id=60 data-nosnippet>60</a>    <span class="prelude-val">Ok</span>(item)
-<a href=#61 id=61 data-nosnippet>61</a>}
-<a href=#62 id=62 data-nosnippet>62</a>
-<a href=#63 id=63 data-nosnippet>63</a><span class="kw">fn </span>kind_label(item: <span class="kw-2">&amp;</span>Item) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str {
-<a href=#64 id=64 data-nosnippet>64</a>    <span class="kw">match </span>item.kind {
-<a href=#65 id=65 data-nosnippet>65</a>        ItemKind::Basic =&gt; <span class="string">"basic"</span>,
-<a href=#66 id=66 data-nosnippet>66</a>        ItemKind::Tool =&gt; <span class="string">"tool"</span>,
-<a href=#67 id=67 data-nosnippet>67</a>        ItemKind::Axe =&gt; <span class="string">"axe"</span>,
-<a href=#68 id=68 data-nosnippet>68</a>        ItemKind::Shovel =&gt; <span class="string">"shovel"</span>,
-<a href=#69 id=69 data-nosnippet>69</a>        ItemKind::Hoe =&gt; <span class="string">"hoe"</span>,
-<a href=#70 id=70 data-nosnippet>70</a>        ItemKind::Food =&gt; <span class="string">"food"</span>,
-<a href=#71 id=71 data-nosnippet>71</a>        ItemKind::SpawnEgg =&gt; <span class="string">"spawn_egg"</span>,
-<a href=#72 id=72 data-nosnippet>72</a>        ItemKind::Fuel =&gt; <span class="string">"fuel"</span>,
-<a href=#73 id=73 data-nosnippet>73</a>        ItemKind::Compostable =&gt; <span class="string">"compostable"</span>,
-<a href=#74 id=74 data-nosnippet>74</a>    }
-<a href=#75 id=75 data-nosnippet>75</a>}
-<a href=#76 id=76 data-nosnippet>76</a>
-<a href=#77 id=77 data-nosnippet>77</a><span class="doccomment">/// CLI arguments for `fw add item`.
-<a href=#78 id=78 data-nosnippet>78</a></span><span class="attr">#[derive(Parser)]
-<a href=#79 id=79 data-nosnippet>79</a></span><span class="kw">pub struct </span>ItemAddArgs {
-<a href=#80 id=80 data-nosnippet>80</a>    <span class="doccomment">/// Item ID
-<a href=#81 id=81 data-nosnippet>81</a>    </span><span class="attr">#[arg(short = <span class="string">'i'</span>, long)]
-<a href=#82 id=82 data-nosnippet>82</a>    </span><span class="kw">pub </span>id: String,
-<a href=#83 id=83 data-nosnippet>83</a>
-<a href=#84 id=84 data-nosnippet>84</a>    <span class="doccomment">/// Item kind: `tool`, `axe`, `shovel`, `hoe`, `food`, `spawn_egg`, or `basic` (defaults to `basic`).
-<a href=#85 id=85 data-nosnippet>85</a>    </span><span class="attr">#[arg(long)]
-<a href=#86 id=86 data-nosnippet>86</a>    </span><span class="kw">pub </span>kind: <span class="prelude-ty">Option</span>&lt;String&gt;,
-<a href=#87 id=87 data-nosnippet>87</a>
-<a href=#88 id=88 data-nosnippet>88</a>    <span class="doccomment">/// Tool material (e.g. `diamond`); required for tool/axe/shovel/hoe.
-<a href=#89 id=89 data-nosnippet>89</a>    </span><span class="attr">#[arg(long)]
-<a href=#90 id=90 data-nosnippet>90</a>    </span><span class="kw">pub </span>material: <span class="prelude-ty">Option</span>&lt;String&gt;,
-<a href=#91 id=91 data-nosnippet>91</a>
-<a href=#92 id=92 data-nosnippet>92</a>    <span class="doccomment">/// Attack damage for tool items.
-<a href=#93 id=93 data-nosnippet>93</a>    </span><span class="attr">#[arg(long)]
-<a href=#94 id=94 data-nosnippet>94</a>    </span><span class="kw">pub </span>attack_damage: <span class="prelude-ty">Option</span>&lt;f32&gt;,
-<a href=#95 id=95 data-nosnippet>95</a>
-<a href=#96 id=96 data-nosnippet>96</a>    <span class="doccomment">/// Attack speed modifier for tool items.
-<a href=#97 id=97 data-nosnippet>97</a>    </span><span class="attr">#[arg(long)]
-<a href=#98 id=98 data-nosnippet>98</a>    </span><span class="kw">pub </span>attack_speed: <span class="prelude-ty">Option</span>&lt;f32&gt;,
-<a href=#99 id=99 data-nosnippet>99</a>
-<a href=#100 id=100 data-nosnippet>100</a>    <span class="doccomment">/// Durability for tool items (overrides material default).
-<a href=#101 id=101 data-nosnippet>101</a>    </span><span class="attr">#[arg(long)]
-<a href=#102 id=102 data-nosnippet>102</a>    </span><span class="kw">pub </span>durability: <span class="prelude-ty">Option</span>&lt;i32&gt;,
-<a href=#103 id=103 data-nosnippet>103</a>
-<a href=#104 id=104 data-nosnippet>104</a>    <span class="doccomment">/// Nutrition value for food items.
-<a href=#105 id=105 data-nosnippet>105</a>    </span><span class="attr">#[arg(long)]
-<a href=#106 id=106 data-nosnippet>106</a>    </span><span class="kw">pub </span>nutrition: <span class="prelude-ty">Option</span>&lt;i32&gt;,
-<a href=#107 id=107 data-nosnippet>107</a>
-<a href=#108 id=108 data-nosnippet>108</a>    <span class="doccomment">/// Saturation modifier for food items.
-<a href=#109 id=109 data-nosnippet>109</a>    </span><span class="attr">#[arg(long)]
-<a href=#110 id=110 data-nosnippet>110</a>    </span><span class="kw">pub </span>saturation: <span class="prelude-ty">Option</span>&lt;f32&gt;,
-<a href=#111 id=111 data-nosnippet>111</a>
-<a href=#112 id=112 data-nosnippet>112</a>    <span class="doccomment">/// Allow eating regardless of hunger level.
-<a href=#113 id=113 data-nosnippet>113</a>    </span><span class="attr">#[arg(long, default_value_t = <span class="bool-val">false</span>)]
-<a href=#114 id=114 data-nosnippet>114</a>    </span><span class="kw">pub </span>always_edible: bool,
-<a href=#115 id=115 data-nosnippet>115</a>
-<a href=#116 id=116 data-nosnippet>116</a>    <span class="doccomment">/// Entity type for spawn egg items (e.g. `minecraft:cow`).
-<a href=#117 id=117 data-nosnippet>117</a>    </span><span class="attr">#[arg(long)]
-<a href=#118 id=118 data-nosnippet>118</a>    </span><span class="kw">pub </span>entity_type: <span class="prelude-ty">Option</span>&lt;String&gt;,
-<a href=#119 id=119 data-nosnippet>119</a>
-<a href=#120 id=120 data-nosnippet>120</a>    <span class="doccomment">/// Burn time in ticks for fuel items.
-<a href=#121 id=121 data-nosnippet>121</a>    </span><span class="attr">#[arg(long)]
-<a href=#122 id=122 data-nosnippet>122</a>    </span><span class="kw">pub </span>burn_time: <span class="prelude-ty">Option</span>&lt;i32&gt;,
-<a href=#123 id=123 data-nosnippet>123</a>
-<a href=#124 id=124 data-nosnippet>124</a>    <span class="doccomment">/// Compost chance for compostable items (0.0 to 1.0).
-<a href=#125 id=125 data-nosnippet>125</a>    </span><span class="attr">#[arg(long)]
-<a href=#126 id=126 data-nosnippet>126</a>    </span><span class="kw">pub </span>compost_chance: <span class="prelude-ty">Option</span>&lt;f32&gt;,
-<a href=#127 id=127 data-nosnippet>127</a>
-<a href=#128 id=128 data-nosnippet>128</a>    <span class="doccomment">/// Tooltip line for the item (repeatable).
-<a href=#129 id=129 data-nosnippet>129</a>    </span><span class="attr">#[arg(long)]
-<a href=#130 id=130 data-nosnippet>130</a>    </span><span class="kw">pub </span>tooltip: Vec&lt;String&gt;,
-<a href=#131 id=131 data-nosnippet>131</a>
-<a href=#132 id=132 data-nosnippet>132</a>    <span class="doccomment">/// Show which files were regenerated, skipped, or pruned
-<a href=#133 id=133 data-nosnippet>133</a>    </span><span class="attr">#[arg(short = <span class="string">'v'</span>, long, default_value_t = <span class="bool-val">false</span>)]
-<a href=#134 id=134 data-nosnippet>134</a>    </span><span class="kw">pub </span>verbose: bool,
-<a href=#135 id=135 data-nosnippet>135</a>}
+<a href=#60 id=60 data-nosnippet>60</a>    item.creative_tab = args.creative_tab.clone();
+<a href=#61 id=61 data-nosnippet>61</a>    <span class="prelude-val">Ok</span>(item)
+<a href=#62 id=62 data-nosnippet>62</a>}
+<a href=#63 id=63 data-nosnippet>63</a>
+<a href=#64 id=64 data-nosnippet>64</a><span class="kw">fn </span>kind_label(item: <span class="kw-2">&amp;</span>Item) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str {
+<a href=#65 id=65 data-nosnippet>65</a>    <span class="kw">match </span>item.kind {
+<a href=#66 id=66 data-nosnippet>66</a>        ItemKind::Basic =&gt; <span class="string">"basic"</span>,
+<a href=#67 id=67 data-nosnippet>67</a>        ItemKind::Tool =&gt; <span class="string">"tool"</span>,
+<a href=#68 id=68 data-nosnippet>68</a>        ItemKind::Axe =&gt; <span class="string">"axe"</span>,
+<a href=#69 id=69 data-nosnippet>69</a>        ItemKind::Shovel =&gt; <span class="string">"shovel"</span>,
+<a href=#70 id=70 data-nosnippet>70</a>        ItemKind::Hoe =&gt; <span class="string">"hoe"</span>,
+<a href=#71 id=71 data-nosnippet>71</a>        ItemKind::Food =&gt; <span class="string">"food"</span>,
+<a href=#72 id=72 data-nosnippet>72</a>        ItemKind::SpawnEgg =&gt; <span class="string">"spawn_egg"</span>,
+<a href=#73 id=73 data-nosnippet>73</a>        ItemKind::Fuel =&gt; <span class="string">"fuel"</span>,
+<a href=#74 id=74 data-nosnippet>74</a>        ItemKind::Compostable =&gt; <span class="string">"compostable"</span>,
+<a href=#75 id=75 data-nosnippet>75</a>    }
+<a href=#76 id=76 data-nosnippet>76</a>}
+<a href=#77 id=77 data-nosnippet>77</a>
+<a href=#78 id=78 data-nosnippet>78</a><span class="doccomment">/// CLI arguments for `fw add item`.
+<a href=#79 id=79 data-nosnippet>79</a></span><span class="attr">#[derive(Parser)]
+<a href=#80 id=80 data-nosnippet>80</a></span><span class="kw">pub struct </span>ItemAddArgs {
+<a href=#81 id=81 data-nosnippet>81</a>    <span class="doccomment">/// Item ID
+<a href=#82 id=82 data-nosnippet>82</a>    </span><span class="attr">#[arg(short = <span class="string">'i'</span>, long)]
+<a href=#83 id=83 data-nosnippet>83</a>    </span><span class="kw">pub </span>id: String,
+<a href=#84 id=84 data-nosnippet>84</a>
+<a href=#85 id=85 data-nosnippet>85</a>    <span class="doccomment">/// Item kind: `tool`, `axe`, `shovel`, `hoe`, `food`, `spawn_egg`, or `basic` (defaults to `basic`).
+<a href=#86 id=86 data-nosnippet>86</a>    </span><span class="attr">#[arg(long)]
+<a href=#87 id=87 data-nosnippet>87</a>    </span><span class="kw">pub </span>kind: <span class="prelude-ty">Option</span>&lt;String&gt;,
+<a href=#88 id=88 data-nosnippet>88</a>
+<a href=#89 id=89 data-nosnippet>89</a>    <span class="doccomment">/// Tool material (e.g. `diamond`); required for tool/axe/shovel/hoe.
+<a href=#90 id=90 data-nosnippet>90</a>    </span><span class="attr">#[arg(long)]
+<a href=#91 id=91 data-nosnippet>91</a>    </span><span class="kw">pub </span>material: <span class="prelude-ty">Option</span>&lt;String&gt;,
+<a href=#92 id=92 data-nosnippet>92</a>
+<a href=#93 id=93 data-nosnippet>93</a>    <span class="doccomment">/// Attack damage for tool items.
+<a href=#94 id=94 data-nosnippet>94</a>    </span><span class="attr">#[arg(long)]
+<a href=#95 id=95 data-nosnippet>95</a>    </span><span class="kw">pub </span>attack_damage: <span class="prelude-ty">Option</span>&lt;f32&gt;,
+<a href=#96 id=96 data-nosnippet>96</a>
+<a href=#97 id=97 data-nosnippet>97</a>    <span class="doccomment">/// Attack speed modifier for tool items.
+<a href=#98 id=98 data-nosnippet>98</a>    </span><span class="attr">#[arg(long)]
+<a href=#99 id=99 data-nosnippet>99</a>    </span><span class="kw">pub </span>attack_speed: <span class="prelude-ty">Option</span>&lt;f32&gt;,
+<a href=#100 id=100 data-nosnippet>100</a>
+<a href=#101 id=101 data-nosnippet>101</a>    <span class="doccomment">/// Durability for tool items (overrides material default).
+<a href=#102 id=102 data-nosnippet>102</a>    </span><span class="attr">#[arg(long)]
+<a href=#103 id=103 data-nosnippet>103</a>    </span><span class="kw">pub </span>durability: <span class="prelude-ty">Option</span>&lt;i32&gt;,
+<a href=#104 id=104 data-nosnippet>104</a>
+<a href=#105 id=105 data-nosnippet>105</a>    <span class="doccomment">/// Nutrition value for food items.
+<a href=#106 id=106 data-nosnippet>106</a>    </span><span class="attr">#[arg(long)]
+<a href=#107 id=107 data-nosnippet>107</a>    </span><span class="kw">pub </span>nutrition: <span class="prelude-ty">Option</span>&lt;i32&gt;,
+<a href=#108 id=108 data-nosnippet>108</a>
+<a href=#109 id=109 data-nosnippet>109</a>    <span class="doccomment">/// Saturation modifier for food items.
+<a href=#110 id=110 data-nosnippet>110</a>    </span><span class="attr">#[arg(long)]
+<a href=#111 id=111 data-nosnippet>111</a>    </span><span class="kw">pub </span>saturation: <span class="prelude-ty">Option</span>&lt;f32&gt;,
+<a href=#112 id=112 data-nosnippet>112</a>
+<a href=#113 id=113 data-nosnippet>113</a>    <span class="doccomment">/// Allow eating regardless of hunger level.
+<a href=#114 id=114 data-nosnippet>114</a>    </span><span class="attr">#[arg(long, default_value_t = <span class="bool-val">false</span>)]
+<a href=#115 id=115 data-nosnippet>115</a>    </span><span class="kw">pub </span>always_edible: bool,
+<a href=#116 id=116 data-nosnippet>116</a>
+<a href=#117 id=117 data-nosnippet>117</a>    <span class="doccomment">/// Entity type for spawn egg items (e.g. `minecraft:cow`).
+<a href=#118 id=118 data-nosnippet>118</a>    </span><span class="attr">#[arg(long)]
+<a href=#119 id=119 data-nosnippet>119</a>    </span><span class="kw">pub </span>entity_type: <span class="prelude-ty">Option</span>&lt;String&gt;,
+<a href=#120 id=120 data-nosnippet>120</a>
+<a href=#121 id=121 data-nosnippet>121</a>    <span class="doccomment">/// Burn time in ticks for fuel items.
+<a href=#122 id=122 data-nosnippet>122</a>    </span><span class="attr">#[arg(long)]
+<a href=#123 id=123 data-nosnippet>123</a>    </span><span class="kw">pub </span>burn_time: <span class="prelude-ty">Option</span>&lt;i32&gt;,
+<a href=#124 id=124 data-nosnippet>124</a>
+<a href=#125 id=125 data-nosnippet>125</a>    <span class="doccomment">/// Compost chance for compostable items (0.0 to 1.0).
+<a href=#126 id=126 data-nosnippet>126</a>    </span><span class="attr">#[arg(long)]
+<a href=#127 id=127 data-nosnippet>127</a>    </span><span class="kw">pub </span>compost_chance: <span class="prelude-ty">Option</span>&lt;f32&gt;,
+<a href=#128 id=128 data-nosnippet>128</a>
+<a href=#129 id=129 data-nosnippet>129</a>    <span class="doccomment">/// Tooltip line for the item (repeatable).
+<a href=#130 id=130 data-nosnippet>130</a>    </span><span class="attr">#[arg(long)]
+<a href=#131 id=131 data-nosnippet>131</a>    </span><span class="kw">pub </span>tooltip: Vec&lt;String&gt;,
+<a href=#132 id=132 data-nosnippet>132</a>
+<a href=#133 id=133 data-nosnippet>133</a>    <span class="doccomment">/// Creative tab for the item (defaults to default behavior: first custom tab or ingredients).
+<a href=#134 id=134 data-nosnippet>134</a>    </span><span class="attr">#[arg(long)]
+<a href=#135 id=135 data-nosnippet>135</a>    </span><span class="kw">pub </span>creative_tab: <span class="prelude-ty">Option</span>&lt;String&gt;,
 <a href=#136 id=136 data-nosnippet>136</a>
-<a href=#137 id=137 data-nosnippet>137</a><span class="doccomment">/// CLI arguments for `fw remove item`.
-<a href=#138 id=138 data-nosnippet>138</a></span><span class="attr">#[derive(Parser)]
-<a href=#139 id=139 data-nosnippet>139</a></span><span class="kw">pub struct </span>ItemRemoveArgs {
-<a href=#140 id=140 data-nosnippet>140</a>    <span class="doccomment">/// Item ID to remove.
-<a href=#141 id=141 data-nosnippet>141</a>    </span><span class="attr">#[arg(short = <span class="string">'i'</span>, long)]
-<a href=#142 id=142 data-nosnippet>142</a>    </span><span class="kw">pub </span>id: String,
-<a href=#143 id=143 data-nosnippet>143</a>
-<a href=#144 id=144 data-nosnippet>144</a>    <span class="doccomment">/// Show which files were regenerated, skipped, or pruned
-<a href=#145 id=145 data-nosnippet>145</a>    </span><span class="attr">#[arg(short = <span class="string">'v'</span>, long, default_value_t = <span class="bool-val">false</span>)]
-<a href=#146 id=146 data-nosnippet>146</a>    </span><span class="kw">pub </span>verbose: bool,
-<a href=#147 id=147 data-nosnippet>147</a>}
+<a href=#137 id=137 data-nosnippet>137</a>    <span class="doccomment">/// Show which files were regenerated, skipped, or pruned
+<a href=#138 id=138 data-nosnippet>138</a>    </span><span class="attr">#[arg(short = <span class="string">'v'</span>, long, default_value_t = <span class="bool-val">false</span>)]
+<a href=#139 id=139 data-nosnippet>139</a>    </span><span class="kw">pub </span>verbose: bool,
+<a href=#140 id=140 data-nosnippet>140</a>}
+<a href=#141 id=141 data-nosnippet>141</a>
+<a href=#142 id=142 data-nosnippet>142</a><span class="doccomment">/// CLI arguments for `fw remove item`.
+<a href=#143 id=143 data-nosnippet>143</a></span><span class="attr">#[derive(Parser)]
+<a href=#144 id=144 data-nosnippet>144</a></span><span class="kw">pub struct </span>ItemRemoveArgs {
+<a href=#145 id=145 data-nosnippet>145</a>    <span class="doccomment">/// Item ID to remove.
+<a href=#146 id=146 data-nosnippet>146</a>    </span><span class="attr">#[arg(short = <span class="string">'i'</span>, long)]
+<a href=#147 id=147 data-nosnippet>147</a>    </span><span class="kw">pub </span>id: String,
+<a href=#148 id=148 data-nosnippet>148</a>
+<a href=#149 id=149 data-nosnippet>149</a>    <span class="doccomment">/// Show which files were regenerated, skipped, or pruned
+<a href=#150 id=150 data-nosnippet>150</a>    </span><span class="attr">#[arg(short = <span class="string">'v'</span>, long, default_value_t = <span class="bool-val">false</span>)]
+<a href=#151 id=151 data-nosnippet>151</a>    </span><span class="kw">pub </span>verbose: bool,
+<a href=#152 id=152 data-nosnippet>152</a>}
 </code></pre></div></section></main></body></html>
