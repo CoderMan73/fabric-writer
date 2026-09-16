@@ -92,6 +92,16 @@ recipes:
     count: 1
 ```
 
+You can export and import this state with `fw save` and `fw load`:
+
+```bash
+# Export current state to a portable YAML file
+fw save backup.yml
+
+# Import state from a YAML file and regenerate all Java sources
+fw load backup.yml
+```
+
 ## Development
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the full contribution guide, and the
