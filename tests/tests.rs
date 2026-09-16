@@ -8,6 +8,7 @@ use common::TestEnv;
 use fabric_writer::commands::block::BlockAddArgs;
 use fabric_writer::commands::item::{ItemAddArgs, add as item_add};
 use fabric_writer::commands::recipe::{RecipeAddArgs, RecipeRemoveArgs, add as recipe_add, remove};
+use fabric_writer::commands::save_load;
 use serial_test::serial;
 use std::env;
 use std::fs::{read, read_to_string};
@@ -583,4 +584,231 @@ fn find_json_files(dir: &Path) -> Vec<std::path::PathBuf> {
         }
     }
     results
+}
+
+#[test]
+#[ignore]
+#[serial]
+fn save_produces_yaml_file() -> Result<()> {
+    let env = TestEnv::new()?;
+    let _guard = DirGuard::enter(&env.project_dir);
+
+    item_add(ItemAddArgs {
+        id: "test_item".into(),
+        kind: None,
+        material: None,
+        attack_damage: None,
+        attack_speed: None,
+        durability: None,
+        nutrition: None,
+        saturation: None,
+        always_edible: false,
+        entity_type: None,
+        burn_time: None,
+        compost_chance: None,
+        tooltip: vec![],
+        creative_tab: None,
+        armor_material: None,
+        armor_slot: None,
+        effect: vec![],
+        verbose: false,
+    })?;
+
+    let save_path = env.project_dir.join("exported_state.yml");
+    let args = save_load::SaveLoadArgs {
+        command: save_load::SaveLoadCommand::Save(save_load::SaveArgs {
+            path: save_path.display().to_string(),
+        }),
+    };
+    save_load::run(args)?;
+
+    assert!(save_path.exists(), "Exported state file should exist");
+    let content = read_to_string(&save_path)?;
+    assert!(
+        content.contains("test_item"),
+        "Exported YAML should contain item id"
+    );
+    assert!(
+        content.contains("mod_name"),
+        "Exported YAML should contain mod_name"
+    );
+
+    Ok(())
+}
+
+#[test]
+#[ignore]
+#[serial]
+fn load_recreates_state_and_regenerates() -> Result<()> {
+    let env = TestEnv::new()?;
+    let _guard = DirGuard::enter(&env.project_dir);
+
+    item_add(ItemAddArgs {
+        id: "copper_ingot".into(),
+        kind: None,
+        material: None,
+        attack_damage: None,
+        attack_speed: None,
+        durability: None,
+        nutrition: None,
+        saturation: None,
+        always_edible: false,
+        entity_type: None,
+        burn_time: None,
+        compost_chance: None,
+        tooltip: vec![],
+        creative_tab: None,
+        armor_material: None,
+        armor_slot: None,
+        effect: vec![],
+        verbose: false,
+    })?;
+
+    fabric_writer::commands::block::add(BlockAddArgs {
+        id: "copper_ore".into(),
+        creative_tab: None,
+        verbose: false,
+    })?;
+
+    let save_path = env.project_dir.join("exported_state.yml");
+    let save_args = save_load::SaveLoadArgs {
+        command: save_load::SaveLoadCommand::Save(save_load::SaveArgs {
+            path: save_path.display().to_string(),
+        }),
+    };
+    save_load::run(save_args)?;
+
+    // Remove all items and blocks
+    fabric_writer::commands::item::remove(fabric_writer::commands::item::ItemRemoveArgs {
+        id: "copper_ingot".into(),
+        verbose: false,
+    })?;
+    fabric_writer::commands::block::remove(fabric_writer::commands::block::BlockRemoveArgs {
+        id: "copper_ore".into(),
+        verbose: false,
+    })?;
+
+    let java_root = env.project_dir.join("src/main/java").join("testmod");
+    let item_class = java_root.join("COPPER_INGOTItem.java");
+    let block_class = java_root.join("COPPER_OREBlock.java");
+    assert!(
+        !item_class.exists(),
+        "Item class should be pruned after remove"
+    );
+    assert!(
+        !block_class.exists(),
+        "Block class should be pruned after remove"
+    );
+
+    // Load state back
+    let load_args = save_load::SaveLoadArgs {
+        command: save_load::SaveLoadCommand::Load(save_load::LoadArgs {
+            path: save_path.display().to_string(),
+            verbose: false,
+        }),
+    };
+    save_load::run(load_args)?;
+
+    assert!(
+        item_class.exists(),
+        "Item class should be regenerated after load"
+    );
+    assert!(
+        block_class.exists(),
+        "Block class should be regenerated after load"
+    );
+
+    Ok(())
+}
+
+#[test]
+#[ignore]
+#[serial]
+fn load_validates_duplicate_ids() -> Result<()> {
+    let env = TestEnv::new()?;
+    let _guard = DirGuard::enter(&env.project_dir);
+
+    let bad_yaml = r#"mod_name: TestMod
+mod_id: testmod
+namespace: testmod
+package_name: testmod
+minecraft_version: "26.2"
+java_path: /tmp/java
+items:
+  - id: duplicate_item
+    kind: basic
+  - id: duplicate_item
+    kind: basic
+"#;
+
+    let bad_path = env.project_dir.join("bad_state.yml");
+    std::fs::write(&bad_path, bad_yaml)?;
+
+    let args = save_load::SaveLoadArgs {
+        command: save_load::SaveLoadCommand::Load(save_load::LoadArgs {
+            path: bad_path.display().to_string(),
+            verbose: false,
+        }),
+    };
+    let result = save_load::run(args);
+    assert!(
+        result.is_err(),
+        "Loading state with duplicate ids should fail"
+    );
+    let err_msg = result.unwrap_err().to_string();
+    assert!(
+        err_msg.contains("Duplicate"),
+        "Error should mention duplicate id"
+    );
+
+    Ok(())
+}
+
+#[test]
+#[ignore]
+#[serial]
+fn load_validates_invalid_recipe_references() -> Result<()> {
+    let env = TestEnv::new()?;
+    let _guard = DirGuard::enter(&env.project_dir);
+
+    let bad_yaml = r#"mod_name: TestMod
+mod_id: testmod
+namespace: testmod
+package_name: testmod
+minecraft_version: "26.2"
+java_path: /tmp/java
+items: []
+blocks: []
+recipes:
+  - id: bad_recipe
+    kind: crafting_shaped
+    pattern:
+      - "X"
+    ingredients:
+      X: nonexistent_item
+    result: minecraft:dirt
+    count: 1
+"#;
+
+    let bad_path = env.project_dir.join("bad_state.yml");
+    std::fs::write(&bad_path, bad_yaml)?;
+
+    let args = save_load::SaveLoadArgs {
+        command: save_load::SaveLoadCommand::Load(save_load::LoadArgs {
+            path: bad_path.display().to_string(),
+            verbose: false,
+        }),
+    };
+    let result = save_load::run(args);
+    assert!(
+        result.is_err(),
+        "Loading state with invalid references should fail"
+    );
+    let err_msg = result.unwrap_err().to_string();
+    assert!(
+        err_msg.contains("references unknown"),
+        "Error should mention unknown reference"
+    );
+
+    Ok(())
 }
