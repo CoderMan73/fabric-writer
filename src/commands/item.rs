@@ -57,6 +57,7 @@ fn build_item(args: &ItemAddArgs) -> Result<Item> {
     item.entity_type = args.entity_type.clone();
     item.burn_time = args.burn_time;
     item.compost_chance = args.compost_chance;
+    item.creative_tab = args.creative_tab.clone();
     Ok(item)
 }
 
@@ -128,6 +129,10 @@ pub struct ItemAddArgs {
     /// Tooltip line for the item (repeatable).
     #[arg(long)]
     pub tooltip: Vec<String>,
+
+    /// Creative tab for the item (defaults to default behavior: first custom tab or ingredients).
+    #[arg(long)]
+    pub creative_tab: Option<String>,
 
     /// Show which files were regenerated, skipped, or pruned
     #[arg(short = 'v', long, default_value_t = false)]

@@ -1,5 +1,5 @@
 use crate::imports::*;
-use crate::state::{Item, ItemKind, ModState, Recipe};
+use crate::state::{Block, Item, ItemKind, ModState, Recipe};
 use genco::lang::java::Tokens;
 use genco::prelude::*;
 use heck::ToTitleCase;
@@ -25,6 +25,16 @@ pub(crate) fn build_mod_item_ids(state: &ModState) -> Tokens {
 }
 
 pub(crate) fn build_mod_items(state: &ModState) -> Tokens {
+    let vanilla_items: Vec<&Item> = if !state.creative_tabs.is_empty() {
+        state
+            .items
+            .iter()
+            .filter(|i| i.creative_tab.as_deref() == Some("ingredients"))
+            .collect()
+    } else {
+        Vec::new()
+    };
+
     quote! {
         public class ModItems {
             private static $(item()) register($(resource_key())<$(item())> itemKey, $(function())<$(item()).Properties, $(item())> itemFactory, $(item()).Properties settings) {
@@ -44,11 +54,20 @@ pub(crate) fn build_mod_items(state: &ModState) -> Tokens {
             )
 
             public static void initialize() {
-                $(if !&state.items.is_empty() =>
+                $(if !&state.items.is_empty() && state.creative_tabs.is_empty() =>
                     $(creative_mode_tab_events()).modifyOutputEvent($(creative_mode_tabs()).INGREDIENTS)
                         .register((creativeTab) ->
                         {
                             $(for i in &state.items =>
+                                creativeTab.accept($(mod_items(state)).$(to_upper(&i.id)));$['\r']
+                            )
+                        });
+                )
+                $(if !vanilla_items.is_empty() =>
+                    $(creative_mode_tab_events()).modifyOutputEvent($(creative_mode_tabs()).INGREDIENTS)
+                        .register((creativeTab) ->
+                        {
+                            $(for i in &vanilla_items =>
                                 creativeTab.accept($(mod_items(state)).$(to_upper(&i.id)));$['\r']
                             )
                         });
@@ -59,6 +78,16 @@ pub(crate) fn build_mod_items(state: &ModState) -> Tokens {
 }
 
 pub(crate) fn build_mod_blocks(state: &ModState) -> Tokens {
+    let vanilla_blocks: Vec<&Block> = if !state.creative_tabs.is_empty() {
+        state
+            .blocks
+            .iter()
+            .filter(|b| b.creative_tab.as_deref() == Some("ingredients"))
+            .collect()
+    } else {
+        Vec::new()
+    };
+
     quote! {
         public class ModBlocks {
             private static $(block()) register($(block_item_id()) id, $(function())<$(block_behaviour()).Properties, $(block())> blockFactory, $(block_behaviour()).Properties properties) {
@@ -83,11 +112,20 @@ pub(crate) fn build_mod_blocks(state: &ModState) -> Tokens {
             )
 
             public static void initialize() {
-                $(if !&state.blocks.is_empty() =>
+                $(if !&state.blocks.is_empty() && state.creative_tabs.is_empty() =>
                     $(creative_mode_tab_events()).modifyOutputEvent($(creative_mode_tabs()).INGREDIENTS)
                         .register((creativeTab) ->
                         {
                             $(for b in &state.blocks =>
+                                creativeTab.accept($(mod_blocks(state)).$(to_upper(&b.id)));$['\r']
+                            )
+                        });
+                )
+                $(if !vanilla_blocks.is_empty() =>
+                    $(creative_mode_tab_events()).modifyOutputEvent($(creative_mode_tabs()).INGREDIENTS)
+                        .register((creativeTab) ->
+                        {
+                            $(for b in &vanilla_blocks =>
                                 creativeTab.accept($(mod_blocks(state)).$(to_upper(&b.id)));$['\r']
                             )
                         });
@@ -126,6 +164,103 @@ pub(crate) fn build_mod_block_ids(state: &ModState) -> Tokens {
     }
 }
 
+pub(crate) fn build_mod_creative_tabs(state: &ModState) -> Tokens {
+    if state.creative_tabs.is_empty() {
+        return quote! {};
+    }
+
+    let first_tab_id = &state.creative_tabs[0].id;
+
+    let mut tab_defs = Vec::new();
+    for tab in &state.creative_tabs {
+        let tab_name = to_upper(&tab.id);
+        let tab_id = &tab.id;
+
+        let icon_item = if !state.items.is_empty() {
+            let first_item = to_upper(&state.items[0].id);
+            quote! { new ItemStack($(mod_items(state)).$(first_item)) }
+        } else {
+            quote! { new ItemStack($(items()).DIAMOND) }
+        };
+
+        let mut display_items = quote! {};
+
+        for item in &state.items {
+            if let Some(ct) = &item.creative_tab
+                && *ct == tab.id
+                && ct != "ingredients"
+                && ct != "default"
+            {
+                quote_in! { display_items =>
+                    output.accept($(mod_items(state)).$(to_upper(&item.id)));$['\r']
+                }
+            }
+        }
+
+        if tab.id == *first_tab_id {
+            for item in &state.items {
+                if item.creative_tab.is_none() || item.creative_tab.as_deref() == Some("default") {
+                    quote_in! { display_items =>
+                        output.accept($(mod_items(state)).$(to_upper(&item.id)));$['\r']
+                    }
+                }
+            }
+            for block in &state.blocks {
+                if block.creative_tab.is_none() || block.creative_tab.as_deref() == Some("default")
+                {
+                    quote_in! { display_items =>
+                        output.accept($(mod_blocks(state)).$(to_upper(&block.id)));$['\r']
+                    }
+                }
+            }
+        }
+
+        for block in &state.blocks {
+            if let Some(ct) = &block.creative_tab
+                && *ct == tab.id
+                && ct != "ingredients"
+                && ct != "default"
+            {
+                quote_in! { display_items =>
+                    output.accept($(mod_blocks(state)).$(to_upper(&block.id)));$['\r']
+                }
+            }
+        }
+
+        tab_defs.push(quote! {
+            public static final $(resource_key())<$(creative_mode_tab())> $(&tab_name)_KEY = $(resource_key()).create(
+                $(built_in_registries()).CREATIVE_MODE_TAB.key(), $(mod_class(state)).id($(quoted(&tab.id)))
+            );
+            public static final $(creative_mode_tab()) $(tab_name) = $(fabric_creative_mode_tab()).builder()
+                .icon(() -> $(icon_item))
+                .title($(component()).translatable($(quoted(&format!("creativeTab.{}.{}", state.mod_id, tab_id)))))
+                .displayItems((params, output) -> {
+                    $display_items
+                })
+                .build();
+        });
+    }
+
+    let mut registration = quote! {};
+    for tab in &state.creative_tabs {
+        let tab_name = to_upper(&tab.id);
+        quote_in! { registration =>
+            $(registry()).register($(built_in_registries()).CREATIVE_MODE_TAB, $(mod_creative_tabs(state)).$(&tab_name)_KEY, $(mod_creative_tabs(state)).$(tab_name));$['\r']
+        }
+    }
+
+    quote! {
+        public class ModCreativeTabs {
+            $("// Creative Tab Definitions")
+            $(for def in &tab_defs => $def)
+
+            public static void initialize() {
+                $registration
+            }
+        }
+    }
+}
+
 pub(crate) fn build_main_mod_class(state: &ModState) -> Tokens {
     quote! {
         public class $(&state.mod_name) implements $(mod_initializer()) {
@@ -140,6 +275,7 @@ pub(crate) fn build_main_mod_class(state: &ModState) -> Tokens {
                 $("// Initialize Mod")
                 $(if !&state.items.is_empty() => $(mod_items(state)).initialize();)
                 $(if !&state.blocks.is_empty() => $(mod_blocks(state)).initialize();)
+                $(if !state.creative_tabs.is_empty() => $(mod_creative_tabs(state)).initialize();)
             }
 
             public static $(identifier()) id(String path) {

@@ -60,6 +60,8 @@ mod import_fns {
     import_fn!(COMPOSTABLE_PROVIDER, compostable_provider, "net.fabricmc.fabric.api.datagen.v1.provider", "FabricCompostableProvider");
     import_fn!(FUEL_REGISTRY, fuel_registry, "net.minecraft.world.item", "FuelRegistry");
     import_fn!(COMPOSTABLE_REGISTRY, compostable_registry, "net.minecraft.world.item", "CompostableRegistry");
+    import_fn!(FABRIC_CREATIVE_MODE_TAB, fabric_creative_mode_tab, "net.fabricmc.fabric.api.creativetab.v1", "FabricCreativeModeTab");
+    import_fn!(CREATIVE_MODE_TAB, creative_mode_tab, "net.minecraft.world.item", "CreativeModeTab");
 }
 
 mod special_imports {
@@ -78,6 +80,7 @@ mod special_imports {
     // Thats a question for another day. Its functional now.
     import_fn!(mod_blocks, "ModBlocks");
     import_fn!(mod_items, "ModItems");
+    import_fn!(mod_creative_tabs, "ModCreativeTabs");
 
     /// Creates an import for the main mod class (e.g. `import testmod.TestMod;`).
     pub fn mod_class(state: &ModState) -> Import {

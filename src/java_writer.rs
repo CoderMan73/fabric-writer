@@ -9,8 +9,8 @@ use crate::state::{Entity, ItemKind, ModState};
 use crate::tokengen::{
     BuildFn, build_compostable_provider, build_datagen_entrypoint, build_fuel_provider,
     build_item_class, build_lang_provider, build_main_mod_class, build_mod_block_ids,
-    build_mod_block_item_ids, build_mod_blocks, build_mod_item_ids, build_mod_items,
-    build_model_provider, build_recipe_provider, to_upper,
+    build_mod_block_item_ids, build_mod_blocks, build_mod_creative_tabs, build_mod_item_ids,
+    build_mod_items, build_model_provider, build_recipe_provider, to_upper,
 };
 
 const PLACEHOLDER_ITEM: &[u8] = include_bytes!("../assets/placeholder_item.png");
@@ -56,6 +56,9 @@ pub struct DirtyFlags {
 
     /// `<ModName>CompostableProvider.java`
     pub compostable_provider: bool,
+
+    /// ModCreativeTabs.java
+    pub creative_tabs: bool,
 }
 
 impl DirtyFlags {
@@ -74,6 +77,7 @@ impl DirtyFlags {
             recipe_provider: true,
             fuel_provider: true,
             compostable_provider: true,
+            creative_tabs: true,
         }
     }
 
@@ -89,6 +93,7 @@ impl DirtyFlags {
                 datagen_entrypoint: true,
                 fuel_provider: true,
                 compostable_provider: true,
+                creative_tabs: true,
                 ..Default::default()
             },
             Entity::Block(_) => Self {
@@ -99,11 +104,19 @@ impl DirtyFlags {
                 lang_provider: true,
                 model_provider: true,
                 datagen_entrypoint: true,
+                creative_tabs: true,
                 ..Default::default()
             },
             Entity::Recipe(_) => Self {
                 recipe_provider: true,
                 datagen_entrypoint: true,
+                ..Default::default()
+            },
+            Entity::CreativeTab(_) => Self {
+                creative_tabs: true,
+                mod_items: true,
+                mod_blocks: true,
+                mod_class: true,
                 ..Default::default()
             },
         }
@@ -123,6 +136,7 @@ impl DirtyFlags {
             "recipe_provider" => self.recipe_provider,
             "fuel_provider" => self.fuel_provider,
             "compostable_provider" => self.compostable_provider,
+            "creative_tabs" => self.creative_tabs,
             _ => false,
         }
     }
@@ -252,6 +266,14 @@ fn file_specs() -> &'static [(&'static str, FileSpec)] {
                 should_exist: blocks_exist,
             },
         ),
+        (
+            "ModCreativeTabs.java",
+            FileSpec {
+                field: "creative_tabs",
+                build: build_mod_creative_tabs,
+                should_exist: |state| !state.creative_tabs.is_empty(),
+            },
+        ),
     ]
 }
 
@@ -365,6 +387,7 @@ fn resolve_path(
         "ModBlocks.java" => java_root.join(name),
         "ModBlockIds.java" => java_root.join(name),
         "ModBlockItemIds.java" => java_root.join(name),
+        "ModCreativeTabs.java" => java_root.join(name),
         _ => unreachable!("unknown file spec name: {}", name),
     }
 }
