@@ -1,2 +1,2 @@
-createSrcSidebar('[["fabric_writer",["",[["commands",[],["block.rs","creative_tab.rs","init.rs","item.rs","mod.rs","recipe.rs","regen.rs","run.rs","save_load.rs","status.rs"]]],["imports.rs","java_writer.rs","lib.rs","state.rs","tokengen.rs"]]]]');
-//{"start":19,"fragment_lengths":[225]}
+createSrcSidebar('[["fabric_writer",["",[["commands",[],["block.rs","creative_tab.rs","init.rs","item.rs","mod.rs","recipe.rs","regen.rs","run.rs","save_load.rs","status.rs","test_project.rs"]]],["imports.rs","java_writer.rs","lib.rs","state.rs","tokengen.rs"]]]]');
+//{"start":19,"fragment_lengths":[243]}
