@@ -16,3 +16,5 @@ pub mod run;
 pub mod save_load;
 /// Status reporting for the current mod project.
 pub mod status;
+/// Generate a complete test project.
+pub mod test_project;
