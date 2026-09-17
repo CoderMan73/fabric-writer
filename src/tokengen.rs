@@ -178,9 +178,9 @@ pub(crate) fn build_mod_creative_tabs(state: &ModState) -> Tokens {
 
         let icon_item = if !state.items.is_empty() {
             let first_item = to_upper(&state.items[0].id);
-            quote! { new ItemStack($(mod_items(state)).$(first_item)) }
+            quote! { new $(item_stack())($(mod_items(state)).$(first_item)) }
         } else {
-            quote! { new ItemStack($(items()).DIAMOND) }
+            quote! { new $(item_stack())($(items()).DIAMOND) }
         };
 
         let mut display_items = quote! {};
@@ -638,13 +638,31 @@ fn item_properties(item: &Item, use_custom_class: bool) -> Tokens {
                 }
             }
             ItemKind::SpawnEgg => {
-                if let Some(entity_type) = &item.entity_type {
-                    quote_in! { out => .spawnEgg($(entity_type)) };
+                if let Some(entity_type_str) = &item.entity_type {
+                    let vanilla_prefix = "minecraft:";
+                    let entity_const = if entity_type_str.starts_with(vanilla_prefix) {
+                        entity_type_str[vanilla_prefix.len()..].to_uppercase().replace('-', "_")
+                    } else {
+                        entity_type_str.to_uppercase().replace('-', "_")
+                    };
+                    quote_in! { out => .spawnEgg($(entity_types()).$(entity_const)) };
                 }
             }
             ItemKind::Fuel | ItemKind::Compostable => {}
             ItemKind::Basic => {}
-            ItemKind::Armor => {}
+            ItemKind::Armor => {
+                if let Some(mat) = &item.armor_material {
+                    let material_const = mat.to_uppercase().replace('-', "_");
+                    let slot = match item.armor_slot.as_deref() {
+                        Some("helmet") => "HELMET",
+                        Some("chestplate") => "CHESTPLATE",
+                        Some("leggings") => "LEGGINGS",
+                        Some("boots") => "BOOTS",
+                        _ => "HELMET",
+                    };
+                    quote_in! { out => .humanoidArmor($(armor_materials()).$(material_const), $(armor_type()).$(slot)) };
+                }
+            }
             ItemKind::Shield => {}
             ItemKind::Potion => {
                 if !item.effects.is_empty() {
@@ -660,7 +678,7 @@ fn item_properties(item: &Item, use_custom_class: bool) -> Tokens {
                         let dur = effect.duration;
                         let amp = effect.amplifier;
                         quote_in! { component_args =>
-                            .component(DataComponents.POTION_CONTENTS, new PotionContents(List.of(new MobEffectInstance(MobEffects.$(effect_const), $(dur), $(amp), 1.0f))))
+                            .component($(data_components()).POTION_CONTENTS, new $(potion_contents())($(list()).of(new $(mob_effect_instance())($(mob_effects()).$(effect_const), $(dur), $(amp), 1.0f))))
                         }
                     }
                     quote_in! { out => $component_args }
@@ -692,19 +710,7 @@ fn item_factory(item_def: &Item, use_custom_class: bool) -> Tokens {
                 }
             }
             ItemKind::Armor => {
-                if let Some(mat) = &item_def.armor_material {
-                    let material_const = mat.to_uppercase().replace('-', "_");
-                    let slot = match item_def.armor_slot.as_deref() {
-                        Some("helmet") => "HELMET",
-                        Some("chestplate") => "CHESTPLATE",
-                        Some("leggings") => "LEGGINGS",
-                        Some("boots") => "BOOTS",
-                        _ => "HELMET",
-                    };
-                    quote! { settings -> new $(class_name)($(armor_material()).$(material_const), $(armor_item()).Type.$(slot), settings) }
-                } else {
-                    quote! { $(item())::new }
-                }
+                quote! { $(class_name)::new }
             }
             _ => quote! { $(class_name)::new },
         }
@@ -732,19 +738,7 @@ fn item_factory(item_def: &Item, use_custom_class: bool) -> Tokens {
                 }
             }
             ItemKind::Armor => {
-                if let Some(mat) = &item_def.armor_material {
-                    let material_const = mat.to_uppercase().replace('-', "_");
-                    let slot = match item_def.armor_slot.as_deref() {
-                        Some("helmet") => "HELMET",
-                        Some("chestplate") => "CHESTPLATE",
-                        Some("leggings") => "LEGGINGS",
-                        Some("boots") => "BOOTS",
-                        _ => "HELMET",
-                    };
-                    quote! { settings -> new $(armor_item())($(armor_material()).$(material_const), $(armor_item()).Type.$(slot), settings) }
-                } else {
-                    quote! { $(item())::new }
-                }
+                quote! { $(item())::new }
             }
             ItemKind::Shield => {
                 quote! { $(shield_item())::new }
@@ -793,7 +787,7 @@ pub(crate) fn build_item_class(item_def: &Item, state: &ModState) -> Tokens {
                         $(item_stack()) stack,
                         $(item()).TooltipContext context,
                         $(tooltip_display()) display,
-                        $(function())<$(component())> textConsumer,
+                        $(consumer())<$(component())> textConsumer,
                         $(tooltip_flag()) type
                     ) {
                         $body
@@ -803,9 +797,9 @@ pub(crate) fn build_item_class(item_def: &Item, state: &ModState) -> Tokens {
         }
         ItemKind::Armor => {
             quote! {
-                public class $(class_name) extends $(armor_item()) {
-                    public $(class_name)($(armor_material()) material, $(armor_item()).Type type, $(item()).Properties properties) {
-                        super(material, type, properties);
+                public class $(class_name) extends $(item()) {
+                    public $(class_name)($(item()).Properties properties) {
+                        super(properties);
                     }
 
                     @Override
@@ -813,7 +807,7 @@ pub(crate) fn build_item_class(item_def: &Item, state: &ModState) -> Tokens {
                         $(item_stack()) stack,
                         $(item()).TooltipContext context,
                         $(tooltip_display()) display,
-                        $(function())<$(component())> textConsumer,
+                        $(consumer())<$(component())> textConsumer,
                         $(tooltip_flag()) type
                     ) {
                         $body
@@ -833,7 +827,7 @@ pub(crate) fn build_item_class(item_def: &Item, state: &ModState) -> Tokens {
                         $(item_stack()) stack,
                         $(item()).TooltipContext context,
                         $(tooltip_display()) display,
-                        $(function())<$(component())> textConsumer,
+                        $(consumer())<$(component())> textConsumer,
                         $(tooltip_flag()) type
                     ) {
                         $body
@@ -853,7 +847,7 @@ pub(crate) fn build_item_class(item_def: &Item, state: &ModState) -> Tokens {
                         $(item_stack()) stack,
                         $(item()).TooltipContext context,
                         $(tooltip_display()) display,
-                        $(function())<$(component())> textConsumer,
+                        $(consumer())<$(component())> textConsumer,
                         $(tooltip_flag()) type
                     ) {
                         $body
