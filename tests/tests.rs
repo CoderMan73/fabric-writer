@@ -9,6 +9,7 @@ use fabric_writer::commands::block::BlockAddArgs;
 use fabric_writer::commands::item::{ItemAddArgs, add as item_add};
 use fabric_writer::commands::recipe::{RecipeAddArgs, RecipeRemoveArgs, add as recipe_add, remove};
 use fabric_writer::commands::save_load;
+use fabric_writer::commands::test_project;
 use serial_test::serial;
 use std::env;
 use std::fs::{read, read_to_string};
@@ -297,6 +298,29 @@ fn datagen_succeeds_with_mixed_vanilla_and_modded_content() -> Result<()> {
         recipe_files.len() >= 3,
         "Expected at least 3 recipe JSON files, found {}",
         recipe_files.len()
+    );
+
+    Ok(())
+}
+
+#[test]
+#[ignore]
+#[serial]
+fn test_project_generates_valid_java_and_datagen() -> Result<()> {
+    let env = TestEnv::new()?;
+    let _guard = DirGuard::enter(&env.project_dir);
+
+    // Add the full test project
+    test_project::run()?;
+
+    // Run datagen — this will fail if the generated Java has errors
+    fabric_writer::commands::run::datagen()?;
+
+    // Verify datagen output exists
+    let datagen_output = env.project_dir.join("src/main/generated");
+    assert!(
+        datagen_output.exists(),
+        "Datagen output directory was not created"
     );
 
     Ok(())

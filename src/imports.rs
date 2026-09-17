@@ -17,6 +17,7 @@ mod import_fns {
     import_fn!(RESOURCE_KEY, resource_key, "net.minecraft.resources", "ResourceKey");
     import_fn!(ITEM, item, "net.minecraft.world.item", "Item");
     import_fn!(FUNCTION, function, "java.util.function", "Function");
+    import_fn!(CONSUMER, consumer, "java.util.function", "Consumer");
     import_fn!(REGISTRY, registry, "net.minecraft.core", "Registry");
     import_fn!(BUILT_IN_REGISTRIES, built_in_registries, "net.minecraft.core.registries", "BuiltInRegistries");
     import_fn!(MOD_INITIALIZER, mod_initializer, "net.fabricmc.api", "ModInitializer");
@@ -56,9 +57,15 @@ mod import_fns {
     import_fn!(AXE_ITEM, axe_item, "net.minecraft.world.item", "AxeItem");
     import_fn!(SHOVEL_ITEM, shovel_item, "net.minecraft.world.item", "ShovelItem");
     import_fn!(HOE_ITEM, hoe_item, "net.minecraft.world.item", "HoeItem");
-    import_fn!(ARMOR_ITEM, armor_item, "net.minecraft.world.item", "ArmorItem");
-    import_fn!(ARMOR_MATERIAL, armor_material, "net.minecraft.world.item", "ArmorMaterial");
+    import_fn!(ARMOR_MATERIALS, armor_materials, "net.minecraft.world.item.equipment", "ArmorMaterials");
+    import_fn!(ARMOR_TYPE, armor_type, "net.minecraft.world.item.equipment", "ArmorType");
     import_fn!(SHIELD_ITEM, shield_item, "net.minecraft.world.item", "ShieldItem");
+    import_fn!(ENTITY_TYPES, entity_types, "net.minecraft.world.entity", "EntityTypes");
+    import_fn!(DATA_COMPONENTS, data_components, "net.minecraft.core.component", "DataComponents");
+    import_fn!(POTION_CONTENTS, potion_contents, "net.minecraft.world.item.alchemy", "PotionContents");
+    import_fn!(MOB_EFFECT_INSTANCE, mob_effect_instance, "net.minecraft.world.effect", "MobEffectInstance");
+    import_fn!(MOB_EFFECTS, mob_effects, "net.minecraft.world.effect", "MobEffects");
+    import_fn!(LIST, list, "java.util", "List");
     import_fn!(FABRIC_EQUIPMENT_MODEL_PROVIDER, fabric_equipment_model_provider, "net.fabricmc.fabric.api.client.datagen.v1.provider", "FabricEquipmentModelProvider");
     import_fn!(EQUIPMENT_MODEL_GENERATOR, equipment_model_generator, "net.minecraft.client.data.models", "EquipmentModelGenerator");
     import_fn!(FUEL_PROVIDER, fuel_provider, "net.fabricmc.fabric.api.datagen.v1.provider", "FabricFuelProvider");
