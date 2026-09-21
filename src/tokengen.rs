@@ -1,7 +1,9 @@
 use crate::imports::*;
 use crate::state::{Block, Item, ItemKind, ModState, Recipe};
 use genco::lang::java::Tokens;
+use genco::lang::java::import;
 use genco::prelude::*;
+use genco::tokens::Register;
 use heck::ToTitleCase;
 
 pub(crate) type BuildFn = fn(&ModState) -> Tokens;
@@ -276,6 +278,22 @@ pub(crate) fn build_main_mod_class(state: &ModState) -> Tokens {
                 $(if !&state.items.is_empty() => $(mod_items(state)).initialize();)
                 $(if !&state.blocks.is_empty() => $(mod_blocks(state)).initialize();)
                 $(if !state.creative_tabs.is_empty() => $(mod_creative_tabs(state)).initialize();)
+
+                $("// Fuel and compostable events")
+                $(for i in &state.items =>
+                    $(if i.kind == ItemKind::Fuel =>
+                        $(if let Some(burn_time) = i.burn_time =>
+                            $(fuel_value_events()).BUILD.register((builder, context) -> { builder.add($(mod_items(state)).$(to_upper(&i.id)), $(burn_time)); });$['\r']
+                        )
+                    )
+                )
+                $(for i in &state.items =>
+                    $(if i.kind == ItemKind::Compostable =>
+                        $(if let Some(chance) = i.compost_chance =>
+                            $(compostable_registry()).INSTANCE.add($(mod_items(state)).$(to_upper(&i.id)), $(format!("{}f", chance)));$['\r']
+                        )
+                    )
+                )
             }
 
             public static $(identifier()) id(String path) {
@@ -314,6 +332,9 @@ pub(crate) fn build_lang_provider(state: &ModState) -> Tokens {
                         )
                     )
                 )
+                $(for tab in &state.creative_tabs =>
+                    translationBuilder.add($(quoted(&format!("creativeTab.{}.{}", state.mod_id, tab.id))), $(quoted(&display_name(&tab.id))));$['\r']
+                )
             }
         }
     }
@@ -332,18 +353,6 @@ pub(crate) fn build_datagen_entrypoint(state: &ModState) -> Tokens {
                 )
                 $(if !&state.recipes.is_empty() =>
                     pack.addProvider($(format!("{}RecipeProvider", state.mod_name))::new);
-                )
-                $(if state.items.iter().any(|i| i.kind == ItemKind::Fuel) =>
-                    pack.addProvider($(format!("{}FuelProvider", state.mod_name))::new);
-                )
-                $(if state.items.iter().any(|i| i.kind == ItemKind::Compostable) =>
-                    pack.addProvider($(format!("{}CompostableProvider", state.mod_name))::new);
-                )
-                $(if state.items.iter().any(|i| i.kind == ItemKind::Armor) =>
-                    pack.addProvider($(format!("{}ArmorProvider", state.mod_name))::new);
-                )
-                $(if state.items.iter().any(|i| i.kind == ItemKind::Shield) =>
-                    pack.addProvider($(format!("{}ShieldProvider", state.mod_name))::new);
                 )
             }
         }
@@ -367,15 +376,7 @@ pub(crate) fn build_model_provider(state: &ModState) -> Tokens {
             @Override
             public void generateItemModels($(item_model_generators()) itemModelGenerator) {
                 $(for i in &state.items =>
-                    $(if i.kind == ItemKind::Armor =>
-                        itemModelGenerator.generateArmorModel($(&mod_items(state)).$(to_upper(&i.id)));$['\r']
-                    )
-                    $(if i.kind == ItemKind::Shield =>
-                        itemModelGenerator.generateShieldModel($(&mod_items(state)).$(to_upper(&i.id)));$['\r']
-                    )
-                    $(if !(i.kind == ItemKind::Armor || i.kind == ItemKind::Shield) =>
-                        itemModelGenerator.generateFlatItem($(&mod_items(state)).$(to_upper(&i.id)), $(model_templates()).FLAT_ITEM);$['\r']
-                    )
+                    itemModelGenerator.generateFlatItem($(&mod_items(state)).$(to_upper(&i.id)), $(model_templates()).FLAT_ITEM);$['\r']
                 )
             }
 
@@ -409,108 +410,6 @@ pub(crate) fn build_recipe_provider(state: &ModState) -> Tokens {
             @Override
             public String getName() {
                 return $(quoted(&format!("{}RecipeProvider", state.mod_name)));
-            }
-        }
-    }
-}
-
-pub(crate) fn build_fuel_provider(state: &ModState) -> Tokens {
-    let has_fuel = state
-        .items
-        .iter()
-        .any(|i| i.kind == ItemKind::Fuel && i.burn_time.is_some());
-    if !has_fuel {
-        return quote! {};
-    }
-    quote! {
-        public class $(format!("{}FuelProvider", state.mod_name)) extends $(fuel_provider()) {
-            public $(format!("{}FuelProvider", state.mod_name))($(fabric_pack_output()) output) {
-                super(output);
-            }
-
-            @Override
-            public void generate() {
-                $(for i in &state.items =>
-                    $(if i.kind == ItemKind::Fuel =>
-                        $(if let Some(burn_time) = i.burn_time =>
-                            $(fuel_registry()).register($(mod_items(state)).$(to_upper(&i.id)), $(burn_time));$['\r']
-                        )
-                    )
-                )
-            }
-        }
-    }
-}
-
-pub(crate) fn build_compostable_provider(state: &ModState) -> Tokens {
-    let has_compostable = state
-        .items
-        .iter()
-        .any(|i| i.kind == ItemKind::Compostable && i.compost_chance.is_some());
-    if !has_compostable {
-        return quote! {};
-    }
-    quote! {
-        public class $(format!("{}CompostableProvider", state.mod_name)) extends $(compostable_provider()) {
-            public $(format!("{}CompostableProvider", state.mod_name))($(fabric_pack_output()) output) {
-                super(output);
-            }
-
-            @Override
-            public void generate() {
-                $(for i in &state.items =>
-                    $(if i.kind == ItemKind::Compostable =>
-                        $(if let Some(chance) = i.compost_chance =>
-                            $(compostable_registry()).register($(mod_items(state)).$(to_upper(&i.id)), $(format!("{}f", chance)));$['\r']
-                        )
-                    )
-                )
-            }
-        }
-    }
-}
-
-pub(crate) fn build_armor_provider(state: &ModState) -> Tokens {
-    let has_armor = state.items.iter().any(|i| i.kind == ItemKind::Armor);
-    if !has_armor {
-        return quote! {};
-    }
-    quote! {
-        public class $(format!("{}ArmorProvider", state.mod_name)) extends $(fabric_equipment_model_provider()) {
-            public $(format!("{}ArmorProvider", state.mod_name))($(fabric_pack_output()) output) {
-                super(output);
-            }
-
-            @Override
-            public void generateEquipmentModels($(equipment_model_generator()) generator) {
-                $(for i in &state.items =>
-                    $(if i.kind == ItemKind::Armor =>
-                        generator.generateArmor($(mod_items(state)).$(to_upper(&i.id)));$['\r']
-                    )
-                )
-            }
-        }
-    }
-}
-
-pub(crate) fn build_shield_provider(state: &ModState) -> Tokens {
-    let has_shield = state.items.iter().any(|i| i.kind == ItemKind::Shield);
-    if !has_shield {
-        return quote! {};
-    }
-    quote! {
-        public class $(format!("{}ShieldProvider", state.mod_name)) extends $(fabric_equipment_model_provider()) {
-            public $(format!("{}ShieldProvider", state.mod_name))($(fabric_pack_output()) output) {
-                super(output);
-            }
-
-            @Override
-            public void generateEquipmentModels($(equipment_model_generator()) generator) {
-                $(for i in &state.items =>
-                    $(if i.kind == ItemKind::Shield =>
-                        generator.generateShield($(mod_items(state)).$(to_upper(&i.id)));$['\r']
-                    )
-                )
             }
         }
     }
@@ -592,6 +491,28 @@ fn strip_namespace(id: &str) -> &str {
 fn item_properties(item: &Item, use_custom_class: bool) -> Tokens {
     let mut out: Tokens = quote! { new Item.Properties() };
 
+    if item.kind == ItemKind::Potion && !item.effects.is_empty() {
+        import("java.util", "Optional").register(&mut out);
+        import("java.util", "List").register(&mut out);
+        import("net.minecraft.world.item.alchemy", "PotionContents").register(&mut out);
+        import("net.minecraft.world.effect", "MobEffectInstance").register(&mut out);
+        import("net.minecraft.world.effect", "MobEffects").register(&mut out);
+        data_components().register(&mut out);
+        for effect in &item.effects {
+            let effect_const = effect
+                .effect_type
+                .split(':')
+                .next_back()
+                .unwrap_or(&effect.effect_type)
+                .to_uppercase()
+                .replace('-', "_");
+            let dur = effect.duration;
+            let amp = effect.amplifier;
+            quote_in! { out => .component($(data_components()).POTION_CONTENTS, new $(potion_contents())(Optional.empty(), Optional.empty(), $(list()).of(new $(mob_effect_instance())($(mob_effects()).$(effect_const), $(dur), $(amp))), Optional.empty())) };
+        }
+        quote_in! { out => .component($(data_components()).CONSUMABLE, $(consumables()).DEFAULT_DRINK) };
+    }
+
     if !use_custom_class {
         match item.kind {
             ItemKind::Tool => {
@@ -621,30 +542,15 @@ fn item_properties(item: &Item, use_custom_class: bool) -> Tokens {
                     }
                 }
             }
-            ItemKind::Food => {
-                if item.nutrition.is_some() || item.saturation.is_some() {
-                    let mut builder = quote! { new FoodProperties.Builder() };
-                    if let Some(nutrition) = item.nutrition {
-                        quote_in! { builder => .nutrition($(nutrition)) };
-                    }
-                    if let Some(saturation) = item.saturation {
-                        let sat_str = format!("{}f", saturation);
-                        quote_in! { builder => .saturationModifier($(sat_str)) };
-                    }
-                    if item.always_edible {
-                        quote_in! { builder => .alwaysEdible() };
-                    }
-                    quote_in! { out => .food($(builder).build()) };
-                }
-            }
             ItemKind::SpawnEgg => {
                 if let Some(entity_type_str) = &item.entity_type {
                     let vanilla_prefix = "minecraft:";
-                    let entity_const = if entity_type_str.starts_with(vanilla_prefix) {
-                        entity_type_str[vanilla_prefix.len()..].to_uppercase().replace('-', "_")
-                    } else {
-                        entity_type_str.to_uppercase().replace('-', "_")
-                    };
+                    let entity_const =
+                        if let Some(stripped) = entity_type_str.strip_prefix(vanilla_prefix) {
+                            stripped.to_uppercase().replace('-', "_")
+                        } else {
+                            entity_type_str.to_uppercase().replace('-', "_")
+                        };
                     quote_in! { out => .spawnEgg($(entity_types()).$(entity_const)) };
                 }
             }
@@ -663,27 +569,76 @@ fn item_properties(item: &Item, use_custom_class: bool) -> Tokens {
                     quote_in! { out => .humanoidArmor($(armor_materials()).$(material_const), $(armor_type()).$(slot)) };
                 }
             }
-            ItemKind::Shield => {}
-            ItemKind::Potion => {
-                if !item.effects.is_empty() {
-                    let mut component_args = quote! {};
-                    for effect in &item.effects {
-                        let effect_const = effect
-                            .effect_type
-                            .split(':')
-                            .next_back()
-                            .unwrap_or(&effect.effect_type)
-                            .to_uppercase()
-                            .replace('-', "_");
-                        let dur = effect.duration;
-                        let amp = effect.amplifier;
-                        quote_in! { component_args =>
-                            .component($(data_components()).POTION_CONTENTS, new $(potion_contents())($(list()).of(new $(mob_effect_instance())($(mob_effects()).$(effect_const), $(dur), $(amp), 1.0f))))
-                        }
-                    }
-                    quote_in! { out => $component_args }
-                }
+            ItemKind::Shield => {
+                import("java.util", "List").register(&mut out);
+                import("java.util", "Optional").register(&mut out);
+                import("net.minecraft.world.item.component", "BlocksAttacks").register(&mut out);
+                data_components().register(&mut out);
+                quote_in! { out => .component($(data_components()).BLOCKS_ATTACKS, new BlocksAttacks(0.25F, 1.0F, List.of(), new BlocksAttacks.ItemDamageFunction(3.0F, 1.0F, 1.0F), Optional.empty(), Optional.empty(), Optional.empty())) };
             }
+            _ => {}
+        }
+    }
+
+    if item.kind == ItemKind::Food && (item.nutrition.is_some() || item.saturation.is_some()) {
+        food_properties().register(&mut out);
+        let mut builder = quote! { new FoodProperties.Builder() };
+        if let Some(nutrition) = item.nutrition {
+            quote_in! { builder => .nutrition($(nutrition)) };
+        }
+        if let Some(saturation) = item.saturation {
+            let sat_str = format!("{}f", saturation);
+            quote_in! { builder => .saturationModifier($(sat_str)) };
+        }
+        if item.always_edible {
+            quote_in! { builder => .alwaysEdible() };
+        }
+        let food_props = builder;
+        if item.effects.is_empty() {
+            quote_in! { out => .food($(food_props).build()) };
+        } else {
+            import("net.minecraft.world.item.component", "Consumable").register(&mut out);
+            import(
+                "net.minecraft.world.item.consume_effects",
+                "ApplyStatusEffectsConsumeEffect",
+            )
+            .register(&mut out);
+            import("net.minecraft.world.effect", "MobEffectInstance").register(&mut out);
+            import("net.minecraft.world.effect", "MobEffects").register(&mut out);
+            import("java.util", "List").register(&mut out);
+            import("net.minecraft.world.item", "ItemUseAnimation").register(&mut out);
+            import("net.minecraft.sounds", "SoundEvents").register(&mut out);
+            let mut consumable_builder = quote! { Consumable.builder() };
+            quote_in! { consumable_builder => .consumeSeconds(1.6F) };
+            quote_in! { consumable_builder => .animation(ItemUseAnimation.EAT) };
+            quote_in! { consumable_builder => .sound(SoundEvents.GENERIC_EAT) };
+            quote_in! { consumable_builder => .hasConsumeParticles(true) };
+            if item.effects.len() == 1 {
+                let effect = &item.effects[0];
+                let effect_const = effect
+                    .effect_type
+                    .split(':')
+                    .next_back()
+                    .unwrap_or(&effect.effect_type)
+                    .to_uppercase()
+                    .replace('-', "_");
+                quote_in! { consumable_builder => .onConsume(new ApplyStatusEffectsConsumeEffect(new $(mob_effect_instance())($(mob_effects()).$(effect_const), $(effect.duration), $(effect.amplifier)))) };
+            } else {
+                let mut effects_list = quote! { List.of() };
+                for effect in &item.effects {
+                    let effect_const = effect
+                        .effect_type
+                        .split(':')
+                        .next_back()
+                        .unwrap_or(&effect.effect_type)
+                        .to_uppercase()
+                        .replace('-', "_");
+                    quote_in! { effects_list => $(mob_effect_instance())($(mob_effects()).$(effect_const), $(effect.duration), $(effect.amplifier)) };
+                }
+                quote_in! { consumable_builder => .onConsume(new ApplyStatusEffectsConsumeEffect($(effects_list))) };
+            }
+            quote_in! { consumable_builder => .build() };
+            quote_in! { out => .food($(food_props).build(), $(consumable_builder)) };
         }
     }
 
