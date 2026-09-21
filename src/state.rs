@@ -19,13 +19,13 @@ impl ModState {
             Entity::CreativeTab(_) => self.creative_tabs.iter().any(|t| t.id == *id),
         }
     }
-
     /// Appends an entity to the appropriate collection, erroring if the id
     /// already exists.
     pub fn add(&mut self, entity: Entity) -> Result<()> {
         if self.has_id(&entity) {
             bail!("{} '{}' already exists.", entity.kind(), entity.id());
         }
+
         match entity {
             Entity::Item(item) => self.items.push(item),
             Entity::Block(block) => self.blocks.push(block),
@@ -33,6 +33,14 @@ impl ModState {
             Entity::CreativeTab(tab) => self.creative_tabs.push(tab),
         }
         Ok(())
+    }
+
+    /// Tries to append an entity. Returns `Ok(false)` if it already exists.
+    pub fn try_add(&mut self, entity: Entity) -> Result<bool> {
+        if self.has_id(&entity) {
+            return Ok(false);
+        }
+        self.add(entity).map(|()| true)
     }
 
     /// Removes an entity by id, erroring if it's not present.
@@ -240,6 +248,7 @@ pub struct ModState {
     pub minecraft_version: String,
 
     /// Advanced options passed to `fabric init`.
+    #[serde(default)]
     pub advanced_options: Vec<String>,
 
     /// Path to the JDK used by Gradle.

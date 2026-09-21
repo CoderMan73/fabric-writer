@@ -9,7 +9,7 @@ use fabric_writer::commands::block::BlockAddArgs;
 use fabric_writer::commands::item::{ItemAddArgs, add as item_add};
 use fabric_writer::commands::recipe::{RecipeAddArgs, RecipeRemoveArgs, add as recipe_add, remove};
 use fabric_writer::commands::save_load;
-use fabric_writer::commands::test_project;
+use fabric_writer::commands::test_project::{self, TestProjectArgs};
 use serial_test::serial;
 use std::env;
 use std::fs::{read, read_to_string};
@@ -311,7 +311,7 @@ fn test_project_generates_valid_java_and_datagen() -> Result<()> {
     let _guard = DirGuard::enter(&env.project_dir);
 
     // Add the full test project
-    test_project::run()?;
+    test_project::run(TestProjectArgs { reset: false })?;
 
     // Run datagen — this will fail if the generated Java has errors
     fabric_writer::commands::run::datagen()?;
@@ -440,40 +440,19 @@ fn add_armor_item_generates_class_and_provider() -> Result<()> {
     })?;
 
     let java_root = env.project_dir.join("src/main/java").join("testmod");
-    let item_class = java_root.join("DIAMOND_HELMETItem.java");
     let mod_items = java_root.join("ModItems.java");
-    let armor_provider = env
-        .project_dir
-        .join("src/client/java")
-        .join("testmod")
-        .join("client")
-        .join("TestModArmorProvider.java");
 
-    assert!(
-        item_class.exists(),
-        "Expected DIAMOND_HELMETItem.java to exist"
-    );
     assert!(mod_items.exists(), "Expected ModItems.java to exist");
-    assert!(
-        armor_provider.exists(),
-        "Expected TestModArmorProvider.java to exist"
-    );
 
-    let item_src = read_to_string(&item_class)?;
     let mod_items_src = read_to_string(&mod_items)?;
-    let provider_src = read_to_string(&armor_provider)?;
 
     assert!(
-        item_src.contains("extends ArmorItem"),
-        "Expected custom armor class to extend ArmorItem"
+        mod_items_src.contains("DIAMOND_HELMET"),
+        "Expected ModItems to register DIAMOND_HELMET"
     );
     assert!(
-        mod_items_src.contains("DIAMOND_HELMETItem::new"),
-        "Expected ModItems to register DIAMOND_HELMET using DIAMOND_HELMETItem"
-    );
-    assert!(
-        provider_src.contains("generateArmor"),
-        "Expected ArmorProvider to call generateArmor"
+        mod_items_src.contains(".humanoidArmor("),
+        "Expected armor item properties to use .humanoidArmor(...)"
     );
 
     Ok(())
@@ -508,40 +487,19 @@ fn add_shield_item_generates_class_and_provider() -> Result<()> {
     })?;
 
     let java_root = env.project_dir.join("src/main/java").join("testmod");
-    let item_class = java_root.join("CUSTOM_SHIELDItem.java");
     let mod_items = java_root.join("ModItems.java");
-    let shield_provider = env
-        .project_dir
-        .join("src/client/java")
-        .join("testmod")
-        .join("client")
-        .join("TestModShieldProvider.java");
 
-    assert!(
-        item_class.exists(),
-        "Expected CUSTOM_SHIELDItem.java to exist"
-    );
     assert!(mod_items.exists(), "Expected ModItems.java to exist");
-    assert!(
-        shield_provider.exists(),
-        "Expected TestModShieldProvider.java to exist"
-    );
 
-    let item_src = read_to_string(&item_class)?;
     let mod_items_src = read_to_string(&mod_items)?;
-    let provider_src = read_to_string(&shield_provider)?;
 
     assert!(
-        item_src.contains("extends ShieldItem"),
-        "Expected custom shield class to extend ShieldItem"
+        mod_items_src.contains("CUSTOM_SHIELD"),
+        "Expected ModItems to register CUSTOM_SHIELD"
     );
     assert!(
-        mod_items_src.contains("CUSTOM_SHIELDItem::new"),
-        "Expected ModItems to register CUSTOM_SHIELD using CUSTOM_SHIELDItem"
-    );
-    assert!(
-        provider_src.contains("generateShield"),
-        "Expected ShieldProvider to call generateShield"
+        mod_items_src.contains("ShieldItem"),
+        "Expected shield item registration to use ShieldItem"
     );
 
     Ok(())
@@ -702,6 +660,11 @@ fn load_recreates_state_and_regenerates() -> Result<()> {
     };
     save_load::run(save_args)?;
 
+    let java_root = env.project_dir.join("src/main/java").join("testmod");
+    let mod_items = java_root.join("ModItems.java");
+
+    assert!(mod_items.exists(), "ModItems.java should exist after add");
+
     // Remove all items and blocks
     fabric_writer::commands::item::remove(fabric_writer::commands::item::ItemRemoveArgs {
         id: "copper_ingot".into(),
@@ -712,16 +675,9 @@ fn load_recreates_state_and_regenerates() -> Result<()> {
         verbose: false,
     })?;
 
-    let java_root = env.project_dir.join("src/main/java").join("testmod");
-    let item_class = java_root.join("COPPER_INGOTItem.java");
-    let block_class = java_root.join("COPPER_OREBlock.java");
     assert!(
-        !item_class.exists(),
-        "Item class should be pruned after remove"
-    );
-    assert!(
-        !block_class.exists(),
-        "Block class should be pruned after remove"
+        !mod_items.exists(),
+        "ModItems.java should be pruned after remove"
     );
 
     // Load state back
@@ -734,12 +690,13 @@ fn load_recreates_state_and_regenerates() -> Result<()> {
     save_load::run(load_args)?;
 
     assert!(
-        item_class.exists(),
-        "Item class should be regenerated after load"
+        mod_items.exists(),
+        "ModItems.java should be regenerated after load"
     );
+    let mod_items_src = read_to_string(&mod_items)?;
     assert!(
-        block_class.exists(),
-        "Block class should be regenerated after load"
+        mod_items_src.contains("COPPER_INGOT"),
+        "ModItems should contain COPPER_INGOT registration after load"
     );
 
     Ok(())
@@ -805,7 +762,7 @@ items: []
 blocks: []
 recipes:
   - id: bad_recipe
-    kind: crafting_shaped
+    type: crafting_shaped
     pattern:
       - "X"
     ingredients:

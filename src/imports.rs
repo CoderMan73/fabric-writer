@@ -62,16 +62,14 @@ mod import_fns {
     import_fn!(SHIELD_ITEM, shield_item, "net.minecraft.world.item", "ShieldItem");
     import_fn!(ENTITY_TYPES, entity_types, "net.minecraft.world.entity", "EntityTypes");
     import_fn!(DATA_COMPONENTS, data_components, "net.minecraft.core.component", "DataComponents");
+    import_fn!(FOOD_PROPERTIES, food_properties, "net.minecraft.world.food", "FoodProperties");
+    import_fn!(CONSUMABLES, consumables, "net.minecraft.world.item.component", "Consumables");
     import_fn!(POTION_CONTENTS, potion_contents, "net.minecraft.world.item.alchemy", "PotionContents");
     import_fn!(MOB_EFFECT_INSTANCE, mob_effect_instance, "net.minecraft.world.effect", "MobEffectInstance");
     import_fn!(MOB_EFFECTS, mob_effects, "net.minecraft.world.effect", "MobEffects");
     import_fn!(LIST, list, "java.util", "List");
-    import_fn!(FABRIC_EQUIPMENT_MODEL_PROVIDER, fabric_equipment_model_provider, "net.fabricmc.fabric.api.client.datagen.v1.provider", "FabricEquipmentModelProvider");
-    import_fn!(EQUIPMENT_MODEL_GENERATOR, equipment_model_generator, "net.minecraft.client.data.models", "EquipmentModelGenerator");
-    import_fn!(FUEL_PROVIDER, fuel_provider, "net.fabricmc.fabric.api.datagen.v1.provider", "FabricFuelProvider");
-    import_fn!(COMPOSTABLE_PROVIDER, compostable_provider, "net.fabricmc.fabric.api.datagen.v1.provider", "FabricCompostableProvider");
-    import_fn!(FUEL_REGISTRY, fuel_registry, "net.minecraft.world.item", "FuelRegistry");
-    import_fn!(COMPOSTABLE_REGISTRY, compostable_registry, "net.minecraft.world.item", "CompostableRegistry");
+    import_fn!(COMPOSTABLE_REGISTRY, compostable_registry, "net.fabricmc.fabric.api.registry", "CompostableRegistry");
+    import_fn!(FUEL_VALUE_EVENTS, fuel_value_events, "net.fabricmc.fabric.api.registry", "FuelValueEvents");
     import_fn!(FABRIC_CREATIVE_MODE_TAB, fabric_creative_mode_tab, "net.fabricmc.fabric.api.creativetab.v1", "FabricCreativeModeTab");
     import_fn!(CREATIVE_MODE_TAB, creative_mode_tab, "net.minecraft.world.item", "CreativeModeTab");
 }

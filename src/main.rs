@@ -16,7 +16,7 @@ use fabric_writer::commands::{
     run,
     save_load::{self, SaveLoadArgs},
     status::{self, StatusArgs},
-    test_project,
+    test_project::{self, TestProjectArgs},
 };
 
 fn main() -> anyhow::Result<()> {
@@ -50,7 +50,7 @@ fn main() -> anyhow::Result<()> {
         Commands::Status(args) => status::run(args),
         Commands::Regen(args) => regen::run(args),
         Commands::SaveLoad(args) => save_load::run(args),
-        Commands::TestProject => test_project::run(),
+        Commands::TestProject(args) => test_project::run(args),
     }
 }
 
@@ -102,7 +102,7 @@ enum Commands {
     SaveLoad(SaveLoadArgs),
 
     /// Generate a complete test project
-    TestProject,
+    TestProject(TestProjectArgs),
 }
 
 #[derive(Subcommand)]
