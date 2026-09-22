@@ -294,6 +294,99 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
         }
     }
 
+    // Blue Polished Basalt
+    {
+        let mut block = Block::base("blue_polished_basalt", tab);
+        block.model_kind = BlockModelKind::CubeBottomTop;
+        block.properties_from = Some("polished_basalt".into());
+        if state.try_add(Entity::Block(block))? {
+            println!("Added block: blue_polished_basalt");
+        }
+    }
+
+    // Blue Blackstone
+    {
+        let mut block = Block::base("blue_blackstone", tab);
+        block.model_kind = BlockModelKind::CubeBottomTop;
+        block.properties_from = Some("blackstone".into());
+        if state.try_add(Entity::Block(block))? {
+            println!("Added block: blue_blackstone");
+        }
+    }
+
+    // Blue Magma Block
+    {
+        let mut block = Block::base("blue_magma_block", tab);
+        block.properties_from = Some("magma_block".into());
+        if state.try_add(Entity::Block(block))? {
+            println!("Added block: blue_magma_block");
+        }
+    }
+
+    // Blue Glowstone
+    {
+        let mut block = Block::base("blue_glowstone", tab);
+        block.properties_from = Some("glowstone".into());
+        if state.try_add(Entity::Block(block))? {
+            println!("Added block: blue_glowstone");
+        }
+    }
+
+    // Blue Shroomlight
+    {
+        let mut block = Block::base("blue_shroomlight", tab);
+        block.properties_from = Some("shroomlight".into());
+        if state.try_add(Entity::Block(block))? {
+            println!("Added block: blue_shroomlight");
+        }
+    }
+
+    // Blue Nether Quartz Ore
+    {
+        let mut block = Block::base("blue_nether_quartz_ore", tab);
+        block.properties_from = Some("nether_quartz_ore".into());
+        if state.try_add(Entity::Block(block))? {
+            println!("Added block: blue_nether_quartz_ore");
+        }
+    }
+
+    // Blue Nether Gold Ore
+    {
+        let mut block = Block::base("blue_nether_gold_ore", tab);
+        block.properties_from = Some("nether_gold_ore".into());
+        if state.try_add(Entity::Block(block))? {
+            println!("Added block: blue_nether_gold_ore");
+        }
+    }
+
+    // Blue Ancient Debris
+    {
+        let mut block = Block::base("blue_ancient_debris", tab);
+        block.model_kind = BlockModelKind::CubeBottomTop;
+        block.properties_from = Some("ancient_debris".into());
+        if state.try_add(Entity::Block(block))? {
+            println!("Added block: blue_ancient_debris");
+        }
+    }
+
+    // Blue Gravel
+    {
+        let mut block = Block::base("blue_gravel", tab);
+        block.properties_from = Some("gravel".into());
+        if state.try_add(Entity::Block(block))? {
+            println!("Added block: blue_gravel");
+        }
+    }
+
+    // Blue Bedrock
+    {
+        let mut block = Block::base("blue_bedrock", tab);
+        block.properties_from = Some("bedrock".into());
+        if state.try_add(Entity::Block(block))? {
+            println!("Added block: blue_bedrock");
+        }
+    }
+
     state.save().context("Failed to save blue nether state")?;
     regenerate_all(state, dirty, false).context("Failed to regenerate Java sources")?;
 
@@ -305,6 +398,22 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
         ("blue_basalt_top", "basalt_top.png"),
         ("blue_basalt_bottom", "basalt_top.png"),
         ("blue_basalt_side", "basalt_side.png"),
+        ("blue_polished_basalt_top", "polished_basalt_top.png"),
+        ("blue_polished_basalt_bottom", "polished_basalt_top.png"),
+        ("blue_polished_basalt_side", "polished_basalt_side.png"),
+        ("blue_blackstone_top", "blackstone_top.png"),
+        ("blue_blackstone_bottom", "blackstone_top.png"),
+        ("blue_blackstone_side", "blackstone.png"),
+        ("blue_magma_block", "magma.png"),
+        ("blue_glowstone", "glowstone.png"),
+        ("blue_shroomlight", "shroomlight.png"),
+        ("blue_nether_quartz_ore", "nether_quartz_ore.png"),
+        ("blue_nether_gold_ore", "nether_gold_ore.png"),
+        ("blue_ancient_debris_top", "ancient_debris_top.png"),
+        ("blue_ancient_debris_bottom", "ancient_debris_top.png"),
+        ("blue_ancient_debris_side", "ancient_debris_side.png"),
+        ("blue_gravel", "gravel.png"),
+        ("blue_bedrock", "bedrock.png"),
     ];
     copy_block_textures(
         state,
@@ -313,6 +422,16 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
             "blue_soul_sand",
             "blue_soul_soil",
             "blue_basalt",
+            "blue_polished_basalt",
+            "blue_blackstone",
+            "blue_magma_block",
+            "blue_glowstone",
+            "blue_shroomlight",
+            "blue_nether_quartz_ore",
+            "blue_nether_gold_ore",
+            "blue_ancient_debris",
+            "blue_gravel",
+            "blue_bedrock",
         ],
         &texture_map,
     )?;
