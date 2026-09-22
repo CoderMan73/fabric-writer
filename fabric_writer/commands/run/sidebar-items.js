@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["client","datagen","server"]};
+window.SIDEBAR_ITEMS = {"fn":["client","client_with_datagen","datagen","server"]};
