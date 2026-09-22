@@ -311,7 +311,10 @@ fn test_project_generates_valid_java_and_datagen() -> Result<()> {
     let _guard = DirGuard::enter(&env.project_dir);
 
     // Add the full test project
-    test_project::run(TestProjectArgs { reset: false })?;
+    test_project::run(TestProjectArgs {
+        reset: false,
+        preset: None,
+    })?;
 
     // Run datagen — this will fail if the generated Java has errors
     fabric_writer::commands::run::datagen()?;
