@@ -3,6 +3,34 @@ use crate::state::{self, Block, CreativeTab, Entity, Item, ItemKind, PotionEffec
 use anyhow::{Context, Result};
 use clap::Parser;
 
+const TAB: &str = "testmod";
+
+fn kind_label(item: &Item) -> &'static str {
+    match item.kind {
+        ItemKind::Basic => "basic",
+        ItemKind::Tool => "tool",
+        ItemKind::Axe => "axe",
+        ItemKind::Shovel => "shovel",
+        ItemKind::Hoe => "hoe",
+        ItemKind::Food => "food",
+        ItemKind::SpawnEgg => "spawn_egg",
+        ItemKind::Fuel => "fuel",
+        ItemKind::Compostable => "compostable",
+        ItemKind::Armor => "armor",
+        ItemKind::Shield => "shield",
+        ItemKind::Potion => "potion",
+    }
+}
+
+fn try_add_item(state: &mut state::ModState, item: Item) -> Result<bool> {
+    let label = format!("{} ({})", item.id, kind_label(&item));
+    let added = state.try_add(Entity::Item(item))?;
+    if added {
+        println!("Added item: {}", label);
+    }
+    Ok(added)
+}
+
 /// Adds a complete set of example entities to the current project for testing.
 pub fn run(args: TestProjectArgs) -> Result<()> {
     let TestProjectArgs { reset } = args;
@@ -26,344 +54,130 @@ pub fn run(args: TestProjectArgs) -> Result<()> {
 
     // Creative tab
     {
-        let tab = CreativeTab {
-            id: "testmod".into(),
-        };
+        let tab = CreativeTab { id: TAB.into() };
         let entity = Entity::CreativeTab(tab);
         if state.try_add(entity)? {
-            println!("Added creative tab: testmod");
+            println!("Added creative tab: {}", TAB);
         }
     }
 
     // Basic item
-    {
-        let item = Item {
-            id: "testmod_ingot".into(),
-            kind: ItemKind::Basic,
-            material: None,
-            attack_damage: None,
-            attack_speed: None,
-            durability: None,
-            tooltip: vec![],
-            nutrition: None,
-            saturation: None,
-            always_edible: false,
-            entity_type: None,
-            burn_time: None,
-            compost_chance: None,
-            creative_tab: Some("testmod".into()),
-            armor_material: None,
-            armor_slot: None,
-            effects: vec![],
-        };
-        if state.try_add(Entity::Item(item))? {
-            println!("Added item: testmod_ingot (basic)");
-        }
-    }
+    try_add_item(&mut state, Item::base("testmod_ingot", TAB))?;
 
     // Tool item
     {
-        let item = Item {
-            id: "testmod_sword".into(),
-            kind: ItemKind::Tool,
-            material: Some("iron".into()),
-            attack_damage: Some(6.0),
-            attack_speed: Some(1.6),
-            durability: None,
-            tooltip: vec![],
-            nutrition: None,
-            saturation: None,
-            always_edible: false,
-            entity_type: None,
-            burn_time: None,
-            compost_chance: None,
-            creative_tab: Some("testmod".into()),
-            armor_material: None,
-            armor_slot: None,
-            effects: vec![],
-        };
-        if state.try_add(Entity::Item(item))? {
-            println!("Added item: testmod_sword (tool)");
-        }
+        let mut item = Item::base("testmod_sword", TAB);
+        item.kind = ItemKind::Tool;
+        item.material = Some("iron".into());
+        item.attack_damage = Some(6.0);
+        item.attack_speed = Some(1.6);
+        try_add_item(&mut state, item)?;
     }
 
     // Axe item
     {
-        let item = Item {
-            id: "testmod_axe".into(),
-            kind: ItemKind::Axe,
-            material: Some("iron".into()),
-            attack_damage: Some(7.0),
-            attack_speed: Some(1.0),
-            durability: None,
-            tooltip: vec![],
-            nutrition: None,
-            saturation: None,
-            always_edible: false,
-            entity_type: None,
-            burn_time: None,
-            compost_chance: None,
-            creative_tab: Some("testmod".into()),
-            armor_material: None,
-            armor_slot: None,
-            effects: vec![],
-        };
-        if state.try_add(Entity::Item(item))? {
-            println!("Added item: testmod_axe (axe)");
-        }
+        let mut item = Item::base("testmod_axe", TAB);
+        item.kind = ItemKind::Axe;
+        item.material = Some("iron".into());
+        item.attack_damage = Some(7.0);
+        item.attack_speed = Some(1.0);
+        try_add_item(&mut state, item)?;
     }
 
     // Shovel item
     {
-        let item = Item {
-            id: "testmod_shovel".into(),
-            kind: ItemKind::Shovel,
-            material: Some("iron".into()),
-            attack_damage: Some(4.5),
-            attack_speed: Some(1.0),
-            durability: None,
-            tooltip: vec![],
-            nutrition: None,
-            saturation: None,
-            always_edible: false,
-            entity_type: None,
-            burn_time: None,
-            compost_chance: None,
-            creative_tab: Some("testmod".into()),
-            armor_material: None,
-            armor_slot: None,
-            effects: vec![],
-        };
-        if state.try_add(Entity::Item(item))? {
-            println!("Added item: testmod_shovel (shovel)");
-        }
+        let mut item = Item::base("testmod_shovel", TAB);
+        item.kind = ItemKind::Shovel;
+        item.material = Some("iron".into());
+        item.attack_damage = Some(4.5);
+        item.attack_speed = Some(1.0);
+        try_add_item(&mut state, item)?;
     }
 
     // Hoe item
     {
-        let item = Item {
-            id: "testmod_hoe".into(),
-            kind: ItemKind::Hoe,
-            material: Some("iron".into()),
-            attack_damage: Some(1.0),
-            attack_speed: Some(4.0),
-            durability: None,
-            tooltip: vec![],
-            nutrition: None,
-            saturation: None,
-            always_edible: false,
-            entity_type: None,
-            burn_time: None,
-            compost_chance: None,
-            creative_tab: Some("testmod".into()),
-            armor_material: None,
-            armor_slot: None,
-            effects: vec![],
-        };
-        if state.try_add(Entity::Item(item))? {
-            println!("Added item: testmod_hoe (hoe)");
-        }
+        let mut item = Item::base("testmod_hoe", TAB);
+        item.kind = ItemKind::Hoe;
+        item.material = Some("iron".into());
+        item.attack_damage = Some(1.0);
+        item.attack_speed = Some(4.0);
+        try_add_item(&mut state, item)?;
     }
 
     // Food item with tooltips
     {
-        let item = Item {
-            id: "glowing_fruit".into(),
-            kind: ItemKind::Food,
-            material: None,
-            attack_damage: None,
-            attack_speed: None,
-            durability: None,
-            tooltip: vec![
-                "A mysterious glowing fruit.".into(),
-                "Grants temporary night vision.".into(),
-            ],
-            nutrition: Some(6),
-            saturation: Some(0.4),
-            always_edible: true,
-            entity_type: None,
-            burn_time: None,
-            compost_chance: None,
-            creative_tab: Some("testmod".into()),
-            armor_material: None,
-            armor_slot: None,
-            effects: vec![PotionEffect {
-                effect_type: "minecraft:night_vision".into(),
-                duration: 1200,
-                amplifier: 0,
-            }],
-        };
-        if state.try_add(Entity::Item(item))? {
-            println!("Added item: glowing_fruit (food)");
-        }
+        let mut item = Item::base("glowing_fruit", TAB);
+        item.kind = ItemKind::Food;
+        item.tooltip = vec![
+            "A mysterious glowing fruit.".into(),
+            "Grants temporary night vision.".into(),
+        ];
+        item.nutrition = Some(6);
+        item.saturation = Some(0.4);
+        item.always_edible = true;
+        item.effects = vec![PotionEffect {
+            effect_type: "minecraft:night_vision".into(),
+            duration: 1200,
+            amplifier: 0,
+        }];
+        try_add_item(&mut state, item)?;
     }
 
     // Spawn egg
     {
-        let item = Item {
-            id: "phantom_spawn_egg".into(),
-            kind: ItemKind::SpawnEgg,
-            material: None,
-            attack_damage: None,
-            attack_speed: None,
-            durability: None,
-            tooltip: vec![],
-            nutrition: None,
-            saturation: None,
-            always_edible: false,
-            entity_type: Some("minecraft:phantom".into()),
-            burn_time: None,
-            compost_chance: None,
-            creative_tab: Some("testmod".into()),
-            armor_material: None,
-            armor_slot: None,
-            effects: vec![],
-        };
-        if state.try_add(Entity::Item(item))? {
-            println!("Added item: phantom_spawn_egg (spawn_egg)");
-        }
+        let mut item = Item::base("phantom_spawn_egg", TAB);
+        item.kind = ItemKind::SpawnEgg;
+        item.entity_type = Some("minecraft:phantom".into());
+        try_add_item(&mut state, item)?;
     }
 
     // Fuel item
     {
-        let item = Item {
-            id: "testmod_fuel".into(),
-            kind: ItemKind::Fuel,
-            material: None,
-            attack_damage: None,
-            attack_speed: None,
-            durability: None,
-            tooltip: vec![],
-            nutrition: None,
-            saturation: None,
-            always_edible: false,
-            entity_type: None,
-            burn_time: Some(3200),
-            compost_chance: None,
-            creative_tab: Some("testmod".into()),
-            armor_material: None,
-            armor_slot: None,
-            effects: vec![],
-        };
-        if state.try_add(Entity::Item(item))? {
-            println!("Added item: testmod_fuel (fuel)");
-        }
+        let mut item = Item::base("testmod_fuel", TAB);
+        item.kind = ItemKind::Fuel;
+        item.burn_time = Some(3200);
+        try_add_item(&mut state, item)?;
     }
 
     // Compostable item
     {
-        let item = Item {
-            id: "plant_fiber".into(),
-            kind: ItemKind::Compostable,
-            material: None,
-            attack_damage: None,
-            attack_speed: None,
-            durability: None,
-            tooltip: vec![],
-            nutrition: None,
-            saturation: None,
-            always_edible: false,
-            entity_type: None,
-            burn_time: None,
-            compost_chance: Some(0.6),
-            creative_tab: Some("testmod".into()),
-            armor_material: None,
-            armor_slot: None,
-            effects: vec![],
-        };
-        if state.try_add(Entity::Item(item))? {
-            println!("Added item: plant_fiber (compostable)");
-        }
+        let mut item = Item::base("plant_fiber", TAB);
+        item.kind = ItemKind::Compostable;
+        item.compost_chance = Some(0.6);
+        try_add_item(&mut state, item)?;
     }
 
     // Armor item
     {
-        let item = Item {
-            id: "testmod_helmet".into(),
-            kind: ItemKind::Armor,
-            material: None,
-            attack_damage: None,
-            attack_speed: None,
-            durability: None,
-            tooltip: vec![],
-            nutrition: None,
-            saturation: None,
-            always_edible: false,
-            entity_type: None,
-            burn_time: None,
-            compost_chance: None,
-            creative_tab: Some("testmod".into()),
-            armor_material: Some("iron".into()),
-            armor_slot: Some("helmet".into()),
-            effects: vec![],
-        };
-        if state.try_add(Entity::Item(item))? {
-            println!("Added item: testmod_helmet (armor)");
-        }
+        let mut item = Item::base("testmod_helmet", TAB);
+        item.kind = ItemKind::Armor;
+        item.armor_material = Some("iron".into());
+        item.armor_slot = Some("helmet".into());
+        try_add_item(&mut state, item)?;
     }
 
     // Shield item
     {
-        let item = Item {
-            id: "testmod_shield".into(),
-            kind: ItemKind::Shield,
-            material: None,
-            attack_damage: None,
-            attack_speed: None,
-            durability: None,
-            tooltip: vec![],
-            nutrition: None,
-            saturation: None,
-            always_edible: false,
-            entity_type: None,
-            burn_time: None,
-            compost_chance: None,
-            creative_tab: Some("testmod".into()),
-            armor_material: None,
-            armor_slot: None,
-            effects: vec![],
-        };
-        if state.try_add(Entity::Item(item))? {
-            println!("Added item: testmod_shield (shield)");
-        }
+        let mut item = Item::base("testmod_shield", TAB);
+        item.kind = ItemKind::Shield;
+        try_add_item(&mut state, item)?;
     }
 
     // Potion item
     {
-        let item = Item {
-            id: "speed_potion".into(),
-            kind: ItemKind::Potion,
-            material: None,
-            attack_damage: None,
-            attack_speed: None,
-            durability: None,
-            tooltip: vec![],
-            nutrition: None,
-            saturation: None,
-            always_edible: false,
-            entity_type: None,
-            burn_time: None,
-            compost_chance: None,
-            creative_tab: Some("testmod".into()),
-            armor_material: None,
-            armor_slot: None,
-            effects: vec![PotionEffect {
-                effect_type: "minecraft:speed".into(),
-                duration: 3600,
-                amplifier: 0,
-            }],
-        };
-        if state.try_add(Entity::Item(item))? {
-            println!("Added item: speed_potion (potion)");
-        }
+        let mut item = Item::base("speed_potion", TAB);
+        item.kind = ItemKind::Potion;
+        item.effects = vec![PotionEffect {
+            effect_type: "minecraft:speed".into(),
+            duration: 3600,
+            amplifier: 0,
+        }];
+        try_add_item(&mut state, item)?;
     }
 
     // Block
     {
-        let block = Block {
-            id: "testmod_ore".into(),
-            creative_tab: Some("testmod".into()),
-        };
+        let block = Block::base("testmod_ore", TAB);
         if state.try_add(Entity::Block(block))? {
             println!("Added block: testmod_ore");
         }

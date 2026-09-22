@@ -1,5 +1,5 @@
 use crate::imports::*;
-use crate::state::{Block, Item, ItemKind, ModState, Recipe};
+use crate::state::{CreativeTab, Item, ItemKind, ModState, Recipe};
 use genco::lang::java::Tokens;
 use genco::lang::java::import;
 use genco::prelude::*;
@@ -27,15 +27,12 @@ pub(crate) fn build_mod_item_ids(state: &ModState) -> Tokens {
 }
 
 pub(crate) fn build_mod_items(state: &ModState) -> Tokens {
-    let vanilla_items: Vec<&Item> = if !state.creative_tabs.is_empty() {
-        state
-            .items
-            .iter()
-            .filter(|i| i.creative_tab.as_deref() == Some("ingredients"))
-            .collect()
-    } else {
-        Vec::new()
-    };
+    let vanilla_items = vanilla_entities(
+        &state.items,
+        &state.creative_tabs,
+        |i| &i.id,
+        |i| i.creative_tab.as_deref() == Some("ingredients"),
+    );
 
     quote! {
         public class ModItems {
@@ -80,15 +77,12 @@ pub(crate) fn build_mod_items(state: &ModState) -> Tokens {
 }
 
 pub(crate) fn build_mod_blocks(state: &ModState) -> Tokens {
-    let vanilla_blocks: Vec<&Block> = if !state.creative_tabs.is_empty() {
-        state
-            .blocks
-            .iter()
-            .filter(|b| b.creative_tab.as_deref() == Some("ingredients"))
-            .collect()
-    } else {
-        Vec::new()
-    };
+    let vanilla_blocks = vanilla_entities(
+        &state.blocks,
+        &state.creative_tabs,
+        |b| &b.id,
+        |b| b.creative_tab.as_deref() == Some("ingredients"),
+    );
 
     quote! {
         public class ModBlocks {
@@ -815,6 +809,23 @@ pub(crate) fn build_item_class(item_def: &Item, state: &ModState) -> Tokens {
 
 pub(crate) fn to_upper(id: &str) -> String {
     id.to_uppercase().replace('-', "_")
+}
+
+fn vanilla_entities<'a, T, F, F2>(
+    entities: &'a [T],
+    _tabs: &[CreativeTab],
+    _id_fn: F,
+    is_vanilla: F2,
+) -> Vec<&'a T>
+where
+    F: Fn(&T) -> &str,
+    F2: Fn(&T) -> bool,
+{
+    if _tabs.is_empty() {
+        vec![]
+    } else {
+        entities.iter().filter(|e| is_vanilla(e)).collect()
+    }
 }
 
 fn display_name(id: &str) -> String {

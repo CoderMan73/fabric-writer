@@ -129,12 +129,23 @@ pub fn run(args: InitArgs) -> Result<()> {
 }
 
 fn validate_name(name: &str) -> Result<()> {
-    if name.trim().is_empty() {
+    let trimmed = name.trim();
+    if trimmed.is_empty() {
         bail!("Mod name cannot be empty.");
     }
 
-    if name.contains(' ') {
+    if trimmed.contains(' ') {
         bail!("Mod name cannot contain spaces.");
+    }
+
+    if !trimmed
+        .chars()
+        .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-')
+    {
+        bail!(
+            "Mod name may only contain letters, numbers, underscores, and hyphens. Got: '{}'",
+            trimmed
+        );
     }
 
     Ok(())
