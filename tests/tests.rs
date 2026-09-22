@@ -233,6 +233,8 @@ fn datagen_succeeds_with_mixed_vanilla_and_modded_content() -> Result<()> {
     fabric_writer::commands::block::add(BlockAddArgs {
         id: "copper_ore".into(),
         creative_tab: None,
+        model_kind: None,
+        properties_from: None,
         verbose: false,
     })?;
 
@@ -652,6 +654,8 @@ fn load_recreates_state_and_regenerates() -> Result<()> {
     fabric_writer::commands::block::add(BlockAddArgs {
         id: "copper_ore".into(),
         creative_tab: None,
+        model_kind: None,
+        properties_from: None,
         verbose: false,
     })?;
 

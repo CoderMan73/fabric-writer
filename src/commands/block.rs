@@ -1,7 +1,7 @@
 use crate::java_writer::{DirtyFlags, regenerate_all};
-use crate::state::{self, Block, Entity};
+use crate::state::{self, Block, BlockModelKind, Entity};
 use anyhow::Result;
-use clap::Parser;
+use clap::{Parser, ValueEnum};
 
 /// Adds a block to the mod state and regenerates Java sources.
 pub fn add(args: BlockAddArgs) -> Result<()> {
@@ -9,6 +9,14 @@ pub fn add(args: BlockAddArgs) -> Result<()> {
     let mut state = state::load()?;
     let mut block = Block::new(&args.id)?;
     block.creative_tab = args.creative_tab.clone();
+    if let Some(model_kind) = args.model_kind {
+        block.model_kind = match model_kind {
+            BlockModelKindCli::CubeAll => BlockModelKind::CubeAll,
+            BlockModelKindCli::CubeBottomTop => BlockModelKind::CubeBottomTop,
+            BlockModelKindCli::Cube => BlockModelKind::Cube,
+        };
+    }
+    block.properties_from = args.properties_from.clone();
     let entity = Entity::Block(block.clone());
     let dirty = DirtyFlags::from_entity(&entity);
     state.add(entity)?;
@@ -42,6 +50,14 @@ pub struct BlockAddArgs {
     #[arg(long)]
     pub creative_tab: Option<String>,
 
+    /// Block model kind for datagen
+    #[arg(long, value_enum)]
+    pub model_kind: Option<BlockModelKindCli>,
+
+    /// Vanilla block to copy properties from (e.g. "netherrack", "basalt", "dirt")
+    #[arg(long)]
+    pub properties_from: Option<String>,
+
     /// Show which files were regenerated, skipped, or pruned
     #[arg(short = 'v', long, default_value_t = false)]
     pub verbose: bool,
@@ -57,4 +73,25 @@ pub struct BlockRemoveArgs {
     /// Show which files were regenerated, skipped, or pruned
     #[arg(short = 'v', long, default_value_t = false)]
     pub verbose: bool,
+}
+
+/// Block model kind for CLI parsing.
+#[derive(Clone, ValueEnum)]
+pub enum BlockModelKindCli {
+    /// All faces use the same texture.
+    CubeAll,
+    /// Different textures for top, bottom, and side faces.
+    CubeBottomTop,
+    /// All faces use the same texture via `TexturedModel.CUBE`.
+    Cube,
+}
+
+impl From<BlockModelKindCli> for BlockModelKind {
+    fn from(cli: BlockModelKindCli) -> Self {
+        match cli {
+            BlockModelKindCli::CubeAll => BlockModelKind::CubeAll,
+            BlockModelKindCli::CubeBottomTop => BlockModelKind::CubeBottomTop,
+            BlockModelKindCli::Cube => BlockModelKind::Cube,
+        }
+    }
 }
