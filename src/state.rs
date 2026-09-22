@@ -19,6 +19,14 @@ impl ModState {
             Entity::CreativeTab(_) => self.creative_tabs.iter().any(|t| t.id == *id),
         }
     }
+
+    /// Returns `true` if the given id is already used by a different entity type.
+    pub fn has_cross_type_id(&self, id: &str) -> bool {
+        self.items.iter().any(|i| i.id == id)
+            || self.blocks.iter().any(|b| b.id == id)
+            || self.recipes.iter().any(|r| r.id == id)
+            || self.creative_tabs.iter().any(|t| t.id == id)
+    }
     /// Appends an entity to the appropriate collection, erroring if the id
     /// already exists.
     pub fn add(&mut self, entity: Entity) -> Result<()> {
@@ -180,6 +188,29 @@ impl Item {
             effects: Vec::new(),
         })
     }
+
+    /// Creates an [`Item`] with a default creative tab assignment.
+    pub fn base(id: &str, tab: &str) -> Self {
+        Self {
+            id: id.into(),
+            kind: ItemKind::Basic,
+            material: None,
+            attack_damage: None,
+            attack_speed: None,
+            durability: None,
+            tooltip: Vec::new(),
+            nutrition: None,
+            saturation: None,
+            always_edible: false,
+            entity_type: None,
+            burn_time: None,
+            compost_chance: None,
+            creative_tab: Some(tab.into()),
+            armor_material: None,
+            armor_slot: None,
+            effects: Vec::new(),
+        }
+    }
 }
 
 impl Block {
@@ -192,6 +223,14 @@ impl Block {
             id,
             creative_tab: None,
         })
+    }
+
+    /// Creates a [`Block`] with a default creative tab assignment.
+    pub fn base(id: &str, tab: &str) -> Self {
+        Self {
+            id: id.into(),
+            creative_tab: Some(tab.into()),
+        }
     }
 }
 

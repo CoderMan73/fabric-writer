@@ -14,12 +14,16 @@ pub fn client() -> Result<()> {
     run_gradle("runClient")
 }
 
+/// Runs datagen then client in succession.
+pub fn client_with_datagen() -> Result<()> {
+    datagen()?;
+    client()
+}
+
 /// Runs the `runServer` Gradle task for the current mod project.
 pub fn server() -> Result<()> {
     run_gradle("runServer")
 }
-
-// TODO: Make a command that runs both runDatagen then runClient in succession.
 
 fn run_gradle(task: &str) -> Result<()> {
     let state = state::load()?;

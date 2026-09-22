@@ -45,6 +45,7 @@ fn main() -> anyhow::Result<()> {
         Commands::Run { subcommand } => match subcommand {
             RunSubcommand::Datagen => run::datagen(),
             RunSubcommand::Client => run::client(),
+            RunSubcommand::ClientWithDatagen => run::client_with_datagen(),
             RunSubcommand::Server => run::server(),
         },
         Commands::Status(args) => status::run(args),
@@ -152,6 +153,10 @@ enum RunSubcommand {
     /// Run client [alias: c]
     #[command(alias = "c")]
     Client,
+
+    /// Run datagen then client [alias: dc]
+    #[command(alias = "dc")]
+    ClientWithDatagen,
 
     /// Run server [alias: s]
     #[command(alias = "s")]

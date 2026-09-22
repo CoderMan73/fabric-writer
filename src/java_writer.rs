@@ -82,7 +82,6 @@ impl DirtyFlags {
                 lang_provider: true,
                 model_provider: true,
                 datagen_entrypoint: true,
-                creative_tabs: true,
                 ..Default::default()
             },
             Entity::Block(_) => Self {
@@ -93,7 +92,6 @@ impl DirtyFlags {
                 lang_provider: true,
                 model_provider: true,
                 datagen_entrypoint: true,
-                creative_tabs: true,
                 ..Default::default()
             },
             Entity::Recipe(_) => Self {
@@ -103,8 +101,6 @@ impl DirtyFlags {
             },
             Entity::CreativeTab(_) => Self {
                 creative_tabs: true,
-                mod_items: true,
-                mod_blocks: true,
                 mod_class: true,
                 ..Default::default()
             },
@@ -368,7 +364,7 @@ fn vlog(action: &str, path: &Path) {
 /// Formats and writes Java `Tokens` to disk at `path` with the given package declaration.
 ///
 /// Only writes when the new content differs from what is already on disk.
-pub fn write(path: &PathBuf, tokens: Tokens, package: &str) -> Result<()> {
+pub fn write(path: &Path, tokens: Tokens, package: &str) -> Result<()> {
     if let Some(parent) = path.parent() {
         create_dir_all(parent).context("Failed to create Java output directory")?;
     }
@@ -494,10 +490,10 @@ fn prune_orphaned_java(
     }
 
     let known_prefixes: [&str; 4] = [
-        "TestModArmorProvider",
-        "TestModShieldProvider",
-        "TestModFuelProvider",
-        "TestModCompostableProvider",
+        "ArmorProvider",
+        "ShieldProvider",
+        "FuelProvider",
+        "CompostableProvider",
     ];
 
     for dir in [java_root, client_root] {
@@ -515,7 +511,10 @@ fn prune_orphaned_java(
                 continue;
             }
             let file_name = path.file_stem().and_then(|s| s.to_str()).unwrap_or("");
-            if known_prefixes.contains(&file_name) {
+            if known_prefixes
+                .iter()
+                .any(|suffix| file_name.ends_with(suffix))
+            {
                 remove_file(&path)
                     .with_context(|| format!("Failed to prune orphaned {}", path.display()))?;
                 if verbose {
