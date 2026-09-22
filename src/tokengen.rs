@@ -1,5 +1,5 @@
 use crate::imports::*;
-use crate::state::{CreativeTab, Item, ItemKind, ModState, Recipe};
+use crate::state::{BlockModelKind, CreativeTab, Item, ItemKind, ModState, Recipe};
 use genco::lang::java::Tokens;
 use genco::lang::java::import;
 use genco::prelude::*;
@@ -84,6 +84,12 @@ pub(crate) fn build_mod_blocks(state: &ModState) -> Tokens {
         |b| b.creative_tab.as_deref() == Some("ingredients"),
     );
 
+    let props_sources: Vec<&str> = state
+        .blocks
+        .iter()
+        .map(|b| b.properties_from.as_deref().unwrap_or("dirt"))
+        .collect();
+
     quote! {
         public class ModBlocks {
             private static $(block()) register($(block_item_id()) id, $(function())<$(block_behaviour()).Properties, $(block())> blockFactory, $(block_behaviour()).Properties properties) {
@@ -99,11 +105,11 @@ pub(crate) fn build_mod_blocks(state: &ModState) -> Tokens {
             }
 
             $("// Block Registration")
-            $(for b in &state.blocks =>
+            $(for (b, props_src) in state.blocks.iter().zip(&props_sources) =>
                 public static final $(block()) $(to_upper(&b.id)) = register(
                     ModBlockItemIds.$(to_upper(&b.id)),
                     $(block())::new,
-                    $(block_behaviour()).Properties.ofFullCopy($(blocks()).DIRT)
+                    $(block_behaviour()).Properties.ofFullCopy($(blocks()).$(to_upper(props_src)))
                 );$['\r']
             )
 
@@ -363,7 +369,13 @@ pub(crate) fn build_model_provider(state: &ModState) -> Tokens {
             @Override
             public void generateBlockStateModels($(block_model_generators()) blockStateModelGenerator) {
                 $(for b in &state.blocks =>
-                    blockStateModelGenerator.createTrivialCube($(&mod_blocks(state)).$(to_upper(&b.id)));$['\r']
+                    $(if b.model_kind == BlockModelKind::CubeAll =>
+                        blockStateModelGenerator.createTrivialCube($(&mod_blocks(state)).$(to_upper(&b.id)));
+                    )$(if b.model_kind == BlockModelKind::CubeBottomTop =>
+                        blockStateModelGenerator.createTrivialBlock($(&mod_blocks(state)).$(to_upper(&b.id)), $(textured_model()).CUBE_TOP_BOTTOM);
+                    )$(if b.model_kind == BlockModelKind::Cube =>
+                        blockStateModelGenerator.createTrivialBlock($(&mod_blocks(state)).$(to_upper(&b.id)), $(textured_model()).CUBE);
+                    )$['\r']
                 )
             }
 

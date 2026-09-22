@@ -1,5 +1,7 @@
 use crate::java_writer::{DirtyFlags, regenerate_all};
-use crate::state::{self, Block, CreativeTab, Entity, Item, ItemKind, PotionEffect, Recipe};
+use crate::state::{
+    self, Block, BlockModelKind, CreativeTab, Entity, Item, ItemKind, PotionEffect, Recipe,
+};
 use anyhow::{Context, Result};
 use clap::{Parser, ValueEnum};
 use std::fs::create_dir_all;
@@ -38,7 +40,9 @@ fn add_default_test_project(state: &mut state::ModState) -> Result<()> {
 
     // Creative tab
     {
-        let tab = CreativeTab { id: DEFAULT_TAB.into() };
+        let tab = CreativeTab {
+            id: DEFAULT_TAB.into(),
+        };
         let entity = Entity::CreativeTab(tab);
         if state.try_add(entity)? {
             println!("Added creative tab: {}", DEFAULT_TAB);
@@ -211,9 +215,14 @@ fn add_default_test_project(state: &mut state::ModState) -> Result<()> {
     Ok(())
 }
 
-const VANILLA_TEXTURE_SOURCE: &str = "E:\\Coding_Projects\\MCSourceCode\\vanilla-minecraft\\26.2\\assets\\minecraft\\textures";
+const VANILLA_TEXTURE_SOURCE: &str =
+    "E:\\Coding_Projects\\MCSourceCode\\vanilla-minecraft\\26.2\\assets\\minecraft\\textures";
 
-fn copy_block_textures(state: &state::ModState, _block_ids: &[&str], source_textures: &[(&str, &str)]) -> Result<()> {
+fn copy_block_textures(
+    state: &state::ModState,
+    _block_ids: &[&str],
+    source_textures: &[(&str, &str)],
+) -> Result<()> {
     let textures_root = PathBuf::from("src/main/resources/assets")
         .join(&state.mod_id)
         .join("textures")
@@ -221,10 +230,12 @@ fn copy_block_textures(state: &state::ModState, _block_ids: &[&str], source_text
 
     create_dir_all(&textures_root)?;
 
-    for (block_id, source_file) in source_textures {
-        let dest = textures_root.join(format!("{}.png", block_id));
-        let src = PathBuf::from(VANILLA_TEXTURE_SOURCE).join("block").join(source_file);
-        if src.exists() && !dest.exists() {
+    for (dest_name, source_file) in source_textures {
+        let dest = textures_root.join(format!("{}.png", dest_name));
+        let src = PathBuf::from(VANILLA_TEXTURE_SOURCE)
+            .join("block")
+            .join(source_file);
+        if src.exists() {
             std::fs::copy(&src, &dest)?;
             println!("Copied texture: {} -> {}", src.display(), dest.display());
         }
@@ -248,7 +259,8 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
 
     // Blue Netherrack
     {
-        let block = Block::base("blue_netherrack", tab);
+        let mut block = Block::base("blue_netherrack", tab);
+        block.properties_from = Some("netherrack".into());
         if state.try_add(Entity::Block(block))? {
             println!("Added block: blue_netherrack");
         }
@@ -256,7 +268,8 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
 
     // Blue Soul Sand
     {
-        let block = Block::base("blue_soul_sand", tab);
+        let mut block = Block::base("blue_soul_sand", tab);
+        block.properties_from = Some("soul_sand".into());
         if state.try_add(Entity::Block(block))? {
             println!("Added block: blue_soul_sand");
         }
@@ -264,7 +277,8 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
 
     // Blue Soul Soil
     {
-        let block = Block::base("blue_soul_soil", tab);
+        let mut block = Block::base("blue_soul_soil", tab);
+        block.properties_from = Some("soul_soil".into());
         if state.try_add(Entity::Block(block))? {
             println!("Added block: blue_soul_soil");
         }
@@ -272,7 +286,9 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
 
     // Blue Basalt
     {
-        let block = Block::base("blue_basalt", tab);
+        let mut block = Block::base("blue_basalt", tab);
+        block.model_kind = BlockModelKind::CubeBottomTop;
+        block.properties_from = Some("basalt".into());
         if state.try_add(Entity::Block(block))? {
             println!("Added block: blue_basalt");
         }
@@ -286,10 +302,20 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
         ("blue_netherrack", "netherrack.png"),
         ("blue_soul_sand", "soul_sand.png"),
         ("blue_soul_soil", "soul_soil.png"),
-        ("blue_basalt", "basalt_side.png"),
-        ("blue_basalt", "basalt_top.png"),
+        ("blue_basalt_top", "basalt_top.png"),
+        ("blue_basalt_bottom", "basalt_top.png"),
+        ("blue_basalt_side", "basalt_side.png"),
     ];
-    copy_block_textures(state, &["blue_netherrack", "blue_soul_sand", "blue_soul_soil", "blue_basalt"], &texture_map)?;
+    copy_block_textures(
+        state,
+        &[
+            "blue_netherrack",
+            "blue_soul_sand",
+            "blue_soul_soil",
+            "blue_basalt",
+        ],
+        &texture_map,
+    )?;
 
     println!("Blue Nether base terrain added!");
     Ok(())

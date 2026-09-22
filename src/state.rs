@@ -222,6 +222,8 @@ impl Block {
         Ok(Self {
             id,
             creative_tab: None,
+            model_kind: BlockModelKind::CubeAll,
+            properties_from: None,
         })
     }
 
@@ -230,6 +232,8 @@ impl Block {
         Self {
             id: id.into(),
             creative_tab: Some(tab.into()),
+            model_kind: BlockModelKind::CubeAll,
+            properties_from: None,
         }
     }
 }
@@ -446,6 +450,18 @@ pub struct PotionEffect {
     pub amplifier: i32,
 }
 
+/// Block model kind for datagen.
+#[derive(Serialize, Deserialize, Debug, Clone, Default, PartialEq)]
+pub enum BlockModelKind {
+    /// All faces use the same texture (`cube_all` model).
+    #[default]
+    CubeAll,
+    /// Different textures for top, bottom, and side faces (`cube_bottom_top` model).
+    CubeBottomTop,
+    /// All faces use the same texture (`cube_all` model via `TexturedModel.CUBE`).
+    Cube,
+}
+
 /// A block tracked in [`ModState::blocks`].
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct Block {
@@ -455,6 +471,14 @@ pub struct Block {
     /// Creative tab assignment (`None` means default to first custom tab or `ingredients`).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub creative_tab: Option<String>,
+
+    /// Model kind for datagen.
+    #[serde(default)]
+    pub model_kind: BlockModelKind,
+
+    /// Vanilla block to copy properties from (`None` uses `minecraft:dirt`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties_from: Option<String>,
 }
 
 /// A crafting recipe tracked in [`ModState::recipes`].

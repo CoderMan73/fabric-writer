@@ -39,6 +39,7 @@ mod imports_inner {
     static_import!(FABRIC_DATA_GENERATOR, fabric_data_generator, "net.fabricmc.fabric.api.datagen.v1", "FabricDataGenerator");
     static_import!(FABRIC_MODEL_PROVIDER, fabric_model_provider, "net.fabricmc.fabric.api.client.datagen.v1.provider", "FabricModelProvider");
     static_import!(MODEL_TEMPLATES, model_templates, "net.minecraft.client.data.models.model", "ModelTemplates");
+    static_import!(TEXTURED_MODEL, textured_model, "net.minecraft.client.data.models.model", "TexturedModel");
     static_import!(BLOCK, block, "net.minecraft.world.level.block", "Block");
     static_import!(BLOCKS, blocks, "net.minecraft.world.level.block", "Blocks");
     static_import!(BLOCK_ITEM, block_item, "net.minecraft.world.item", "BlockItem");
