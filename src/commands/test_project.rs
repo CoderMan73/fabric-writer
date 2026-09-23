@@ -1,6 +1,7 @@
 use crate::java_writer::{DirtyFlags, regenerate_all};
 use crate::state::{
-    self, Block, BlockModelKind, CreativeTab, Entity, Item, ItemKind, PotionEffect, Recipe,
+    self, Advancement, Biome, Block, BlockModelKind, CreativeTab, Dimension, Entity, Feature, Item,
+    ItemKind, LootTable, Mob, PotionEffect, Recipe, SoundEvent, Structure, Tag,
 };
 use anyhow::{Context, Result};
 use clap::{Parser, ValueEnum};
@@ -586,6 +587,222 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
         recipe.category = Some("building_blocks".into());
         if state.try_add(Entity::Recipe(recipe))? {
             println!("Added recipe: blue_nether_bricks_smelting");
+        }
+    }
+
+    // Blue Ghast mob
+    {
+        let mob = Mob {
+            id: "blue_ghast".into(),
+            entity_type: "minecraft:ghast".into(),
+            spawn_category: Some("monster".into()),
+            spawn_egg_id: Some("blue_ghast_spawn_egg".into()),
+            baby_spawn_egg_id: None,
+            attributes: vec![],
+            drops: vec![],
+        };
+        if state.try_add(Entity::Mob(mob))? {
+            println!("Added mob: blue_ghast");
+        }
+    }
+
+    // Blue Strider mob
+    {
+        let mob = Mob {
+            id: "blue_strider".into(),
+            entity_type: "minecraft:strider".into(),
+            spawn_category: Some("creature".into()),
+            spawn_egg_id: Some("blue_strider_spawn_egg".into()),
+            baby_spawn_egg_id: None,
+            attributes: vec![],
+            drops: vec![],
+        };
+        if state.try_add(Entity::Mob(mob))? {
+            println!("Added mob: blue_strider");
+        }
+    }
+
+    // Blue Zombie Piglin mob
+    {
+        let mob = Mob {
+            id: "blue_zombie_piglin".into(),
+            entity_type: "minecraft:zombified_piglin".into(),
+            spawn_category: Some("monster".into()),
+            spawn_egg_id: Some("blue_zombie_piglin_spawn_egg".into()),
+            baby_spawn_egg_id: None,
+            attributes: vec![],
+            drops: vec![],
+        };
+        if state.try_add(Entity::Mob(mob))? {
+            println!("Added mob: blue_zombie_piglin");
+        }
+    }
+
+    // Blue Hoglin mob
+    {
+        let mob = Mob {
+            id: "blue_hoglin".into(),
+            entity_type: "minecraft:hoglin".into(),
+            spawn_category: Some("creature".into()),
+            spawn_egg_id: Some("blue_hoglin_spawn_egg".into()),
+            baby_spawn_egg_id: None,
+            attributes: vec![],
+            drops: vec![],
+        };
+        if state.try_add(Entity::Mob(mob))? {
+            println!("Added mob: blue_hoglin");
+        }
+    }
+
+    // Blue Piglin mob
+    {
+        let mob = Mob {
+            id: "blue_piglin".into(),
+            entity_type: "minecraft:piglin".into(),
+            spawn_category: Some("creature".into()),
+            spawn_egg_id: Some("blue_piglin_spawn_egg".into()),
+            baby_spawn_egg_id: None,
+            attributes: vec![],
+            drops: vec![],
+        };
+        if state.try_add(Entity::Mob(mob))? {
+            println!("Added mob: blue_piglin");
+        }
+    }
+
+    // Blue Wither Skeleton mob
+    {
+        let mob = Mob {
+            id: "blue_wither_skeleton".into(),
+            entity_type: "minecraft:wither_skeleton".into(),
+            spawn_category: Some("monster".into()),
+            spawn_egg_id: Some("blue_wither_skeleton_spawn_egg".into()),
+            baby_spawn_egg_id: None,
+            attributes: vec![],
+            drops: vec![],
+        };
+        if state.try_add(Entity::Mob(mob))? {
+            println!("Added mob: blue_wither_skeleton");
+        }
+    }
+
+    // Blue Nether biome
+    {
+        let biome = Biome {
+            id: "blue_nether".into(),
+            temperature: Some(2.0),
+            downfall: Some(0.0),
+            sky_color: None,
+            water_color: None,
+            water_fog_color: None,
+            fog_color: None,
+            has_precipitation: Some(false),
+            features: vec![],
+            structures: vec![],
+            mob_spawns: vec![],
+            player_spawn_friendly: None,
+        };
+        if state.try_add(Entity::Biome(biome))? {
+            println!("Added biome: blue_nether");
+        }
+    }
+
+    // Blue Nether dimension
+    {
+        let dimension = Dimension {
+            id: "blue_nether".into(),
+            dimension_type: "minecraft:nether".into(),
+            portal_frame: None,
+            portal_igniter: None,
+        };
+        if state.try_add(Entity::Dimension(dimension))? {
+            println!("Added dimension: blue_nether");
+        }
+    }
+
+    // Blue Nether structure
+    {
+        let structure = Structure {
+            id: "blue_nether_fortress".into(),
+            structure_type: "minecraft:fortress".into(),
+            spawn: None,
+            spacing: None,
+            separation: None,
+            salt: None,
+        };
+        if state.try_add(Entity::Structure(structure))? {
+            println!("Added structure: blue_nether_fortress");
+        }
+    }
+
+    // Blue Nether feature
+    {
+        let feature = Feature {
+            id: "blue_nether_wart_patch".into(),
+            feature_type: "minecraft:nether_wart_patch".into(),
+            block: None,
+            state: None,
+            radius: None,
+        };
+        if state.try_add(Entity::Feature(feature))? {
+            println!("Added feature: blue_nether_wart_patch");
+        }
+    }
+
+    // Blue Nether loot table
+    {
+        let loot_table = LootTable {
+            id: "blue_nether_chest".into(),
+            loot_type: "chest".into(),
+            rolls: None,
+            entries: vec![],
+        };
+        if state.try_add(Entity::LootTable(loot_table))? {
+            println!("Added loot_table: blue_nether_chest");
+        }
+    }
+
+    // Blue Nether advancement
+    {
+        let advancement = Advancement {
+            id: "enter_blue_nether".into(),
+            parent: None,
+            title: "Enter the Blue Nether".into(),
+            description: "Enter the blue Nether dimension".into(),
+            icon: "minecraft:netherrack".into(),
+            background: None,
+            frame: None,
+            show_toast: None,
+            announce_to_chat: None,
+            hidden: None,
+            criteria: vec![],
+        };
+        if state.try_add(Entity::Advancement(advancement))? {
+            println!("Added advancement: enter_blue_nether");
+        }
+    }
+
+    // Blue Nether sound event
+    {
+        let sound_event = SoundEvent {
+            id: "blue_nether_ambient".into(),
+            sound_path: "ambient/nether/blue_nether_ambient".into(),
+        };
+        if state.try_add(Entity::SoundEvent(sound_event))? {
+            println!("Added sound_event: blue_nether_ambient");
+        }
+    }
+
+    // Blue Nether tag
+    {
+        let tag = Tag {
+            id: "blue_nether_blocks".into(),
+            tag_type: "block".into(),
+            values: vec!["blue_netherrack".into(), "blue_soul_sand".into()],
+            replace: None,
+        };
+        if state.try_add(Entity::Tag(tag))? {
+            println!("Added tag: blue_nether_blocks");
         }
     }
 
