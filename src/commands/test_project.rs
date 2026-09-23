@@ -244,6 +244,16 @@ fn copy_block_textures(
             std::fs::copy(&src, &dest)?;
             println!("Copied texture: {} -> {}", src.display(), dest.display());
         }
+        let mcmeta_src = src.with_extension("png.mcmeta");
+        if mcmeta_src.exists() {
+            let mcmeta_dest = dest.with_extension("png.mcmeta");
+            std::fs::copy(&mcmeta_src, &mcmeta_dest)?;
+            println!(
+                "Copied texture metadata: {} -> {}",
+                mcmeta_src.display(),
+                mcmeta_dest.display()
+            );
+        }
     }
 
     Ok(())
@@ -432,6 +442,7 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
     // Blue Quartz Block
     {
         let mut block = Block::base("blue_quartz_block", tab);
+        block.model_kind = BlockModelKind::CubeBottomTop;
         block.properties_from = Some("quartz_block".into());
         if state.try_add(Entity::Block(block))? {
             println!("Added block: blue_quartz_block");
@@ -443,6 +454,7 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
         let mut block = Block::base("blue_iron_chain", tab);
         block.model_kind = BlockModelKind::Chain;
         block.properties_from = Some("iron_chain".into());
+        block.block_class = "ChainBlock".into();
         if state.try_add(Entity::Block(block))? {
             println!("Added block: blue_iron_chain");
         }
@@ -453,6 +465,7 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
         let mut block = Block::base("blue_lantern", tab);
         block.model_kind = BlockModelKind::Lantern;
         block.properties_from = Some("lantern".into());
+        block.block_class = "LanternBlock".into();
         if state.try_add(Entity::Block(block))? {
             println!("Added block: blue_lantern");
         }
@@ -559,10 +572,10 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
     {
         let mut recipe = Recipe::new("blue_netherite_ingot")?;
         recipe.kind = "crafting_shaped".into();
-        recipe.pattern = vec!["NNN".into(), "N N".into(), "NNN".into()];
+        recipe.pattern = vec!["NNN".into(), "NGN".into(), "NNN".into()];
         recipe
             .ingredients
-            .insert("N".into(), "blue_netherite_scrap".into());
+            .insert("N".into(), "minecraft:netherite_scrap".into());
         recipe
             .ingredients
             .insert("G".into(), "minecraft:gold_ingot".into());
@@ -839,7 +852,9 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
         ("blue_bone_block_top", "bone_block_top.png"),
         ("blue_bone_block_bottom", "bone_block_bottom.png"),
         ("blue_bone_block_side", "bone_block_side.png"),
-        ("blue_quartz_block", "quartz_block.png"),
+        ("blue_quartz_block_top", "quartz_block_top.png"),
+        ("blue_quartz_block_bottom", "quartz_block_bottom.png"),
+        ("blue_quartz_block_side", "quartz_block_side.png"),
         ("blue_iron_chain", "iron_chain.png"),
         ("blue_lantern", "lantern.png"),
     ];

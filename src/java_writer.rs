@@ -687,7 +687,7 @@ fn generate_model_resources(state: &ModState, _verbose: bool) -> Result<()> {
                 std::fs::write(
                     block_model_path,
                     format!(
-                        r#"{{"parent":"minecraft:block/cube_bottom_top","textures":{{"bottom":"{}:block/{}_bottom","top":"{}:block/{}_top","side":"{}:block/{}"}}}}"#,
+                        r#"{{"parent":"minecraft:block/cube_bottom_top","textures":{{"bottom":"{}:block/{}_bottom","top":"{}:block/{}_top","side":"{}:block/{}_side"}}}}"#,
                         mod_id, texture_name, mod_id, texture_name, mod_id, texture_name
                     ),
                 )?;
@@ -793,6 +793,45 @@ fn generate_model_resources(state: &ModState, _verbose: bool) -> Result<()> {
                     )?;
                 }
             }
+            BlockModelKind::Chain => {
+                std::fs::write(
+                    blockstate_path,
+                    format!(
+                        r#"{{"variants":{{"axis=x":{{"model":"{}:block/{}","x":90,"y":90}},"axis=y":{{"model":"{}:block/{}"}},"axis=z":{{"model":"{}:block/{}","x":90}}}}}}"#,
+                        mod_id, id, mod_id, id, mod_id, id
+                    ),
+                )?;
+                std::fs::write(
+                    block_model_path,
+                    format!(
+                        r#"{{"parent":"minecraft:block/template_chain","textures":{{"texture":"{}:block/{}"}}}}"#,
+                        mod_id, id
+                    ),
+                )?;
+            }
+            BlockModelKind::Lantern => {
+                std::fs::write(
+                    blockstate_path,
+                    format!(
+                        r#"{{"variants":{{"hanging=false":{{"model":"{}:block/{}"}},"hanging=true":{{"model":"{}:block/{}_hanging"}}}}}}"#,
+                        mod_id, id, mod_id, id
+                    ),
+                )?;
+                std::fs::write(
+                    block_model_path,
+                    format!(
+                        r#"{{"parent":"minecraft:block/template_lantern","textures":{{"lantern":"{}:block/{}"}}}}"#,
+                        mod_id, id
+                    ),
+                )?;
+                std::fs::write(
+                    block_models_root.join(format!("{}_hanging.json", id)),
+                    format!(
+                        r#"{{"parent":"minecraft:block/template_hanging_lantern","textures":{{"lantern":"{}:block/{}"}}}}"#,
+                        mod_id, id
+                    ),
+                )?;
+            }
             _ => {
                 std::fs::write(
                     blockstate_path,
@@ -815,10 +854,7 @@ fn generate_model_resources(state: &ModState, _verbose: bool) -> Result<()> {
         if !item_model_path.exists() {
             std::fs::write(
                 item_model_path,
-                format!(
-                    r#"{{"parent":"minecraft:item/generated","textures":{{"layer0":"{}:item/{}"}}}}"#,
-                    mod_id, id
-                ),
+                format!(r#"{{"parent":"{}:block/{}"}}"#, mod_id, id),
             )?;
         }
     }

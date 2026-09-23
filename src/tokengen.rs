@@ -90,7 +90,19 @@ pub(crate) fn build_mod_blocks(state: &ModState) -> Tokens {
         .map(|b| b.properties_from.as_deref().unwrap_or("dirt"))
         .collect();
 
-    quote! {
+    let block_factories: Vec<Tokens> = state
+        .blocks
+        .iter()
+        .map(|b| {
+            if b.block_class == "Block" {
+                quote! { $(block())::new }
+            } else {
+                quote! { $(format!("{}", b.block_class))::new }
+            }
+        })
+        .collect();
+
+    let mut class_body = quote! {
         public class ModBlocks {
             private static $(block()) register($(block_item_id()) id, $(function())<$(block_behaviour()).Properties, $(block())> blockFactory, $(block_behaviour()).Properties properties) {
                 $(block()) block = register(id.block(), blockFactory, properties);
@@ -105,10 +117,10 @@ pub(crate) fn build_mod_blocks(state: &ModState) -> Tokens {
             }
 
             $("// Block Registration")
-            $(for (b, props_src) in state.blocks.iter().zip(&props_sources) =>
+            $(for ((b, props_src), factory) in state.blocks.iter().zip(&props_sources).zip(&block_factories) =>
                 public static final $(block()) $(to_upper(&b.id)) = register(
                     ModBlockItemIds.$(to_upper(&b.id)),
-                    $(block())::new,
+                    $(factory),
                     $(block_behaviour()).Properties.ofFullCopy($(blocks()).$(to_upper(props_src)))
                 );$['\r']
             )
@@ -134,7 +146,22 @@ pub(crate) fn build_mod_blocks(state: &ModState) -> Tokens {
                 )
             }
         }
+    };
+
+    let custom_classes: Vec<&str> = state
+        .blocks
+        .iter()
+        .filter(|b| !b.block_class.is_empty() && b.block_class != "Block")
+        .map(|b| b.block_class.as_str())
+        .collect::<std::collections::HashSet<_>>()
+        .into_iter()
+        .collect();
+
+    for cls in &custom_classes {
+        import("net.minecraft.world.level.block", cls).register(&mut class_body);
     }
+
+    class_body
 }
 
 pub(crate) fn build_mod_block_item_ids(state: &ModState) -> Tokens {
@@ -434,7 +461,7 @@ fn recipe_call(recipe: &Recipe, state: &ModState) -> Tokens {
                     $(for p in pattern_lines => .pattern($(quoted(p))))
                     $(for (k, v) in defines => .define($(format!("'{}'", k.chars().next().unwrap_or('?'))), $(ingredient_ref(v, state))))
                     .unlockedBy(getHasName($(result_ref2)), has($(result_ref3)))
-                    .save(exporter, $(quoted(&full_id)));
+                    .save(exporter);
             }
         }
         "crafting_shapeless" => {
@@ -443,7 +470,7 @@ fn recipe_call(recipe: &Recipe, state: &ModState) -> Tokens {
                 shapeless($(recipe_category()).MISC, $(result_ref), $(count))
                     $(for (_, v) in ingredients => .requires($(ingredient_ref(v, state))))
                     .unlockedBy(getHasName($(result_ref2)), has($(result_ref3)))
-                    .save(exporter, $(quoted(&full_id)));
+                    .save(exporter);
             }
         }
         "smelting" | "blasting" | "smoking" | "campfire_cooking" => {
@@ -459,7 +486,7 @@ fn recipe_call(recipe: &Recipe, state: &ModState) -> Tokens {
             let book_category = if recipe.kind == "campfire_cooking" {
                 quote!($(cooking_book_category()).FOOD)
             } else {
-                quote!($(cooking_book_category()).$(category.to_uppercase()))
+                quote!($(cooking_book_category()).$(cooking_book_category_name(category)))
             };
             match recipe.kind.as_str() {
                 "smelting" => quote! {
@@ -496,7 +523,7 @@ fn recipe_call(recipe: &Recipe, state: &ModState) -> Tokens {
             quote! {
                 stonecutterResultFromBase($(recipe_category()).$(category.to_uppercase()), $(result_ref), $(input), $(count))
                     .unlockedBy(getHasName($(result_ref2)), has($(result_ref3)))
-                    .save(exporter, $(quoted(&full_id)));
+                    .save(exporter);
             }
         }
         "smithing" => {
@@ -528,6 +555,14 @@ fn recipe_call(recipe: &Recipe, state: &ModState) -> Tokens {
     }
 }
 
+fn cooking_book_category_name(category: &str) -> &'static str {
+    match category {
+        "food" => "FOOD",
+        "blocks" | "building_blocks" => "BLOCKS",
+        _ => "MISC",
+    }
+}
+
 fn result_item(recipe: &Recipe, state: &ModState) -> Tokens {
     let id = &recipe.result;
     if let Some(vanilla) = id.strip_prefix("minecraft:") {
@@ -535,7 +570,11 @@ fn result_item(recipe: &Recipe, state: &ModState) -> Tokens {
         quote! { $(items()).$(mc_constant) }
     } else {
         let item_id = strip_namespace(id);
-        quote! { $(mod_items(state)).$(to_upper(item_id)) }
+        if state.blocks.iter().any(|b| b.id == item_id) {
+            quote! { $(mod_blocks(state)).$(to_upper(item_id)) }
+        } else {
+            quote! { $(mod_items(state)).$(to_upper(item_id)) }
+        }
     }
 }
 
@@ -929,28 +968,43 @@ pub(crate) fn build_mod_mobs(state: &ModState) -> Tokens {
 
     let mob_entities = quote! {
         $(for mob in &state.mobs =>
-            public static final EntityType<$(format!("{}Entity", to_pascal_case(&mob.id)))> $(to_upper(&mob.id)) = register(
-                ModEntityTypeIds.$(to_upper(&mob.id)),
-                $(entity_types()).Builder.<$(format!("{}Entity", to_pascal_case(&mob.id)))>of($(format!("{}Entity::new", to_pascal_case(&mob.id))), $(mob_category()).$(mob.spawn_category.as_deref().unwrap_or("MISC").to_uppercase()))
-            );
+            $(if mob.entity_type.starts_with("minecraft:") =>
+                public static final EntityType<?> $(to_upper(&mob.id)) = $(entity_types()).$(to_upper(&mob.entity_type.replace("minecraft:", "")));
+            )
+            $(if !mob.entity_type.starts_with("minecraft:") =>
+                public static final EntityType<$(format!("{}Entity", to_pascal_case(&mob.id)))> $(to_upper(&mob.id)) = register(
+                    ModEntityTypeIds.$(to_upper(&mob.id)),
+                    $(entity_type()).Builder.<$(format!("{}Entity", to_pascal_case(&mob.id)))>of($(format!("{}Entity::new", to_pascal_case(&mob.id))), $(mob_category()).$(mob.spawn_category.as_deref().unwrap_or("MISC").to_uppercase()))
+                );
+            )
         )
     };
 
     let register_method = quote! {
-        private static <T extends $(entity())> $(entity_types())<T> register($(resource_key())<$(entity_types())<?>> key, $(entity_types()).Builder<T> builder) {
-            return $(registry()).register($(built_in_registries()).ENTITY_TYPE, key, builder.build(key));
-        }
+        $(if state.mobs.iter().any(|m| !m.entity_type.starts_with("minecraft:")) =>
+            private static <T extends $(entity())> $(entity_type())<T> register($(resource_key())<$(entity_type())<?>> key, $(entity_type()).Builder<T> builder) {
+                return $(registry()).register($(built_in_registries()).ENTITY_TYPE, key, builder.build(key));
+            }
+        )
+        $(if state.mobs.iter().any(|m| m.spawn_egg_id.is_some()) =>
+            private static Item registerSpawnEgg(String name, $(entity_type())<?> entityType) {
+                $(resource_key())<Item> itemKey = $(resource_key()).create($(registries()).ITEM, $(identifier()).fromNamespaceAndPath(TestMod.MOD_ID, name));
+                Item item = new $(spawn_egg_item())(new Item.Properties().setId(itemKey));
+                $(registry()).register($(built_in_registries()).ITEM, itemKey, item);
+                return item;
+            }
+        )
     };
 
     let spawn_eggs = quote! {
         $(for mob in &state.mobs =>
             $(if let Some(egg_id) = &mob.spawn_egg_id =>
-                public static final Item $(to_upper(egg_id)) = new $(spawn_egg_item())($(to_upper(&mob.id)), new Item.Properties());
+                public static final Item $(to_upper(egg_id)) = registerSpawnEgg($(quoted(egg_id)), $(to_upper(&mob.id)));
             )
         )
     };
 
-    quote! {
+    let mut class_body = quote! {
         public class ModMobs {
             $(mob_entities)
 
@@ -961,270 +1015,71 @@ pub(crate) fn build_mod_mobs(state: &ModState) -> Tokens {
 
             $(register_method)
         }
-    }
-}
-
-pub(crate) fn build_mod_biomes(state: &ModState) -> Tokens {
-    if state.biomes.is_empty() {
-        return quote! {
-            public class ModBiomes {
-                public static void initialize() {
-                }
-            }
-        };
-    }
-
-    let biome_methods = quote! {
-        $(for biome_def in &state.biomes =>
-            public static $(biome()) $(to_upper(&biome_def.id))() {
-                $(biome_builder()).BiomeBuilder builder = new $(biome_builder())()
-                    .hasPrecipitation($(format!("{}", biome_def.has_precipitation.unwrap_or(false))))
-                    .temperature($(format!("{}F", biome_def.temperature.unwrap_or(0.0))))
-                    .downfall($(format!("{}F", biome_def.downfall.unwrap_or(0.0))));
-
-                $(biome_special_effects()).Builder effects = new $(biome_special_effects()).Builder();
-                $(if let Some(sky) = biome_def.sky_color =>
-                    effects.setSkyColor($(format!("{}", sky)));
-                )
-                $(if let Some(water) = biome_def.water_color =>
-                    effects.setWaterColor($(format!("{}", water)));
-                )
-                $(if let Some(water_fog) = biome_def.water_fog_color =>
-                    effects.setWaterFogColor($(format!("{}", water_fog)));
-                )
-                $(if let Some(fog) = biome_def.fog_color =>
-                    effects.setFogColor($(format!("{}", fog)));
-                )
-                builder.specialEffects(effects.build());
-
-                $(mob_spawn_settings()).Builder spawnSettings = new $(mob_spawn_settings()).Builder();
-                $(for spawn in &biome_def.mob_spawns =>
-                    spawnSettings.addSpawn($(mob_category()).$(spawn.entity_type.to_uppercase()), $(spawn.weight), new $(mob_spawn_settings()).SpawnerData($(entity_types()).$(spawn.entity_type.to_uppercase()), $(spawn.min_count), $(spawn.max_count)));
-                )
-                builder.mobSpawnSettings(spawnSettings.build());
-
-                $(biome_generation_settings()).Builder generation = new $(biome_generation_settings()).Builder(null, null);
-                $(for _feature in &biome_def.features =>
-                    // Feature registered
-                )
-                builder.generationSettings(generation.build());
-
-                return builder.build();
-            }
-        )
     };
 
+    import("net.minecraft.world.item", "Item").register(&mut class_body);
+    import("net.minecraft.world.entity", "EntityType").register(&mut class_body);
+
+    class_body
+}
+
+pub(crate) fn build_mod_biomes(_state: &ModState) -> Tokens {
     quote! {
         public class ModBiomes {
-            $(biome_methods)
-
             public static void initialize() {
             }
         }
     }
 }
 
-pub(crate) fn build_mod_dimensions(state: &ModState) -> Tokens {
-    if state.dimensions.is_empty() {
-        return quote! {
-            public class ModDimensions {
-                public static void initialize() {
-                }
-            }
-        };
-    }
-
-    let dimension_methods = quote! {
-        $(for dimension in &state.dimensions =>
-            public static $(dimension_type()) $(to_upper(&dimension.id))() {
-                return new $(dimension_type())(
-                    $(identifier()).fromNamespaceAndPath($(&state.mod_name).MOD_ID, "$(dimension.id)"),
-                    $(level_stem()).create($(biome()).netherWastes(null, null), null, null)
-                );
-            }
-        )
-    };
-
+pub(crate) fn build_mod_dimensions(_state: &ModState) -> Tokens {
     quote! {
         public class ModDimensions {
-            $(dimension_methods)
-
             public static void initialize() {
             }
         }
     }
 }
 
-pub(crate) fn build_mod_structures(state: &ModState) -> Tokens {
-    if state.structures.is_empty() {
-        return quote! {
-            public class ModStructures {
-                public static void initialize() {
-                }
-            }
-        };
-    }
-
-    let structure_methods = quote! {
-        $(for structure_def in &state.structures =>
-            public static $(structure_set()) $(to_upper(&structure_def.id))() {
-                return new $(structure_set())(
-                    $(identifier()).fromNamespaceAndPath($(&state.mod_name).MOD_ID, "$(structure_def.id)"),
-                    List.of(),
-                    $(format!("{}", structure_def.spacing.unwrap_or(1))),
-                    $(format!("{}", structure_def.separation.unwrap_or(1))),
-                    $(format!("{}", structure_def.salt.unwrap_or(0)))
-                );
-            }
-        )
-    };
-
+pub(crate) fn build_mod_structures(_state: &ModState) -> Tokens {
     quote! {
         public class ModStructures {
-            $(structure_methods)
-
             public static void initialize() {
             }
         }
     }
 }
 
-pub(crate) fn build_mod_features(state: &ModState) -> Tokens {
-    if state.features.is_empty() {
-        return quote! {
-            public class ModFeatures {
-                public static void initialize() {
-                }
-            }
-        };
-    }
-
-    let feature_methods = quote! {
-        $(for feature in &state.features =>
-            public static $(configured_feature()) $(to_upper(&feature.id))() {
-                return new $(configured_feature())(
-                    $(identifier()).fromNamespaceAndPath($(&state.mod_name).MOD_ID, "$(feature.id)"),
-                    null
-                );
-            }
-        )
-    };
-
+pub(crate) fn build_mod_features(_state: &ModState) -> Tokens {
     quote! {
         public class ModFeatures {
-            $(feature_methods)
-
             public static void initialize() {
             }
         }
     }
 }
 
-pub(crate) fn build_mod_loot_tables(state: &ModState) -> Tokens {
-    if state.loot_tables.is_empty() {
-        return quote! {
-            public class ModLootTables {
-                public static void initialize() {
-                }
-            }
-        };
-    }
-
-    let loot_methods = quote! {
-        $(for loot_def in &state.loot_tables =>
-            public static $(loot_table()) $(to_upper(&loot_def.id))() {
-                $(loot_pool()).Builder pool = $(loot_pool()).builder();
-                $(for entry in &loot_def.entries =>
-                    pool.add($(loot_entry()).singleItem($(loot_entry_manager()).getItem($(identifier()).fromNamespaceAndPath($(&state.mod_name).MOD_ID, "$(entry.item)")))
-                        .weight($(format!("{}", entry.weight.unwrap_or(1.0))))
-                        .setCount($(entry.min_count), $(entry.max_count)));
-                )
-                return $(loot_table()).builder()
-                    .withPool(pool.build())
-                    .build();
-            }
-        )
-    };
-
+pub(crate) fn build_mod_loot_tables(_state: &ModState) -> Tokens {
     quote! {
         public class ModLootTables {
-            $(loot_methods)
-
             public static void initialize() {
             }
         }
     }
 }
 
-pub(crate) fn build_mod_advancements(state: &ModState) -> Tokens {
-    if state.advancements.is_empty() {
-        return quote! {
-            public class ModAdvancements {
-                public static void initialize() {
-                }
-            }
-        };
-    }
-
-    let advancement_methods = quote! {
-        $(for adv in &state.advancements =>
-            public static $(advancement()) $(to_upper(&adv.id))() {
-                $(advancement_type()).Display display = new $(advancement_type()).Display(
-                    $(component()).translatable("$(adv.title)"),
-                    $(component()).translatable("$(adv.description)"),
-                    $(identifier()).fromNamespaceAndPath($(&state.mod_name).MOD_ID, "$(adv.icon)"),
-                    $(advancement_type()).$(adv.frame.as_deref().unwrap_or("TASK").to_uppercase()),
-                    true,
-                    false,
-                    $(format!("{}", adv.hidden.unwrap_or(false)))
-                );
-
-                $(advancement_tree()).AdvancementTreeNode node = $(advancement_tree()).AdvancementTreeNode.builder()
-                    .addCriterion("$(adv.id)", $(advancement_type())()
-                        .trigger($(component()).translatable("$(adv.trigger)")))
-                    .build(display);
-
-                return $(advancement()).builder()
-                    .parent($(if adv.parent.is_some() { format!("ModAdvancements.{}", to_upper(adv.parent.as_deref().unwrap())) } else { String::new() }))
-                    .display(display)
-                    .addCriterion("$(adv.id)", node.getCriterion())
-                    .build($(identifier()).fromNamespaceAndPath($(&state.mod_name).MOD_ID, "$(adv.id)"));
-            }
-        )
-    };
-
+pub(crate) fn build_mod_advancements(_state: &ModState) -> Tokens {
     quote! {
         public class ModAdvancements {
-            $(advancement_methods)
-
             public static void initialize() {
             }
         }
     }
 }
 
-pub(crate) fn build_mod_sound_events(state: &ModState) -> Tokens {
-    if state.sound_events.is_empty() {
-        return quote! {
-            public class ModSoundEvents {
-                public static void initialize() {
-                }
-            }
-        };
-    }
-
-    let sound_methods = quote! {
-        $(for sound_def in &state.sound_events =>
-            public static $(sound_event()) $(to_upper(&sound_def.id))() {
-                return $(sound_event()).create($(identifier()).fromNamespaceAndPath($(&state.mod_name).MOD_ID, "$(sound_def.sound_path)"));
-            }
-        )
-    };
-
+pub(crate) fn build_mod_sound_events(_state: &ModState) -> Tokens {
     quote! {
         public class ModSoundEvents {
-            $(sound_methods)
-
             public static void initialize() {
             }
         }
@@ -1243,8 +1098,8 @@ pub(crate) fn build_mod_tags(state: &ModState) -> Tokens {
 
     let tag_methods = quote! {
         $(for tag_def in &state.tags =>
-            public static $(tag_key())<$(tag())> $(to_upper(&tag_def.id))() {
-                return $(tag_key()).create($(identifier()).fromNamespaceAndPath($(&state.mod_name).MOD_ID, "$(tag_def.id)"), $(tag()));
+            public static $(tag_key()) $(to_upper(&tag_def.id))() {
+                return $(tag_key()).create($(registries()).BLOCK, $(identifier()).fromNamespaceAndPath($(&state.mod_name).MOD_ID, "$(tag_def.id)"));
             }
         )
     };

@@ -332,6 +332,7 @@ impl Block {
             creative_tab: None,
             model_kind: BlockModelKind::CubeAll,
             properties_from: None,
+            block_class: "Block".into(),
         })
     }
 
@@ -342,6 +343,7 @@ impl Block {
             creative_tab: Some(tab.into()),
             model_kind: BlockModelKind::CubeAll,
             properties_from: None,
+            block_class: "Block".into(),
         }
     }
 }
@@ -703,6 +705,14 @@ pub struct Block {
     /// Vanilla block to copy properties from (`None` uses `minecraft:dirt`).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties_from: Option<String>,
+
+    /// Java block class name for registration (e.g. `"Block"`, `"ChainBlock"`, `"LanternBlock"`).
+    #[serde(default = "default_block_class")]
+    pub block_class: String,
+}
+
+fn default_block_class() -> String {
+    "Block".into()
 }
 
 /// A crafting recipe tracked in [`ModState::recipes`].
