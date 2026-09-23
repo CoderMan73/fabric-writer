@@ -26,6 +26,9 @@ fn build_recipe(args: &RecipeAddArgs) -> Result<Recipe> {
     recipe.result = args.result.clone().unwrap_or_default();
     recipe.count = args.count.unwrap_or(1);
     recipe.pattern = args.pattern.clone();
+    recipe.cooking_time = args.cooking_time;
+    recipe.experience = args.experience;
+    recipe.category = args.category.clone();
     for pair in &args.ingredients {
         let (key, value) = parse_ingredient_pair(pair)?;
         recipe.ingredients.insert(key, value);
@@ -103,6 +106,18 @@ pub struct RecipeAddArgs {
     /// Ingredient key→value mapping (e.g. `--ingredients W=minecraft:logs`).
     #[arg(long)]
     pub ingredients: Vec<String>,
+
+    /// Cooking time in ticks (for cooking recipes).
+    #[arg(long)]
+    pub cooking_time: Option<i32>,
+
+    /// Experience points (for cooking recipes).
+    #[arg(long)]
+    pub experience: Option<f32>,
+
+    /// Recipe category (e.g. `building_blocks`, `combat`).
+    #[arg(long)]
+    pub category: Option<String>,
 
     /// Show which files were regenerated, skipped, or pruned
     #[arg(short = 'v', long, default_value_t = false)]

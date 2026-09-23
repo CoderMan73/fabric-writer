@@ -1,5 +1,5 @@
 use crate::imports::*;
-use crate::state::{BlockModelKind, CreativeTab, Item, ItemKind, ModState, Recipe};
+use crate::state::{CreativeTab, Item, ItemKind, ModState, Recipe};
 use genco::lang::java::Tokens;
 use genco::lang::java::import;
 use genco::prelude::*;
@@ -278,6 +278,15 @@ pub(crate) fn build_main_mod_class(state: &ModState) -> Tokens {
                 $(if !&state.items.is_empty() => $(mod_items(state)).initialize();)
                 $(if !&state.blocks.is_empty() => $(mod_blocks(state)).initialize();)
                 $(if !state.creative_tabs.is_empty() => $(mod_creative_tabs(state)).initialize();)
+                $(if !state.mobs.is_empty() => $(format!("ModMobs")).initialize();)
+                $(if !state.biomes.is_empty() => $(format!("ModBiomes")).initialize();)
+                $(if !state.dimensions.is_empty() => $(format!("ModDimensions")).initialize();)
+                $(if !state.structures.is_empty() => $(format!("ModStructures")).initialize();)
+                $(if !state.features.is_empty() => $(format!("ModFeatures")).initialize();)
+                $(if !state.loot_tables.is_empty() => $(format!("ModLootTables")).initialize();)
+                $(if !state.advancements.is_empty() => $(format!("ModAdvancements")).initialize();)
+                $(if !state.sound_events.is_empty() => $(format!("ModSoundEvents")).initialize();)
+                $(if !state.tags.is_empty() => $(format!("ModTags")).initialize();)
 
                 $("// Fuel and compostable events")
                 $(for i in &state.items =>
@@ -359,7 +368,7 @@ pub(crate) fn build_datagen_entrypoint(state: &ModState) -> Tokens {
     }
 }
 
-pub(crate) fn build_model_provider(state: &ModState) -> Tokens {
+pub(crate) fn build_model_provider(_state: &ModState) -> Tokens {
     quote! {
         public class ModelProvider extends $(fabric_model_provider()) {
             protected ModelProvider($(fabric_pack_output()) output) {
@@ -368,22 +377,10 @@ pub(crate) fn build_model_provider(state: &ModState) -> Tokens {
 
             @Override
             public void generateBlockStateModels($(block_model_generators()) blockStateModelGenerator) {
-                $(for b in &state.blocks =>
-                    $(if b.model_kind == BlockModelKind::CubeAll =>
-                        blockStateModelGenerator.createTrivialCube($(&mod_blocks(state)).$(to_upper(&b.id)));
-                    )$(if b.model_kind == BlockModelKind::CubeBottomTop =>
-                        blockStateModelGenerator.createTrivialBlock($(&mod_blocks(state)).$(to_upper(&b.id)), $(textured_model()).CUBE_TOP_BOTTOM);
-                    )$(if b.model_kind == BlockModelKind::Cube =>
-                        blockStateModelGenerator.createTrivialBlock($(&mod_blocks(state)).$(to_upper(&b.id)), $(textured_model()).CUBE);
-                    )$['\r']
-                )
             }
 
             @Override
             public void generateItemModels($(item_model_generators()) itemModelGenerator) {
-                $(for i in &state.items =>
-                    itemModelGenerator.generateFlatItem($(&mod_items(state)).$(to_upper(&i.id)), $(model_templates()).FLAT_ITEM);$['\r']
-                )
             }
 
             @Override
@@ -423,6 +420,8 @@ pub(crate) fn build_recipe_provider(state: &ModState) -> Tokens {
 
 fn recipe_call(recipe: &Recipe, state: &ModState) -> Tokens {
     let result_ref = result_item(recipe, state);
+    let result_ref2 = result_ref.clone();
+    let result_ref3 = result_ref.clone();
     let count = recipe.count;
     let recipe_id = strip_namespace(&recipe.id);
     let full_id = format!("{}:{}", state.mod_id, recipe_id);
@@ -430,8 +429,6 @@ fn recipe_call(recipe: &Recipe, state: &ModState) -> Tokens {
         "crafting_shaped" => {
             let pattern_lines = &recipe.pattern;
             let defines = &recipe.ingredients;
-            let result_ref2 = result_ref.clone();
-            let result_ref3 = result_ref.clone();
             quote! {
                 shaped($(recipe_category()).MISC, $(result_ref), $(count))
                     $(for p in pattern_lines => .pattern($(quoted(p))))
@@ -442,13 +439,89 @@ fn recipe_call(recipe: &Recipe, state: &ModState) -> Tokens {
         }
         "crafting_shapeless" => {
             let ingredients = &recipe.ingredients;
-            let result_ref2 = result_ref.clone();
-            let result_ref3 = result_ref.clone();
             quote! {
                 shapeless($(recipe_category()).MISC, $(result_ref), $(count))
                     $(for (_, v) in ingredients => .requires($(ingredient_ref(v, state))))
                     .unlockedBy(getHasName($(result_ref2)), has($(result_ref3)))
                     .save(exporter, $(quoted(&full_id)));
+            }
+        }
+        "smelting" | "blasting" | "smoking" | "campfire_cooking" => {
+            let input = recipe
+                .ingredients
+                .values()
+                .next()
+                .map(|v| ingredient_ref(v, state))
+                .unwrap_or_else(|| quote!("null"));
+            let cooking_time = recipe.cooking_time.unwrap_or(200);
+            let experience = format!("{}f", recipe.experience.unwrap_or(1.0));
+            let category = recipe.category.as_deref().unwrap_or("MISC");
+            let book_category = if recipe.kind == "campfire_cooking" {
+                quote!($(cooking_book_category()).FOOD)
+            } else {
+                quote!($(cooking_book_category()).$(category.to_uppercase()))
+            };
+            match recipe.kind.as_str() {
+                "smelting" => quote! {
+                    $(simple_cooking_recipe_builder()).smelting($(input), $(recipe_category()).$(category.to_uppercase()), $(book_category), $(result_ref), $(experience), $(cooking_time))
+                        .unlockedBy(getHasName($(result_ref2)), has($(result_ref3)))
+                        .save(exporter, $(quoted(&full_id)));
+                },
+                "blasting" => quote! {
+                    $(simple_cooking_recipe_builder()).blasting($(input), $(recipe_category()).$(category.to_uppercase()), $(book_category), $(result_ref), $(experience), $(cooking_time))
+                        .unlockedBy(getHasName($(result_ref2)), has($(result_ref3)))
+                        .save(exporter, $(quoted(&full_id)));
+                },
+                "smoking" => quote! {
+                    $(simple_cooking_recipe_builder()).smoking($(input), $(recipe_category()).$(category.to_uppercase()), $(book_category), $(result_ref), $(experience), $(cooking_time))
+                        .unlockedBy(getHasName($(result_ref2)), has($(result_ref3)))
+                        .save(exporter, $(quoted(&full_id)));
+                },
+                "campfire_cooking" => quote! {
+                    $(simple_cooking_recipe_builder()).campfireCooking($(input), $(recipe_category()).$(category.to_uppercase()), $(book_category), $(result_ref), $(experience), $(cooking_time))
+                        .unlockedBy(getHasName($(result_ref2)), has($(result_ref3)))
+                        .save(exporter, $(quoted(&full_id)));
+                },
+                _ => unreachable!(),
+            }
+        }
+        "stonecutting" => {
+            let input = recipe
+                .ingredients
+                .values()
+                .next()
+                .map(|v| ingredient_ref(v, state))
+                .unwrap_or_else(|| quote!("null"));
+            let category = recipe.category.as_deref().unwrap_or("BUILDING_BLOCKS");
+            quote! {
+                stonecutterResultFromBase($(recipe_category()).$(category.to_uppercase()), $(result_ref), $(input), $(count))
+                    .unlockedBy(getHasName($(result_ref2)), has($(result_ref3)))
+                    .save(exporter, $(quoted(&full_id)));
+            }
+        }
+        "smithing" => {
+            let base = recipe
+                .ingredients
+                .values()
+                .next()
+                .map(|v| ingredient_ref(v, state))
+                .unwrap_or_else(|| quote!("null"));
+            let template = recipe
+                .ingredients
+                .values()
+                .nth(1)
+                .map(|v| ingredient_ref(v, state))
+                .unwrap_or_else(|| quote!("null"));
+            let category = recipe.category.as_deref().unwrap_or("MISC");
+            quote! {
+                $(smithing_transform_recipe_builder()).smithing(
+                    $(template),
+                    $(base),
+                    $(item_tags()).NETHERITE_TOOL_MATERIALS,
+                    $(recipe_category()).$(category.to_uppercase()),
+                    $(result_ref)
+                ).unlocks("has_netherite_ingot", has($(item_tags()).NETHERITE_TOOL_MATERIALS))
+                 .save(exporter, $(quoted(&full_id)));
             }
         }
         _ => quote! { /* unsupported recipe type: $(quoted(&recipe.kind)) */ },
@@ -842,4 +915,85 @@ where
 
 fn display_name(id: &str) -> String {
     id.replace('_', " ").to_title_case()
+}
+
+pub(crate) fn build_mod_mobs(_state: &ModState) -> Tokens {
+    quote! {
+        public class ModMobs {
+            public static void initialize() {
+            }
+        }
+    }
+}
+
+pub(crate) fn build_mod_biomes(_state: &ModState) -> Tokens {
+    quote! {
+        public class ModBiomes {
+            public static void initialize() {
+            }
+        }
+    }
+}
+
+pub(crate) fn build_mod_dimensions(_state: &ModState) -> Tokens {
+    quote! {
+        public class ModDimensions {
+            public static void initialize() {
+            }
+        }
+    }
+}
+
+pub(crate) fn build_mod_structures(_state: &ModState) -> Tokens {
+    quote! {
+        public class ModStructures {
+            public static void initialize() {
+            }
+        }
+    }
+}
+
+pub(crate) fn build_mod_features(_state: &ModState) -> Tokens {
+    quote! {
+        public class ModFeatures {
+            public static void initialize() {
+            }
+        }
+    }
+}
+
+pub(crate) fn build_mod_loot_tables(_state: &ModState) -> Tokens {
+    quote! {
+        public class ModLootTables {
+            public static void initialize() {
+            }
+        }
+    }
+}
+
+pub(crate) fn build_mod_advancements(_state: &ModState) -> Tokens {
+    quote! {
+        public class ModAdvancements {
+            public static void initialize() {
+            }
+        }
+    }
+}
+
+pub(crate) fn build_mod_sound_events(_state: &ModState) -> Tokens {
+    quote! {
+        public class ModSoundEvents {
+            public static void initialize() {
+            }
+        }
+    }
+}
+
+pub(crate) fn build_mod_tags(_state: &ModState) -> Tokens {
+    quote! {
+        public class ModTags {
+            public static void initialize() {
+            }
+        }
+    }
 }

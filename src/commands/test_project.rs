@@ -23,6 +23,10 @@ fn kind_label(item: &Item) -> &'static str {
         ItemKind::Armor => "armor",
         ItemKind::Shield => "shield",
         ItemKind::Potion => "potion",
+        ItemKind::MusicDisc => "music_disc",
+        ItemKind::FireCharge => "fire_charge",
+        ItemKind::FlintAndSteel => "flint_and_steel",
+        ItemKind::Compass => "compass",
     }
 }
 

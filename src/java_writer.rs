@@ -5,11 +5,14 @@ use std::collections::HashSet;
 use std::fs::{create_dir_all, read as fs_read, read_dir, remove_file, write as fs_write};
 use std::path::{Path, PathBuf};
 
-use crate::state::{Entity, ModState};
+use crate::state::{BlockModelKind, Entity, ModState};
 use crate::tokengen::{
     BuildFn, build_datagen_entrypoint, build_item_class, build_lang_provider, build_main_mod_class,
-    build_mod_block_ids, build_mod_block_item_ids, build_mod_blocks, build_mod_creative_tabs,
-    build_mod_item_ids, build_mod_items, build_model_provider, build_recipe_provider, to_upper,
+    build_mod_advancements, build_mod_biomes, build_mod_block_ids, build_mod_block_item_ids,
+    build_mod_blocks, build_mod_creative_tabs, build_mod_dimensions, build_mod_features,
+    build_mod_item_ids, build_mod_items, build_mod_loot_tables, build_mod_mobs,
+    build_mod_sound_events, build_mod_structures, build_mod_tags, build_model_provider,
+    build_recipe_provider, to_upper,
 };
 
 const PLACEHOLDER_ITEM: &[u8] = include_bytes!("../assets/placeholder_item.png");
@@ -52,6 +55,33 @@ pub struct DirtyFlags {
 
     /// `ModCreativeTabs.java`
     pub creative_tabs: bool,
+
+    /// `ModMobs.java`
+    pub mod_mobs: bool,
+
+    /// `ModBiomes.java`
+    pub mod_biomes: bool,
+
+    /// `ModDimensions.java`
+    pub mod_dimensions: bool,
+
+    /// `ModStructures.java`
+    pub mod_structures: bool,
+
+    /// `ModFeatures.java`
+    pub mod_features: bool,
+
+    /// `ModLootTables.java`
+    pub mod_loot_tables: bool,
+
+    /// `ModAdvancements.java`
+    pub mod_advancements: bool,
+
+    /// `ModSoundEvents.java`
+    pub mod_sound_events: bool,
+
+    /// `ModTags.java`
+    pub mod_tags: bool,
 }
 
 impl DirtyFlags {
@@ -69,6 +99,15 @@ impl DirtyFlags {
             mod_block_item_ids: true,
             recipe_provider: true,
             creative_tabs: true,
+            mod_mobs: true,
+            mod_biomes: true,
+            mod_dimensions: true,
+            mod_structures: true,
+            mod_features: true,
+            mod_loot_tables: true,
+            mod_advancements: true,
+            mod_sound_events: true,
+            mod_tags: true,
         }
     }
 
@@ -104,6 +143,59 @@ impl DirtyFlags {
                 mod_class: true,
                 ..Default::default()
             },
+            Entity::Mob(_) => Self {
+                mod_mobs: true,
+                mod_class: true,
+                ..Default::default()
+            },
+            Entity::Biome(_) => Self {
+                mod_biomes: true,
+                mod_class: true,
+                datagen_entrypoint: true,
+                ..Default::default()
+            },
+            Entity::Dimension(_) => Self {
+                mod_dimensions: true,
+                mod_class: true,
+                datagen_entrypoint: true,
+                ..Default::default()
+            },
+            Entity::Structure(_) => Self {
+                mod_structures: true,
+                mod_class: true,
+                datagen_entrypoint: true,
+                ..Default::default()
+            },
+            Entity::Feature(_) => Self {
+                mod_features: true,
+                mod_class: true,
+                datagen_entrypoint: true,
+                ..Default::default()
+            },
+            Entity::LootTable(_) => Self {
+                mod_loot_tables: true,
+                mod_class: true,
+                datagen_entrypoint: true,
+                ..Default::default()
+            },
+            Entity::Advancement(_) => Self {
+                mod_advancements: true,
+                mod_class: true,
+                datagen_entrypoint: true,
+                ..Default::default()
+            },
+            Entity::SoundEvent(_) => Self {
+                mod_sound_events: true,
+                mod_class: true,
+                datagen_entrypoint: true,
+                ..Default::default()
+            },
+            Entity::Tag(_) => Self {
+                mod_tags: true,
+                mod_class: true,
+                datagen_entrypoint: true,
+                ..Default::default()
+            },
         }
     }
 
@@ -120,6 +212,15 @@ impl DirtyFlags {
             "mod_block_item_ids" => self.mod_block_item_ids,
             "recipe_provider" => self.recipe_provider,
             "creative_tabs" => self.creative_tabs,
+            "mod_mobs" => self.mod_mobs,
+            "mod_biomes" => self.mod_biomes,
+            "mod_dimensions" => self.mod_dimensions,
+            "mod_structures" => self.mod_structures,
+            "mod_features" => self.mod_features,
+            "mod_loot_tables" => self.mod_loot_tables,
+            "mod_advancements" => self.mod_advancements,
+            "mod_sound_events" => self.mod_sound_events,
+            "mod_tags" => self.mod_tags,
             _ => false,
         }
     }
@@ -241,6 +342,78 @@ fn file_specs() -> &'static [(&'static str, FileSpec)] {
                 should_exist: |state| !state.creative_tabs.is_empty(),
             },
         ),
+        (
+            "ModMobs.java",
+            FileSpec {
+                field: "mod_mobs",
+                build: build_mod_mobs,
+                should_exist: |state| !state.mobs.is_empty(),
+            },
+        ),
+        (
+            "ModBiomes.java",
+            FileSpec {
+                field: "mod_biomes",
+                build: build_mod_biomes,
+                should_exist: |state| !state.biomes.is_empty(),
+            },
+        ),
+        (
+            "ModDimensions.java",
+            FileSpec {
+                field: "mod_dimensions",
+                build: build_mod_dimensions,
+                should_exist: |state| !state.dimensions.is_empty(),
+            },
+        ),
+        (
+            "ModStructures.java",
+            FileSpec {
+                field: "mod_structures",
+                build: build_mod_structures,
+                should_exist: |state| !state.structures.is_empty(),
+            },
+        ),
+        (
+            "ModFeatures.java",
+            FileSpec {
+                field: "mod_features",
+                build: build_mod_features,
+                should_exist: |state| !state.features.is_empty(),
+            },
+        ),
+        (
+            "ModLootTables.java",
+            FileSpec {
+                field: "mod_loot_tables",
+                build: build_mod_loot_tables,
+                should_exist: |state| !state.loot_tables.is_empty(),
+            },
+        ),
+        (
+            "ModAdvancements.java",
+            FileSpec {
+                field: "mod_advancements",
+                build: build_mod_advancements,
+                should_exist: |state| !state.advancements.is_empty(),
+            },
+        ),
+        (
+            "ModSoundEvents.java",
+            FileSpec {
+                field: "mod_sound_events",
+                build: build_mod_sound_events,
+                should_exist: |state| !state.sound_events.is_empty(),
+            },
+        ),
+        (
+            "ModTags.java",
+            FileSpec {
+                field: "mod_tags",
+                build: build_mod_tags,
+                should_exist: |state| !state.tags.is_empty(),
+            },
+        ),
     ]
 }
 
@@ -302,6 +475,7 @@ pub fn regenerate_all(state: &ModState, dirty: DirtyFlags, verbose: bool) -> Res
     }
 
     copy_textures(state, verbose)?;
+    generate_model_resources(state, verbose)?;
 
     for i in &state.items {
         let class_name = format!("{}Item.java", to_upper(&i.id));
@@ -349,6 +523,15 @@ fn resolve_path(
         "ModBlockIds.java" => java_root.join(name),
         "ModBlockItemIds.java" => java_root.join(name),
         "ModCreativeTabs.java" => java_root.join(name),
+        "ModMobs.java" => java_root.join(name),
+        "ModBiomes.java" => java_root.join(name),
+        "ModDimensions.java" => java_root.join(name),
+        "ModStructures.java" => java_root.join(name),
+        "ModFeatures.java" => java_root.join(name),
+        "ModLootTables.java" => java_root.join(name),
+        "ModAdvancements.java" => java_root.join(name),
+        "ModSoundEvents.java" => java_root.join(name),
+        "ModTags.java" => java_root.join(name),
         _ => unreachable!("unknown file spec name: {}", name),
     }
 }
@@ -455,6 +638,206 @@ fn copy_textures(state: &ModState, verbose: bool) -> Result<()> {
         "block",
         verbose,
     )?;
+    Ok(())
+}
+
+fn generate_model_resources(state: &ModState, _verbose: bool) -> Result<()> {
+    let assets_root = PathBuf::from("src/main/resources/assets").join(&state.mod_id);
+    let blockstates_root = assets_root.join("blockstates");
+    let block_models_root = assets_root.join("models").join("block");
+    let item_models_root = assets_root.join("models").join("item");
+    create_dir_all(&blockstates_root)?;
+    create_dir_all(&block_models_root)?;
+    create_dir_all(&item_models_root)?;
+
+    for block in &state.blocks {
+        let id = &block.id;
+        let mod_id = &state.mod_id;
+        let blockstate_path = blockstates_root.join(format!("{}.json", id));
+        let block_model_path = block_models_root.join(format!("{}.json", id));
+
+        match block.model_kind {
+            BlockModelKind::CubeAll | BlockModelKind::Cube => {
+                std::fs::write(
+                    blockstate_path,
+                    format!(
+                        r#"{{"variants":{{"":{{"model":"{}:block/{}"}}}}}}"#,
+                        mod_id, id
+                    ),
+                )?;
+                std::fs::write(
+                    block_model_path,
+                    format!(
+                        r#"{{"parent":"minecraft:block/cube_all","textures":{{"all":"{}:block/{}"}}}}"#,
+                        mod_id, id
+                    ),
+                )?;
+            }
+            BlockModelKind::CubeBottomTop
+            | BlockModelKind::CubeColumn
+            | BlockModelKind::Orientable => {
+                let texture_name = id;
+                std::fs::write(
+                    blockstate_path,
+                    format!(
+                        r#"{{"variants":{{"":{{"model":"{}:block/{}"}}}}}}"#,
+                        mod_id, id
+                    ),
+                )?;
+                std::fs::write(
+                    block_model_path,
+                    format!(
+                        r#"{{"parent":"minecraft:block/cube_bottom_top","textures":{{"bottom":"{}:block/{}_bottom","top":"{}:block/{}_top","side":"{}:block/{}"}}}}"#,
+                        mod_id, texture_name, mod_id, texture_name, mod_id, texture_name
+                    ),
+                )?;
+            }
+            BlockModelKind::Slab => {
+                std::fs::write(
+                    blockstate_path,
+                    format!(
+                        r#"{{"variants":{{"type=bottom":{{"model":"{}:block/{}_slab_bottom"}},"type=top":{{"model":"{}:block/{}_slab_top"}},"type=double":{{"model":"{}:block/{}_slab_double"}}}}}}"#,
+                        mod_id, id, mod_id, id, mod_id, id
+                    ),
+                )?;
+                std::fs::write(
+                    block_models_root.join(format!("{}_slab_bottom.json", id)),
+                    format!(
+                        r#"{{"parent":"minecraft:block/slab_bottom","textures":{{"bottom":"{}:block/{}","top":"{}:block/{}","side":"{}:block/{}"}}}}"#,
+                        mod_id, id, mod_id, id, mod_id, id
+                    ),
+                )?;
+                std::fs::write(
+                    block_models_root.join(format!("{}_slab_top.json", id)),
+                    format!(
+                        r#"{{"parent":"minecraft:block/slab_top","textures":{{"bottom":"{}:block/{}","top":"{}:block/{}","side":"{}:block/{}"}}}}"#,
+                        mod_id, id, mod_id, id, mod_id, id
+                    ),
+                )?;
+                std::fs::write(
+                    block_models_root.join(format!("{}_slab_double.json", id)),
+                    format!(
+                        r#"{{"parent":"minecraft:block/cube_all","textures":{{"all":"{}:block/{}"}}}}"#,
+                        mod_id, id
+                    ),
+                )?;
+            }
+            BlockModelKind::Stairs => {
+                std::fs::write(
+                    blockstate_path,
+                    format!(
+                        r#"{{"variants":{{"facing=east,half=bottom,shape=straight":{{"model":"{}:block/{}_stairs"}},"facing=west,half=bottom,shape=straight":{{"model":"{}:block/{}_stairs","y":90,"uvlock":true}},"facing=south,half=bottom,shape=straight":{{"model":"{}:block/{}_stairs","y":180,"uvlock":true}},"facing=north,half=bottom,shape=straight":{{"model":"{}:block/{}_stairs","y":270,"uvlock":true}},"facing=east,half=bottom,shape=outer_right":{{"model":"{}:block/{}_stairs_outer_right"}},"facing=west,half=bottom,shape=outer_right":{{"model":"{}:block/{}_stairs_outer_right","y":90,"uvlock":true}},"facing=south,half=bottom,shape=outer_right":{{"model":"{}:block/{}_stairs_outer_right","y":180,"uvlock":true}},"facing=north,half=bottom,shape=outer_right":{{"model":"{}:block/{}_stairs_outer_right","y":270,"uvlock":true}},"facing=east,half=bottom,shape=outer_left":{{"model":"{}:block/{}_stairs_outer_left"}},"facing=west,half=bottom,shape=outer_left":{{"model":"{}:block/{}_stairs_outer_left","y":90,"uvlock":true}},"facing=south,half=bottom,shape=outer_left":{{"model":"{}:block/{}_stairs_outer_left","y":180,"uvlock":true}},"facing=north,half=bottom,shape=outer_left":{{"model":"{}:block/{}_stairs_outer_left","y":270,"uvlock":true}},"facing=east,half=bottom,shape=inner_right":{{"model":"{}:block/{}_stairs_inner_right"}},"facing=west,half=bottom,shape=inner_right":{{"model":"{}:block/{}_stairs_inner_right","y":90,"uvlock":true}},"facing=south,half=bottom,shape=inner_right":{{"model":"{}:block/{}_stairs_inner_right","y":180,"uvlock":true}},"facing=north,half=bottom,shape=inner_right":{{"model":"{}:block/{}_stairs_inner_right","y":270,"uvlock":true}},"facing=east,half=bottom,shape=inner_left":{{"model":"{}:block/{}_stairs_inner_left"}},"facing=west,half=bottom,shape=inner_left":{{"model":"{}:block/{}_stairs_inner_left","y":90,"uvlock":true}},"facing=south,half=bottom,shape=inner_left":{{"model":"{}:block/{}_stairs_inner_left","y":180,"uvlock":true}},"facing=north,half=bottom,shape=inner_left":{{"model":"{}:block/{}_stairs_inner_left","y":270,"uvlock":true}},"half=top":{{"model":"{}:block/{}_stairs","x":180,"uvlock":true}}}}"#,
+                        mod_id,
+                        id,
+                        mod_id,
+                        id,
+                        mod_id,
+                        id,
+                        mod_id,
+                        id,
+                        mod_id,
+                        id,
+                        mod_id,
+                        id,
+                        mod_id,
+                        id,
+                        mod_id,
+                        id,
+                        mod_id,
+                        id,
+                        mod_id,
+                        id,
+                        mod_id,
+                        id,
+                        mod_id,
+                        id,
+                        mod_id,
+                        id,
+                        mod_id,
+                        id,
+                        mod_id,
+                        id,
+                        mod_id,
+                        id,
+                        mod_id,
+                        id,
+                        mod_id,
+                        id,
+                        mod_id,
+                        id,
+                        mod_id,
+                        id,
+                        mod_id,
+                        id
+                    ),
+                )?;
+                let tex = id;
+                for suffix in &[
+                    "",
+                    "_inner_right",
+                    "_inner_left",
+                    "_outer_right",
+                    "_outer_left",
+                ] {
+                    let parent = if suffix.is_empty() {
+                        "minecraft:block/stairs".to_string()
+                    } else {
+                        format!("minecraft:block/stairs{}", suffix)
+                    };
+                    std::fs::write(
+                        block_models_root.join(format!("{}{}.json", id, suffix)),
+                        format!(
+                            r#"{{"parent":"{}","textures":{{"bottom":"{}:block/{}","top":"{}:block/{}","side":"{}:block/{}"}}}}"#,
+                            parent, mod_id, tex, mod_id, tex, mod_id, tex
+                        ),
+                    )?;
+                }
+            }
+            _ => {
+                std::fs::write(
+                    blockstate_path,
+                    format!(
+                        r#"{{"variants":{{"":{{"model":"{}:block/{}"}}}}}}"#,
+                        mod_id, id
+                    ),
+                )?;
+                std::fs::write(
+                    block_model_path,
+                    format!(
+                        r#"{{"parent":"minecraft:block/cube_all","textures":{{"all":"{}:block/{}"}}}}"#,
+                        mod_id, id
+                    ),
+                )?;
+            }
+        }
+
+        let item_model_path = item_models_root.join(format!("{}.json", id));
+        if !item_model_path.exists() {
+            std::fs::write(
+                    item_model_path,
+                format!(
+                    r#"{{"parent":"minecraft:item/generated","textures":{{"layer0":"{}:item/{}"}}}}"#,
+                    mod_id, id
+                ),
+            )?;
+        }
+    }
+
+    for item in &state.items {
+        let id = &item.id;
+        let mod_id = &state.mod_id;
+        let item_model_path = item_models_root.join(format!("{}.json", id));
+        if !item_model_path.exists() {
+            std::fs::write(
+                    item_model_path,
+                format!(
+                    r#"{{"parent":"minecraft:item/generated","textures":{{"layer0":"{}:item/{}"}}}}"#,
+                    mod_id, id
+                ),
+            )?;
+        }
+    }
+
     Ok(())
 }
 

@@ -208,6 +208,56 @@ cargo build
 
 > See `spec.md` for the spec workflow (feature tracking, status sections, etc.).
 
+## Blue Nether Mod Implementation
+
+The active feature target is the **Blue Nether Mod** content spec:
+`E:\Coding_Projects\blue_nether_spec.md`
+
+When working on this feature, consult the spec for exact content requirements.
+The implementation approach is to extend `fabric-writer`'s state model and
+codegen templates until the full content set can be generated from state rather
+than hand-written Java.
+
+### Current Blue Nether preset
+
+`src/commands/test_project.rs` exposes:
+- `Preset::BlueNetherBase`
+- `fw test-project --preset blue-nether-base`
+
+This preset adds the base terrain blocks, creative tab, and copies textures
+from:
+`E:\Coding_Projects\MCSourceCode\vanilla-minecraft\26.2\assets\minecraft\textures`
+
+### Codegen extension pattern
+
+New content types follow the same pattern as items/blocks/recipes:
+
+1. **State** (`src/state.rs`): Add entity struct + `Entity` variant
+2. **CLI** (`src/commands/*.rs`): Add parse flags and entity construction
+3. **Dirty flags** (`src/java_writer.rs`): Add bits for any new generated files
+4. **Template** (`src/tokengen.rs`): Add `BuildFn` producing Java source
+5. **Imports** (`src/imports.rs`): Add `Import` entries for new Java types
+6. **Writer** (`src/java_writer.rs`): Add `FileSpec` entries with `build`,
+   `should_exist`, and dirty flag
+
+### Files likely to change for Blue Nether
+
+- `src/state.rs` — new entity types: `Biome`, `Dimension`, `Structure`,
+  `Feature`, `LootTable`, `Advancement`, `Mob`, `SoundEvent`, etc.
+- `src/imports.rs` — new Minecraft/Fabric API imports
+- `src/tokengen.rs` — new Java templates
+- `src/java_writer.rs` — new `FileSpec` entries and dirty flags
+- `src/commands/*.rs` — new CLI commands / flags
+- `src/commands/test_project.rs` — preset expansion as codegen support lands
+- `tests/tests.rs` — integration coverage for new entities
+
+### Reference materials
+
+- Minecraft source: `E:\Coding_Projects\MCSourceCode\26.2`
+- Fabric API source: `E:\Coding_Projects\MCSourceCode\fabric-api\26.2`
+- Fabric docs: `E:\Coding_Projects\MCSourceCode\fabric-docs\develop`
+- Fabric example code: `E:\Coding_Projects\MCSourceCode\fabric-docs\reference\latest\src`
+
 ## Common Pitfalls
 
 1. **Java path:** `fw init` validates JDK version (25+ for MC 26.2). The path must point to the JDK root, not the `bin` directory.

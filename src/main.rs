@@ -7,10 +7,13 @@
 
 use clap::{Parser, Subcommand};
 use fabric_writer::commands::{
+    biome::{self, BiomeAddArgs, BiomeRemoveArgs},
     block::{self, BlockAddArgs, BlockRemoveArgs},
     creative_tab::{self, CreativeTabAddArgs, CreativeTabRemoveArgs},
+    dimension::{self, DimensionAddArgs, DimensionRemoveArgs},
     init::{self, InitArgs},
     item::{self, ItemAddArgs, ItemRemoveArgs},
+    mob::{self, MobAddArgs, MobRemoveArgs},
     recipe::{self, RecipeAddArgs, RecipeRemoveArgs},
     regen::{self, RegenArgs},
     run,
@@ -35,12 +38,18 @@ fn main() -> anyhow::Result<()> {
             AddSubcommand::Block(args) => block::add(args),
             AddSubcommand::Recipe(args) => recipe::add(args),
             AddSubcommand::CreativeTab(args) => creative_tab::add(args),
+            AddSubcommand::Mob(args) => mob::add(args),
+            AddSubcommand::Biome(args) => biome::add(args),
+            AddSubcommand::Dimension(args) => dimension::add(args),
         },
         Commands::Remove { subcommand } => match subcommand {
             RemoveSubcommand::Item(args) => item::remove(args),
             RemoveSubcommand::Block(args) => block::remove(args),
             RemoveSubcommand::Recipe(args) => recipe::remove(args),
             RemoveSubcommand::CreativeTab(args) => creative_tab::remove(args),
+            RemoveSubcommand::Mob(args) => mob::remove(args),
+            RemoveSubcommand::Biome(args) => biome::remove(args),
+            RemoveSubcommand::Dimension(args) => dimension::remove(args),
         },
         Commands::Run { subcommand } => match subcommand {
             RunSubcommand::Datagen => run::datagen(),
@@ -123,6 +132,18 @@ enum AddSubcommand {
     /// Add a creative tab [alias: t]
     #[command(alias = "t")]
     CreativeTab(CreativeTabAddArgs),
+
+    /// Add a mob [alias: m]
+    #[command(alias = "m")]
+    Mob(MobAddArgs),
+
+    /// Add a biome [alias: bm]
+    #[command(alias = "bm")]
+    Biome(BiomeAddArgs),
+
+    /// Add a dimension [alias: d")]
+    #[command(alias = "d")]
+    Dimension(DimensionAddArgs),
 }
 
 #[derive(Subcommand)]
@@ -142,6 +163,18 @@ enum RemoveSubcommand {
     /// Remove a creative tab [alias: t]
     #[command(alias = "t")]
     CreativeTab(CreativeTabRemoveArgs),
+
+    /// Remove a mob [alias: m]
+    #[command(alias = "m")]
+    Mob(MobRemoveArgs),
+
+    /// Remove a biome [alias: bm]
+    #[command(alias = "bm")]
+    Biome(BiomeRemoveArgs),
+
+    /// Remove a dimension [alias: d")]
+    #[command(alias = "d")]
+    Dimension(DimensionRemoveArgs),
 }
 
 #[derive(Subcommand)]

@@ -38,8 +38,7 @@ mod imports_inner {
     static_import!(DATA_GENERATOR_ENTRYPOINT, data_generator_entrypoint, "net.fabricmc.fabric.api.datagen.v1", "DataGeneratorEntrypoint");
     static_import!(FABRIC_DATA_GENERATOR, fabric_data_generator, "net.fabricmc.fabric.api.datagen.v1", "FabricDataGenerator");
     static_import!(FABRIC_MODEL_PROVIDER, fabric_model_provider, "net.fabricmc.fabric.api.client.datagen.v1.provider", "FabricModelProvider");
-    static_import!(MODEL_TEMPLATES, model_templates, "net.minecraft.client.data.models.model", "ModelTemplates");
-    static_import!(TEXTURED_MODEL, textured_model, "net.minecraft.client.data.models.model", "TexturedModel");
+
     static_import!(BLOCK, block, "net.minecraft.world.level.block", "Block");
     static_import!(BLOCKS, blocks, "net.minecraft.world.level.block", "Blocks");
     static_import!(BLOCK_ITEM, block_item, "net.minecraft.world.item", "BlockItem");
@@ -53,6 +52,11 @@ mod imports_inner {
     static_import!(RECIPE_PROVIDER, recipe_provider, "net.minecraft.data.recipes", "RecipeProvider");
     static_import!(RECIPE_OUTPUT, recipe_output, "net.minecraft.data.recipes", "RecipeOutput");
     static_import!(RECIPE_CATEGORY, recipe_category, "net.minecraft.data.recipes", "RecipeCategory");
+    static_import!(SIMPLE_COOKING_RECIPE_BUILDER, simple_cooking_recipe_builder, "net.minecraft.data.recipes", "SimpleCookingRecipeBuilder");
+    static_import!(SMITHING_TRANSFORM_RECIPE_BUILDER, smithing_transform_recipe_builder, "net.minecraft.world.item.crafting", "SmithingTransformRecipeBuilder");
+
+    static_import!(COOKING_BOOK_CATEGORY, cooking_book_category, "net.minecraft.world.item.crafting", "CookingBookCategory");
+    static_import!(ITEM_TAGS, item_tags, "net.minecraft.tags", "ItemTags");
     static_import!(INGREDIENT, ingredient, "net.minecraft.world.item.crafting", "Ingredient");
     static_import!(ITEMS, items, "net.minecraft.world.item", "Items");
     static_import!(TOOL_MATERIALS, tool_materials, "net.minecraft.world.item", "ToolMaterial");
@@ -69,6 +73,7 @@ mod imports_inner {
     static_import!(ARMOR_TYPE, armor_type, "net.minecraft.world.item.equipment", "ArmorType");
     static_import!(SHIELD_ITEM, shield_item, "net.minecraft.world.item", "ShieldItem");
     static_import!(ENTITY_TYPES, entity_types, "net.minecraft.world.entity", "EntityTypes");
+
     static_import!(DATA_COMPONENTS, data_components, "net.minecraft.core.component", "DataComponents");
     static_import!(FOOD_PROPERTIES, food_properties, "net.minecraft.world.food", "FoodProperties");
     static_import!(CONSUMABLES, consumables, "net.minecraft.world.item.component", "Consumables");

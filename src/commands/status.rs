@@ -47,6 +47,10 @@ fn print_item(item: &state::Item) {
         ItemKind::Armor => "armor",
         ItemKind::Shield => "shield",
         ItemKind::Potion => "potion",
+        ItemKind::MusicDisc
+        | ItemKind::FireCharge
+        | ItemKind::FlintAndSteel
+        | ItemKind::Compass => "special",
     };
     let mut detail = format!("  - {} ({kind}", item.id);
     if let Some(material) = &item.material {

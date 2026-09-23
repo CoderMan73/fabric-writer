@@ -46,6 +46,10 @@ fn build_item(args: &ItemAddArgs) -> Result<Item> {
             "armor" => ItemKind::Armor,
             "shield" => ItemKind::Shield,
             "potion" => ItemKind::Potion,
+            "music_disc" => ItemKind::MusicDisc,
+            "fire_charge" => ItemKind::FireCharge,
+            "flint_and_steel" => ItemKind::FlintAndSteel,
+            "compass" => ItemKind::Compass,
             _ => ItemKind::Basic,
         };
     }
@@ -106,6 +110,10 @@ fn kind_label(item: &Item) -> &'static str {
         ItemKind::Armor => "armor",
         ItemKind::Shield => "shield",
         ItemKind::Potion => "potion",
+        ItemKind::MusicDisc => "music_disc",
+        ItemKind::FireCharge => "fire_charge",
+        ItemKind::FlintAndSteel => "flint_and_steel",
+        ItemKind::Compass => "compass",
     }
 }
 

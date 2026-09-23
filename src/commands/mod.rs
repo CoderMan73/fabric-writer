@@ -1,11 +1,17 @@
+/// Biome related commands.
+pub mod biome;
 /// Block related commands.
 pub mod block;
 /// Creative tab related commands.
 pub mod creative_tab;
+/// Dimension related commands.
+pub mod dimension;
 /// Project initialization via the Fabric CLI.
 pub mod init;
 /// Item related commands.
 pub mod item;
+/// Mob related commands.
+pub mod mob;
 /// Recipe related commands.
 pub mod recipe;
 /// Full regeneration of all Java sources.

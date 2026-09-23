@@ -76,6 +76,9 @@ fn add_shaped_recipe_generates_provider() -> Result<()> {
         count: Some(1),
         pattern: vec!["W W".into(), " W ".into(), "W W".into()],
         ingredients: vec!["W=minecraft:wood".into()],
+        cooking_time: None,
+        experience: None,
+        category: None,
         verbose: false,
     };
     recipe_add(args)?;
@@ -113,6 +116,9 @@ fn add_shapeless_recipe_generates_provider() -> Result<()> {
         count: Some(4),
         pattern: vec![],
         ingredients: vec!["X=minecraft:coarse_dirt".into()],
+        cooking_time: None,
+        experience: None,
+        category: None,
         verbose: false,
     };
     recipe_add(args)?;
@@ -149,6 +155,9 @@ fn remove_recipe_prunes_provider() -> Result<()> {
         count: Some(1),
         pattern: vec!["D".into()],
         ingredients: vec!["D=minecraft:dirt".into()],
+        cooking_time: None,
+        experience: None,
+        category: None,
         verbose: false,
     };
     recipe_add(add_args)?;
@@ -246,6 +255,9 @@ fn datagen_succeeds_with_mixed_vanilla_and_modded_content() -> Result<()> {
         count: Some(1),
         pattern: vec!["W".into()],
         ingredients: vec!["W=minecraft:stick".into()],
+        cooking_time: None,
+        experience: None,
+        category: None,
         verbose: false,
     })?;
 
@@ -257,6 +269,9 @@ fn datagen_succeeds_with_mixed_vanilla_and_modded_content() -> Result<()> {
         count: Some(4),
         pattern: vec!["C".into(), "C".into()],
         ingredients: vec!["C=testmod:copper_ore".into()],
+        cooking_time: None,
+        experience: None,
+        category: None,
         verbose: false,
     })?;
 
@@ -271,6 +286,9 @@ fn datagen_succeeds_with_mixed_vanilla_and_modded_content() -> Result<()> {
             "X=minecraft:coarse_dirt".into(),
             "Y=testmod:copper_ingot".into(),
         ],
+        cooking_time: None,
+        experience: None,
+        category: None,
         verbose: false,
     })?;
 
