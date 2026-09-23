@@ -457,6 +457,138 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
         }
     }
 
+    // Blue Netherite Ingot
+    {
+        let item = Item::base("blue_netherite_ingot", tab);
+        if state.try_add(Entity::Item(item))? {
+            println!("Added item: blue_netherite_ingot");
+        }
+    }
+
+    // Blue Blaze Rod
+    {
+        let item = Item::base("blue_blaze_rod", tab);
+        if state.try_add(Entity::Item(item))? {
+            println!("Added item: blue_blaze_rod");
+        }
+    }
+
+    // Blue Ghast Tear
+    {
+        let item = Item::base("blue_ghast_tear", tab);
+        if state.try_add(Entity::Item(item))? {
+            println!("Added item: blue_ghast_tear");
+        }
+    }
+
+    // Blue Magma Cream
+    {
+        let item = Item::base("blue_magma_cream", tab);
+        if state.try_add(Entity::Item(item))? {
+            println!("Added item: blue_magma_cream");
+        }
+    }
+
+    // Blue Nether Wart
+    {
+        let item = Item::base("blue_nether_wart", tab);
+        if state.try_add(Entity::Item(item))? {
+            println!("Added item: blue_nether_wart");
+        }
+    }
+
+    // Blue Fire Charge
+    {
+        let mut item = Item::new("blue_fire_charge")?;
+        item.kind = ItemKind::FireCharge;
+        if state.try_add(Entity::Item(item))? {
+            println!("Added item: blue_fire_charge");
+        }
+    }
+
+    // Blue Flint and Steel
+    {
+        let mut item = Item::new("blue_flint_and_steel")?;
+        item.kind = ItemKind::FlintAndSteel;
+        if state.try_add(Entity::Item(item))? {
+            println!("Added item: blue_flint_and_steel");
+        }
+    }
+
+    // Blue Netherite Sword
+    {
+        let mut item = Item::new("blue_netherite_sword")?;
+        item.kind = ItemKind::Tool;
+        item.material = Some("netherite".into());
+        item.attack_damage = Some(8.0);
+        item.attack_speed = Some(-2.4);
+        if state.try_add(Entity::Item(item))? {
+            println!("Added item: blue_netherite_sword");
+        }
+    }
+
+    // Blue Netherite Pickaxe
+    {
+        let mut item = Item::new("blue_netherite_pickaxe")?;
+        item.kind = ItemKind::Tool;
+        item.material = Some("netherite".into());
+        item.attack_damage = Some(2.0);
+        item.attack_speed = Some(-2.8);
+        if state.try_add(Entity::Item(item))? {
+            println!("Added item: blue_netherite_pickaxe");
+        }
+    }
+
+    // Blue Nether Bricks recipe
+    {
+        let mut recipe = Recipe::new("blue_nether_bricks")?;
+        recipe.kind = "crafting_shaped".into();
+        recipe.pattern = vec!["NNN".into(), "NNN".into(), "NNN".into()];
+        recipe
+            .ingredients
+            .insert("N".into(), "blue_netherrack".into());
+        recipe.result = "blue_nether_bricks".into();
+        recipe.count = 4;
+        if state.try_add(Entity::Recipe(recipe))? {
+            println!("Added recipe: blue_nether_bricks");
+        }
+    }
+
+    // Blue Netherite Ingot recipe
+    {
+        let mut recipe = Recipe::new("blue_netherite_ingot")?;
+        recipe.kind = "crafting_shaped".into();
+        recipe.pattern = vec!["NNN".into(), "N N".into(), "NNN".into()];
+        recipe
+            .ingredients
+            .insert("N".into(), "blue_netherite_scrap".into());
+        recipe
+            .ingredients
+            .insert("G".into(), "minecraft:gold_ingot".into());
+        recipe.result = "blue_netherite_ingot".into();
+        recipe.count = 1;
+        if state.try_add(Entity::Recipe(recipe))? {
+            println!("Added recipe: blue_netherite_ingot");
+        }
+    }
+
+    // Blue Nether Bricks smelting recipe
+    {
+        let mut recipe = Recipe::new("blue_nether_bricks_smelting")?;
+        recipe.kind = "smelting".into();
+        recipe
+            .ingredients
+            .insert("I".into(), "blue_netherrack".into());
+        recipe.result = "blue_nether_bricks".into();
+        recipe.count = 1;
+        recipe.cooking_time = Some(200);
+        recipe.experience = Some(0.5);
+        recipe.category = Some("building_blocks".into());
+        if state.try_add(Entity::Recipe(recipe))? {
+            println!("Added recipe: blue_nether_bricks_smelting");
+        }
+    }
+
     state.save().context("Failed to save blue nether state")?;
     regenerate_all(state, dirty, false).context("Failed to regenerate Java sources")?;
 
