@@ -73,6 +73,8 @@ mod imports_inner {
     static_import!(ARMOR_TYPE, armor_type, "net.minecraft.world.item.equipment", "ArmorType");
     static_import!(SHIELD_ITEM, shield_item, "net.minecraft.world.item", "ShieldItem");
     static_import!(ENTITY_TYPES, entity_types, "net.minecraft.world.entity", "EntityTypes");
+    static_import!(ENTITY, entity, "net.minecraft.world.entity", "Entity");
+    static_import!(MOB_CATEGORY, mob_category, "net.minecraft.world.entity", "MobCategory");
 
     static_import!(DATA_COMPONENTS, data_components, "net.minecraft.core.component", "DataComponents");
     static_import!(FOOD_PROPERTIES, food_properties, "net.minecraft.world.food", "FoodProperties");

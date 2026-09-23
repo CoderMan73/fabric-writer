@@ -917,11 +917,49 @@ fn display_name(id: &str) -> String {
     id.replace('_', " ").to_title_case()
 }
 
-pub(crate) fn build_mod_mobs(_state: &ModState) -> Tokens {
+pub(crate) fn build_mod_mobs(state: &ModState) -> Tokens {
+    if state.mobs.is_empty() {
+        return quote! {
+            public class ModMobs {
+                public static void initialize() {
+                }
+            }
+        };
+    }
+
+    let mob_entities = quote! {
+        $(for mob in &state.mobs =>
+            public static final EntityType<$(format!("{}Entity", to_pascal_case(&mob.id)))> $(to_upper(&mob.id)) = register(
+                ModEntityTypeIds.$(to_upper(&mob.id)),
+                $(entity_types()).Builder.<$(format!("{}Entity", to_pascal_case(&mob.id)))>of($(format!("{}Entity::new", to_pascal_case(&mob.id))), $(mob_category()).$(mob.spawn_category.as_deref().unwrap_or("MISC").to_uppercase()))
+            );
+        )
+    };
+
+    let register_method = quote! {
+        private static <T extends $(entity())> $(entity_types())<T> register($(resource_key())<$(entity_types())<?>> key, $(entity_types()).Builder<T> builder) {
+            return $(registry()).register($(built_in_registries()).ENTITY_TYPE, key, builder.build(key));
+        }
+    };
+
+    let spawn_eggs = quote! {
+        $(for mob in &state.mobs =>
+            $(if let Some(egg_id) = &mob.spawn_egg_id =>
+                public static final Item $(to_upper(egg_id)) = new $(spawn_egg_item())($(to_upper(&mob.id)), new Item.Properties());
+            )
+        )
+    };
+
     quote! {
         public class ModMobs {
+            $(mob_entities)
+
+            $(spawn_eggs)
+
             public static void initialize() {
             }
+
+            $(register_method)
         }
     }
 }
@@ -996,4 +1034,16 @@ pub(crate) fn build_mod_tags(_state: &ModState) -> Tokens {
             }
         }
     }
+}
+
+fn to_pascal_case(s: &str) -> String {
+    s.split('_')
+        .map(|word| {
+            let mut chars = word.chars();
+            match chars.next() {
+                Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
+                None => String::new(),
+            }
+        })
+        .collect()
 }
