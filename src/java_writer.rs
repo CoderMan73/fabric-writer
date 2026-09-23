@@ -814,7 +814,7 @@ fn generate_model_resources(state: &ModState, _verbose: bool) -> Result<()> {
         let item_model_path = item_models_root.join(format!("{}.json", id));
         if !item_model_path.exists() {
             std::fs::write(
-                    item_model_path,
+                item_model_path,
                 format!(
                     r#"{{"parent":"minecraft:item/generated","textures":{{"layer0":"{}:item/{}"}}}}"#,
                     mod_id, id
@@ -829,7 +829,7 @@ fn generate_model_resources(state: &ModState, _verbose: bool) -> Result<()> {
         let item_model_path = item_models_root.join(format!("{}.json", id));
         if !item_model_path.exists() {
             std::fs::write(
-                    item_model_path,
+                item_model_path,
                 format!(
                     r#"{{"parent":"minecraft:item/generated","textures":{{"layer0":"{}:item/{}"}}}}"#,
                     mod_id, id

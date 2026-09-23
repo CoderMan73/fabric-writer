@@ -7,18 +7,24 @@
 
 use clap::{Parser, Subcommand};
 use fabric_writer::commands::{
+    advancement::{self, AdvancementAddArgs, AdvancementRemoveArgs},
     biome::{self, BiomeAddArgs, BiomeRemoveArgs},
     block::{self, BlockAddArgs, BlockRemoveArgs},
     creative_tab::{self, CreativeTabAddArgs, CreativeTabRemoveArgs},
     dimension::{self, DimensionAddArgs, DimensionRemoveArgs},
+    feature::{self, FeatureAddArgs, FeatureRemoveArgs},
     init::{self, InitArgs},
     item::{self, ItemAddArgs, ItemRemoveArgs},
+    loot_table::{self, LootTableAddArgs, LootTableRemoveArgs},
     mob::{self, MobAddArgs, MobRemoveArgs},
     recipe::{self, RecipeAddArgs, RecipeRemoveArgs},
     regen::{self, RegenArgs},
     run,
     save_load::{self, SaveLoadArgs},
+    sound_event::{self, SoundEventAddArgs, SoundEventRemoveArgs},
     status::{self, StatusArgs},
+    structure::{self, StructureAddArgs, StructureRemoveArgs},
+    tag::{self, TagAddArgs, TagRemoveArgs},
     test_project::{self, TestProjectArgs},
 };
 
@@ -41,6 +47,12 @@ fn main() -> anyhow::Result<()> {
             AddSubcommand::Mob(args) => mob::add(args),
             AddSubcommand::Biome(args) => biome::add(args),
             AddSubcommand::Dimension(args) => dimension::add(args),
+            AddSubcommand::Feature(args) => feature::add(args),
+            AddSubcommand::Structure(args) => structure::add(args),
+            AddSubcommand::LootTable(args) => loot_table::add(args),
+            AddSubcommand::Advancement(args) => advancement::add(args),
+            AddSubcommand::SoundEvent(args) => sound_event::add(args),
+            AddSubcommand::Tag(args) => tag::add(args),
         },
         Commands::Remove { subcommand } => match subcommand {
             RemoveSubcommand::Item(args) => item::remove(args),
@@ -50,6 +62,12 @@ fn main() -> anyhow::Result<()> {
             RemoveSubcommand::Mob(args) => mob::remove(args),
             RemoveSubcommand::Biome(args) => biome::remove(args),
             RemoveSubcommand::Dimension(args) => dimension::remove(args),
+            RemoveSubcommand::Feature(args) => feature::remove(args),
+            RemoveSubcommand::Structure(args) => structure::remove(args),
+            RemoveSubcommand::LootTable(args) => loot_table::remove(args),
+            RemoveSubcommand::Advancement(args) => advancement::remove(args),
+            RemoveSubcommand::SoundEvent(args) => sound_event::remove(args),
+            RemoveSubcommand::Tag(args) => tag::remove(args),
         },
         Commands::Run { subcommand } => match subcommand {
             RunSubcommand::Datagen => run::datagen(),
@@ -144,6 +162,30 @@ enum AddSubcommand {
     /// Add a dimension [alias: d")]
     #[command(alias = "d")]
     Dimension(DimensionAddArgs),
+
+    /// Add a feature [alias: f"]
+    #[command(alias = "f")]
+    Feature(FeatureAddArgs),
+
+    /// Add a structure [alias: s"]
+    #[command(alias = "s")]
+    Structure(StructureAddArgs),
+
+    /// Add a loot table [alias: l"]
+    #[command(alias = "l")]
+    LootTable(LootTableAddArgs),
+
+    /// Add an advancement [alias: a"]
+    #[command(alias = "a")]
+    Advancement(AdvancementAddArgs),
+
+    /// Add a sound event [alias: se"]
+    #[command(alias = "se")]
+    SoundEvent(SoundEventAddArgs),
+
+    /// Add a tag [alias: t"]
+    #[command(alias = "t")]
+    Tag(TagAddArgs),
 }
 
 #[derive(Subcommand)]
@@ -175,6 +217,30 @@ enum RemoveSubcommand {
     /// Remove a dimension [alias: d")]
     #[command(alias = "d")]
     Dimension(DimensionRemoveArgs),
+
+    /// Remove a feature [alias: f"]
+    #[command(alias = "f")]
+    Feature(FeatureRemoveArgs),
+
+    /// Remove a structure [alias: s"]
+    #[command(alias = "s")]
+    Structure(StructureRemoveArgs),
+
+    /// Remove a loot table [alias: l"]
+    #[command(alias = "l")]
+    LootTable(LootTableRemoveArgs),
+
+    /// Remove an advancement [alias: a"]
+    #[command(alias = "a")]
+    Advancement(AdvancementRemoveArgs),
+
+    /// Remove a sound event [alias: se"]
+    #[command(alias = "se")]
+    SoundEvent(SoundEventRemoveArgs),
+
+    /// Remove a tag [alias: t"]
+    #[command(alias = "t")]
+    Tag(TagRemoveArgs),
 }
 
 #[derive(Subcommand)]
