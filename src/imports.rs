@@ -38,14 +38,14 @@ mod imports_inner {
     static_import!(DATA_GENERATOR_ENTRYPOINT, data_generator_entrypoint, "net.fabricmc.fabric.api.datagen.v1", "DataGeneratorEntrypoint");
     static_import!(FABRIC_DATA_GENERATOR, fabric_data_generator, "net.fabricmc.fabric.api.datagen.v1", "FabricDataGenerator");
     static_import!(FABRIC_MODEL_PROVIDER, fabric_model_provider, "net.fabricmc.fabric.api.client.datagen.v1.provider", "FabricModelProvider");
+    static_import!(BLOCK_MODEL_GENERATORS, block_model_generators, "net.minecraft.client.data.models", "BlockModelGenerators");
+    static_import!(ITEM_MODEL_GENERATORS, item_model_generators, "net.minecraft.client.data.models", "ItemModelGenerators");
 
     static_import!(BLOCK, block, "net.minecraft.world.level.block", "Block");
     static_import!(BLOCKS, blocks, "net.minecraft.world.level.block", "Blocks");
     static_import!(BLOCK_ITEM, block_item, "net.minecraft.world.item", "BlockItem");
     static_import!(BLOCK_BEHAVIOUR, block_behaviour, "net.minecraft.world.level.block.state", "BlockBehaviour");
     static_import!(BLOCK_ITEM_ID, block_item_id, "net.minecraft.references", "BlockItemId");
-    static_import!(BLOCK_MODEL_GENERATORS, block_model_generators, "net.minecraft.client.data.models", "BlockModelGenerators");
-    static_import!(ITEM_MODEL_GENERATORS, item_model_generators, "net.minecraft.client.data.models", "ItemModelGenerators");
     static_import!(CREATIVE_MODE_TAB_EVENTS, creative_mode_tab_events, "net.fabricmc.fabric.api.creativetab.v1", "CreativeModeTabEvents");
     static_import!(CREATIVE_MODE_TABS, creative_mode_tabs, "net.minecraft.world.item", "CreativeModeTabs");
     static_import!(FABRIC_RECIPE_PROVIDER, fabric_recipe_provider, "net.fabricmc.fabric.api.datagen.v1.provider", "FabricRecipeProvider");
@@ -54,7 +54,6 @@ mod imports_inner {
     static_import!(RECIPE_CATEGORY, recipe_category, "net.minecraft.data.recipes", "RecipeCategory");
     static_import!(SIMPLE_COOKING_RECIPE_BUILDER, simple_cooking_recipe_builder, "net.minecraft.data.recipes", "SimpleCookingRecipeBuilder");
     static_import!(SMITHING_TRANSFORM_RECIPE_BUILDER, smithing_transform_recipe_builder, "net.minecraft.world.item.crafting", "SmithingTransformRecipeBuilder");
-
     static_import!(COOKING_BOOK_CATEGORY, cooking_book_category, "net.minecraft.world.item.crafting", "CookingBookCategory");
     static_import!(ITEM_TAGS, item_tags, "net.minecraft.tags", "ItemTags");
     static_import!(INGREDIENT, ingredient, "net.minecraft.world.item.crafting", "Ingredient");
@@ -75,7 +74,6 @@ mod imports_inner {
     static_import!(ENTITY_TYPES, entity_types, "net.minecraft.world.entity", "EntityTypes");
     static_import!(ENTITY, entity, "net.minecraft.world.entity", "Entity");
     static_import!(MOB_CATEGORY, mob_category, "net.minecraft.world.entity", "MobCategory");
-
     static_import!(DATA_COMPONENTS, data_components, "net.minecraft.core.component", "DataComponents");
     static_import!(FOOD_PROPERTIES, food_properties, "net.minecraft.world.food", "FoodProperties");
     static_import!(CONSUMABLES, consumables, "net.minecraft.world.item.component", "Consumables");
@@ -87,6 +85,28 @@ mod imports_inner {
     static_import!(FUEL_VALUE_EVENTS, fuel_value_events, "net.fabricmc.fabric.api.registry", "FuelValueEvents");
     static_import!(FABRIC_CREATIVE_MODE_TAB, fabric_creative_mode_tab, "net.fabricmc.fabric.api.creativetab.v1", "FabricCreativeModeTab");
     static_import!(CREATIVE_MODE_TAB, creative_mode_tab, "net.minecraft.world.item", "CreativeModeTab");
+
+    static_import!(BIOME, biome, "net.minecraft.world.level.biome", "Biome");
+    static_import!(BIOME_BUILDER, biome_builder, "net.minecraft.world.level.biome", "Biome.BiomeBuilder");
+    static_import!(BIOME_SPECIAL_EFFECTS, biome_special_effects, "net.minecraft.world.level.biome", "BiomeSpecialEffects");
+    static_import!(BIOME_GENERATION_SETTINGS, biome_generation_settings, "net.minecraft.world.level.biome", "BiomeGenerationSettings");
+    static_import!(MOB_SPAWN_SETTINGS, mob_spawn_settings, "net.minecraft.world.level.biome", "MobSpawnSettings");
+    static_import!(DIMENSION_TYPE, dimension_type, "net.minecraft.world.level.dimension", "DimensionType");
+    static_import!(LEVEL_STEM, level_stem, "net.minecraft.world.level.dimension", "LevelStem");
+    static_import!(STRUCTURE_SET, structure_set, "net.minecraft.world.level.levelgen.structure", "StructureSet");
+    static_import!(CONFIGURED_FEATURE, configured_feature, "net.minecraft.world.level.levelgen.feature", "ConfiguredFeature");
+    static_import!(LOOT_TABLE, loot_table, "net.minecraft.world.level.storage.loot", "LootTable");
+    static_import!(LOOT_POOL, loot_pool, "net.minecraft.world.level.storage.loot", "LootPool");
+    static_import!(LOOT_ENTRY, loot_entry, "net.minecraft.world.level.storage.loot", "LootPoolEntry");
+    static_import!(LOOT_ENTRY_MANAGER, loot_entry_manager, "net.minecraft.world.level.storage.loot", "LootEntryManager");
+    static_import!(ADVANCEMENT, advancement, "net.minecraft.advancements", "Advancement");
+    static_import!(ADVANCEMENT_TREE, advancement_tree, "net.minecraft.advancements", "AdvancementTree");
+    static_import!(ADVANCEMENT_TYPE, advancement_type, "net.minecraft.advancements", "AdvancementType");
+    static_import!(SOUND_EVENT, sound_event, "net.minecraft.sounds", "SoundEvent");
+    static_import!(TAG, tag, "net.minecraft.tags", "Tag");
+    static_import!(TAG_KEY, tag_key, "net.minecraft.tags", "TagKey");
+    static_import!(HOLDER, holder, "net.minecraft.core", "Holder");
+    static_import!(HOLDER_GETTER, holder_getter, "net.minecraft.core", "HolderGetter");
 
     dynamic_import!(mod_blocks, "ModBlocks");
     dynamic_import!(mod_items, "ModItems");
