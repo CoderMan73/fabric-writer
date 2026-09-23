@@ -391,6 +391,72 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
         }
     }
 
+    // Blue Nether Bricks
+    {
+        let mut block = Block::base("blue_nether_bricks", tab);
+        block.properties_from = Some("nether_bricks".into());
+        if state.try_add(Entity::Block(block))? {
+            println!("Added block: blue_nether_bricks");
+        }
+    }
+
+    // Blue Crying Obsidian
+    {
+        let mut block = Block::base("blue_crying_obsidian", tab);
+        block.properties_from = Some("crying_obsidian".into());
+        if state.try_add(Entity::Block(block))? {
+            println!("Added block: blue_crying_obsidian");
+        }
+    }
+
+    // Blue Gold Block
+    {
+        let mut block = Block::base("blue_gold_block", tab);
+        block.properties_from = Some("gold_block".into());
+        if state.try_add(Entity::Block(block))? {
+            println!("Added block: blue_gold_block");
+        }
+    }
+
+    // Blue Bone Block
+    {
+        let mut block = Block::base("blue_bone_block", tab);
+        block.model_kind = BlockModelKind::CubeColumn;
+        block.properties_from = Some("bone_block".into());
+        if state.try_add(Entity::Block(block))? {
+            println!("Added block: blue_bone_block");
+        }
+    }
+
+    // Blue Quartz Block
+    {
+        let mut block = Block::base("blue_quartz_block", tab);
+        block.properties_from = Some("quartz_block".into());
+        if state.try_add(Entity::Block(block))? {
+            println!("Added block: blue_quartz_block");
+        }
+    }
+
+    // Blue Iron Chain
+    {
+        let mut block = Block::base("blue_iron_chain", tab);
+        block.model_kind = BlockModelKind::Chain;
+        block.properties_from = Some("iron_chain".into());
+        if state.try_add(Entity::Block(block))? {
+            println!("Added block: blue_iron_chain");
+        }
+    }
+
+    // Blue Lantern
+    {
+        let mut block = Block::base("blue_lantern", tab);
+        block.model_kind = BlockModelKind::Lantern;
+        block.properties_from = Some("lantern".into());
+        if state.try_add(Entity::Block(block))? {
+            println!("Added block: blue_lantern");
+        }
+    }
+
     state.save().context("Failed to save blue nether state")?;
     regenerate_all(state, dirty, false).context("Failed to regenerate Java sources")?;
 
@@ -418,6 +484,15 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
         ("blue_ancient_debris_side", "ancient_debris_side.png"),
         ("blue_gravel", "gravel.png"),
         ("blue_bedrock", "bedrock.png"),
+        ("blue_nether_bricks", "nether_bricks.png"),
+        ("blue_crying_obsidian", "crying_obsidian.png"),
+        ("blue_gold_block", "gold_block.png"),
+        ("blue_bone_block_top", "bone_block_top.png"),
+        ("blue_bone_block_bottom", "bone_block_bottom.png"),
+        ("blue_bone_block_side", "bone_block_side.png"),
+        ("blue_quartz_block", "quartz_block.png"),
+        ("blue_iron_chain", "iron_chain.png"),
+        ("blue_lantern", "lantern.png"),
     ];
     copy_block_textures(
         state,
@@ -436,6 +511,13 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
             "blue_ancient_debris",
             "blue_gravel",
             "blue_bedrock",
+            "blue_nether_bricks",
+            "blue_crying_obsidian",
+            "blue_gold_block",
+            "blue_bone_block",
+            "blue_quartz_block",
+            "blue_iron_chain",
+            "blue_lantern",
         ],
         &texture_map,
     )?;
@@ -465,6 +547,15 @@ pub fn run(args: TestProjectArgs) -> Result<()> {
         state.blocks.clear();
         state.recipes.clear();
         state.creative_tabs.clear();
+        state.mobs.clear();
+        state.biomes.clear();
+        state.dimensions.clear();
+        state.structures.clear();
+        state.features.clear();
+        state.loot_tables.clear();
+        state.advancements.clear();
+        state.sound_events.clear();
+        state.tags.clear();
         state.save().context("Failed to save reset state")?;
         regenerate_all(&state, DirtyFlags::all(), false)
             .context("Failed to regenerate after reset")?;
