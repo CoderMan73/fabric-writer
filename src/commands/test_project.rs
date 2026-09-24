@@ -1261,6 +1261,75 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
         }
     }
 
+    // Blue netherite tools
+    {
+        let mut item = Item::new("blue_netherite_sword")?;
+        item.kind = ItemKind::Tool;
+        item.material = Some("netherite".into());
+        item.attack_damage = Some(8.0);
+        item.attack_speed = Some(-2.4);
+        if state.try_add(Entity::Item(item))? {
+            println!("Added item: blue_netherite_sword");
+        }
+    }
+    {
+        let mut item = Item::new("blue_netherite_pickaxe")?;
+        item.kind = ItemKind::Tool;
+        item.material = Some("netherite".into());
+        item.attack_damage = Some(2.0);
+        item.attack_speed = Some(-2.8);
+        if state.try_add(Entity::Item(item))? {
+            println!("Added item: blue_netherite_pickaxe");
+        }
+    }
+    {
+        let mut item = Item::new("blue_netherite_axe")?;
+        item.kind = ItemKind::Axe;
+        item.material = Some("netherite".into());
+        item.attack_damage = Some(6.0);
+        item.attack_speed = Some(-3.0);
+        if state.try_add(Entity::Item(item))? {
+            println!("Added item: blue_netherite_axe");
+        }
+    }
+    {
+        let mut item = Item::new("blue_netherite_shovel")?;
+        item.kind = ItemKind::Shovel;
+        item.material = Some("netherite".into());
+        item.attack_damage = Some(3.5);
+        item.attack_speed = Some(-3.0);
+        if state.try_add(Entity::Item(item))? {
+            println!("Added item: blue_netherite_shovel");
+        }
+    }
+    {
+        let mut item = Item::new("blue_netherite_hoe")?;
+        item.kind = ItemKind::Hoe;
+        item.material = Some("netherite".into());
+        item.attack_damage = Some(1.0);
+        item.attack_speed = Some(-3.0);
+        if state.try_add(Entity::Item(item))? {
+            println!("Added item: blue_netherite_hoe");
+        }
+    }
+
+    // Blue netherite armor
+    let armor_pieces = [
+        ("blue_netherite_helmet", "helmet"),
+        ("blue_netherite_chestplate", "chestplate"),
+        ("blue_netherite_leggings", "leggings"),
+        ("blue_netherite_boots", "boots"),
+    ];
+    for (item_id, slot) in armor_pieces {
+        let mut item = Item::new(item_id)?;
+        item.kind = ItemKind::Armor;
+        item.material = Some("netherite".into());
+        item.armor_slot = Some(slot.into());
+        if state.try_add(Entity::Item(item))? {
+            println!("Added item: {}", item_id);
+        }
+    }
+
     // Recipes for new blocks
     {
         let mut recipe = Recipe::new("blue_nether_bricks_from_blue_netherrack")?;
