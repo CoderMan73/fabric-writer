@@ -1238,6 +1238,29 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
         }
     }
 
+    // Spawn eggs for all mobs
+    let spawn_eggs = [
+        "blue_ghast_spawn_egg",
+        "blue_strider_spawn_egg",
+        "blue_zombie_piglin_spawn_egg",
+        "blue_hoglin_spawn_egg",
+        "blue_piglin_spawn_egg",
+        "blue_wither_skeleton_spawn_egg",
+        "blue_skeleton_spawn_egg",
+        "blue_blaze_spawn_egg",
+        "blue_magma_cube_spawn_egg",
+        "blue_enderman_spawn_egg",
+        "blue_piglin_brute_spawn_egg",
+        "blue_wither_spawn_egg",
+    ];
+    for egg_id in spawn_eggs {
+        let mut item = Item::base(egg_id, tab);
+        item.kind = ItemKind::SpawnEgg;
+        if state.try_add(Entity::Item(item))? {
+            println!("Added item: {}", egg_id);
+        }
+    }
+
     // Recipes for new blocks
     {
         let mut recipe = Recipe::new("blue_nether_bricks_from_blue_netherrack")?;
