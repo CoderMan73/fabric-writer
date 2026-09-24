@@ -1338,6 +1338,46 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
         }
     }
 
+    // Block variant recipes
+    let block_recipies = [
+        ("blue_nether_brick_stairs", "blue_nether_bricks", 4),
+        ("blue_nether_brick_slab", "blue_nether_bricks", 6),
+        ("blue_nether_brick_fence", "blue_nether_bricks", 6),
+        (
+            "blue_polished_blackstone_stairs",
+            "blue_polished_blackstone",
+            4,
+        ),
+        (
+            "blue_polished_blackstone_slab",
+            "blue_polished_blackstone",
+            6,
+        ),
+        (
+            "blue_polished_blackstone_brick_stairs",
+            "blue_polished_blackstone_bricks",
+            4,
+        ),
+        (
+            "blue_polished_blackstone_brick_slab",
+            "blue_polished_blackstone_bricks",
+            6,
+        ),
+        ("blue_blackstone_stairs", "blue_blackstone", 4),
+        ("blue_blackstone_slab", "blue_blackstone", 6),
+        ("blue_smooth_quartz_slab", "blue_smooth_quartz_block", 6),
+    ];
+    for (result_id, ingredient_id, count) in block_recipies {
+        let mut recipe = Recipe::new(result_id)?;
+        recipe.kind = "crafting_shaped".into();
+        recipe.ingredients.insert("X".into(), ingredient_id.into());
+        recipe.result = result_id.into();
+        recipe.count = count;
+        if state.try_add(Entity::Recipe(recipe))? {
+            println!("Added recipe: {}", result_id);
+        }
+    }
+
     // Recipes for new blocks
     {
         let mut recipe = Recipe::new("blue_nether_bricks_from_blue_netherrack")?;
