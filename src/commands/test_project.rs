@@ -857,6 +857,47 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
         ("blue_quartz_block_side", "quartz_block_side.png"),
         ("blue_iron_chain", "iron_chain.png"),
         ("blue_lantern", "lantern.png"),
+        ("blue_crimson_nylium", "crimson_nylium.png"),
+        ("blue_warped_nylium", "warped_nylium.png"),
+        ("blue_crimson_stem", "crimson_stem.png"),
+        ("blue_crimson_stem_top", "crimson_stem_top.png"),
+        ("blue_warped_stem", "warped_stem.png"),
+        ("blue_warped_stem_top", "warped_stem_top.png"),
+        ("blue_crimson_fungus", "crimson_fungus.png"),
+        ("blue_warped_fungus", "warped_fungus.png"),
+        ("blue_crimson_roots", "crimson_roots.png"),
+        ("blue_warped_roots", "warped_roots.png"),
+        ("blue_nether_sprouts", "nether_sprouts.png"),
+        ("blue_weeping_vines", "weeping_vines.png"),
+        ("blue_weeping_vines_plant", "weeping_vines_plant.png"),
+        ("blue_twisting_vines", "twisting_vines.png"),
+        ("blue_twisting_vines_plant", "twisting_vines_plant.png"),
+        ("blue_brown_mushroom", "brown_mushroom.png"),
+        ("blue_red_mushroom", "red_mushroom.png"),
+        ("blue_nether_wart", "nether_wart_stage0.png"),
+        ("blue_nether_brick_fence", "nether_brick_fence.png"),
+        ("blue_nether_brick_stairs", "nether_brick_stairs.png"),
+        ("blue_chiseled_nether_bricks", "chiseled_nether_bricks.png"),
+        ("blue_cracked_nether_bricks", "cracked_nether_bricks.png"),
+        ("blue_polished_blackstone", "polished_blackstone.png"),
+        (
+            "blue_polished_blackstone_bricks",
+            "polished_blackstone_bricks.png",
+        ),
+        (
+            "blue_cracked_polished_blackstone_bricks",
+            "cracked_polished_blackstone_bricks.png",
+        ),
+        (
+            "blue_chiseled_polished_blackstone",
+            "chiseled_polished_blackstone.png",
+        ),
+        ("blue_gilded_blackstone", "gilded_blackstone.png"),
+        ("blue_blackstone_stairs", "blackstone_stairs.png"),
+        ("blue_blackstone_slab", "blackstone_slab.png"),
+        ("blue_blackstone_wall", "blackstone_wall.png"),
+        ("blue_smooth_quartz_block", "smooth_quartz_block.png"),
+        ("blue_smooth_quartz_slab", "smooth_quartz_slab.png"),
     ];
     copy_block_textures(
         state,
@@ -882,9 +923,239 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
             "blue_quartz_block",
             "blue_iron_chain",
             "blue_lantern",
+            "blue_crimson_nylium",
+            "blue_warped_nylium",
+            "blue_crimson_stem",
+            "blue_warped_stem",
+            "blue_crimson_fungus",
+            "blue_warped_fungus",
+            "blue_crimson_roots",
+            "blue_warped_roots",
+            "blue_nether_sprouts",
+            "blue_weeping_vines",
+            "blue_twisting_vines",
+            "blue_brown_mushroom",
+            "blue_red_mushroom",
+            "blue_nether_wart",
+            "blue_nether_brick_fence",
+            "blue_nether_brick_stairs",
+            "blue_chiseled_nether_bricks",
+            "blue_cracked_nether_bricks",
+            "blue_polished_blackstone",
+            "blue_polished_blackstone_bricks",
+            "blue_cracked_polished_blackstone_bricks",
+            "blue_chiseled_polished_blackstone",
+            "blue_polished_blackstone_stairs",
+            "blue_polished_blackstone_slab",
+            "blue_polished_blackstone_brick_stairs",
+            "blue_polished_blackstone_brick_slab",
+            "blue_polished_blackstone_brick_wall",
+            "blue_blackstone_stairs",
+            "blue_blackstone_slab",
+            "blue_blackstone_wall",
+            "blue_gilded_blackstone",
+            "blue_smooth_quartz_block",
+            "blue_smooth_quartz_slab",
         ],
         &texture_map,
     )?;
+
+    // Nylium blocks
+    {
+        let mut block = Block::base("blue_crimson_nylium", tab);
+        block.properties_from = Some("crimson_nylium".into());
+        if state.try_add(Entity::Block(block))? {
+            println!("Added block: blue_crimson_nylium");
+        }
+    }
+    {
+        let mut block = Block::base("blue_warped_nylium", tab);
+        block.properties_from = Some("warped_nylium".into());
+        if state.try_add(Entity::Block(block))? {
+            println!("Added block: blue_warped_nylium");
+        }
+    }
+
+    // Fungi and plant blocks
+    let plant_blocks = [
+        ("blue_crimson_stem", "crimson_stem"),
+        ("blue_warped_stem", "warped_stem"),
+        ("blue_crimson_fungus", "crimson_fungus"),
+        ("blue_warped_fungus", "warped_fungus"),
+        ("blue_crimson_roots", "crimson_roots"),
+        ("blue_warped_roots", "warped_roots"),
+        ("blue_nether_sprouts", "nether_sprouts"),
+        ("blue_weeping_vines", "weeping_vines"),
+        ("blue_twisting_vines", "twisting_vines"),
+        ("blue_brown_mushroom", "brown_mushroom"),
+        ("blue_red_mushroom", "red_mushroom"),
+    ];
+    for (blue_id, vanilla_id) in plant_blocks {
+        let mut block = Block::base(blue_id, tab);
+        block.properties_from = Some(vanilla_id.into());
+        if state.try_add(Entity::Block(block))? {
+            println!("Added block: {}", blue_id);
+        }
+    }
+
+    // Fire and portal blocks
+    {
+        let mut block = Block::base("blue_fire", tab);
+        block.properties_from = Some("fire".into());
+        if state.try_add(Entity::Block(block))? {
+            println!("Added block: blue_fire");
+        }
+    }
+    {
+        let mut block = Block::base("blue_soul_fire", tab);
+        block.properties_from = Some("soul_fire".into());
+        if state.try_add(Entity::Block(block))? {
+            println!("Added block: blue_soul_fire");
+        }
+    }
+    {
+        let mut block = Block::base("blue_nether_portal", tab);
+        block.properties_from = Some("nether_portal".into());
+        if state.try_add(Entity::Block(block))? {
+            println!("Added block: blue_nether_portal");
+        }
+    }
+
+    // Blue Nether Wart crop
+    {
+        let mut block = Block::base("blue_nether_wart", tab);
+        block.properties_from = Some("nether_wart".into());
+        if state.try_add(Entity::Block(block))? {
+            println!("Added block: blue_nether_wart");
+        }
+    }
+
+    // Structure blocks
+    let structure_blocks = [
+        ("blue_nether_brick_fence", "nether_brick_fence"),
+        ("blue_nether_brick_stairs", "nether_brick_stairs"),
+        ("blue_chiseled_nether_bricks", "chiseled_nether_bricks"),
+        ("blue_cracked_nether_bricks", "cracked_nether_bricks"),
+        ("blue_polished_blackstone", "polished_blackstone"),
+        (
+            "blue_polished_blackstone_bricks",
+            "polished_blackstone_bricks",
+        ),
+        (
+            "blue_cracked_polished_blackstone_bricks",
+            "cracked_polished_blackstone_bricks",
+        ),
+        (
+            "blue_chiseled_polished_blackstone",
+            "chiseled_polished_blackstone",
+        ),
+        (
+            "blue_polished_blackstone_stairs",
+            "polished_blackstone_stairs",
+        ),
+        ("blue_polished_blackstone_slab", "polished_blackstone_slab"),
+        (
+            "blue_polished_blackstone_brick_stairs",
+            "polished_blackstone_brick_stairs",
+        ),
+        (
+            "blue_polished_blackstone_brick_slab",
+            "polished_blackstone_brick_slab",
+        ),
+        (
+            "blue_polished_blackstone_brick_wall",
+            "polished_blackstone_brick_wall",
+        ),
+        ("blue_blackstone_stairs", "blackstone_stairs"),
+        ("blue_blackstone_slab", "blackstone_slab"),
+        ("blue_blackstone_wall", "blackstone_wall"),
+        ("blue_gilded_blackstone", "gilded_blackstone"),
+        ("blue_smooth_quartz_block", "smooth_quartz_block"),
+        ("blue_smooth_quartz_slab", "smooth_quartz_slab"),
+    ];
+    for (blue_id, vanilla_id) in structure_blocks {
+        let mut block = Block::base(blue_id, tab);
+        block.properties_from = Some(vanilla_id.into());
+        if state.try_add(Entity::Block(block))? {
+            println!("Added block: {}", blue_id);
+        }
+    }
+
+    // Items for new blocks
+    let item_blocks = [
+        "blue_crimson_nylium",
+        "blue_warped_nylium",
+        "blue_crimson_stem",
+        "blue_warped_stem",
+        "blue_crimson_fungus",
+        "blue_warped_fungus",
+        "blue_crimson_roots",
+        "blue_warped_roots",
+        "blue_nether_sprouts",
+        "blue_weeping_vines",
+        "blue_twisting_vines",
+        "blue_brown_mushroom",
+        "blue_red_mushroom",
+        "blue_nether_wart",
+        "blue_nether_brick_fence",
+        "blue_nether_brick_stairs",
+        "blue_chiseled_nether_bricks",
+        "blue_cracked_nether_bricks",
+        "blue_polished_blackstone",
+        "blue_polished_blackstone_bricks",
+        "blue_cracked_polished_blackstone_bricks",
+        "blue_chiseled_polished_blackstone",
+        "blue_polished_blackstone_stairs",
+        "blue_polished_blackstone_slab",
+        "blue_polished_blackstone_brick_stairs",
+        "blue_polished_blackstone_brick_slab",
+        "blue_polished_blackstone_brick_wall",
+        "blue_blackstone_stairs",
+        "blue_blackstone_slab",
+        "blue_blackstone_wall",
+        "blue_gilded_blackstone",
+        "blue_smooth_quartz_block",
+        "blue_smooth_quartz_slab",
+    ];
+    for block_id in item_blocks {
+        let item = Item::base(block_id, tab);
+        if state.try_add(Entity::Item(item))? {
+            println!("Added item: {}", block_id);
+        }
+    }
+
+    // Additional items
+    let extra_items = [
+        "blue_netherite_scrap",
+        "blue_nether_star",
+        "blue_blaze_powder",
+        "blue_crimson_fungus",
+        "blue_warped_fungus",
+        "blue_leather",
+        "blue_obsidian",
+        "blue_music_disc",
+    ];
+    for item_id in extra_items {
+        let item = Item::base(item_id, tab);
+        if state.try_add(Entity::Item(item))? {
+            println!("Added item: {}", item_id);
+        }
+    }
+
+    // Recipes for new blocks
+    {
+        let mut recipe = Recipe::new("blue_nether_bricks_from_blue_netherrack")?;
+        recipe.kind = "crafting_shaped".into();
+        recipe.pattern = vec!["NN".into(), "NN".into()];
+        recipe
+            .ingredients
+            .insert("N".into(), "blue_netherrack".into());
+        recipe.result = "blue_nether_bricks".into();
+        recipe.count = 4;
+        if state.try_add(Entity::Recipe(recipe))? {
+            println!("Added recipe: blue_nether_bricks_from_blue_netherrack");
+        }
+    }
 
     println!("Blue Nether base terrain added!");
     Ok(())
