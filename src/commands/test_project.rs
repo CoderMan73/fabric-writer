@@ -1313,6 +1313,14 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
         }
     }
 
+    // Blue sticks (intermediate crafting ingredient)
+    {
+        let item = Item::base("blue_stick", tab);
+        if state.try_add(Entity::Item(item))? {
+            println!("Added item: blue_stick");
+        }
+    }
+
     // Blue netherite armor
     let armor_pieces = [
         ("blue_netherite_helmet", "helmet"),
@@ -1342,6 +1350,132 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
         recipe.count = 4;
         if state.try_add(Entity::Recipe(recipe))? {
             println!("Added recipe: blue_nether_bricks_from_blue_netherrack");
+        }
+    }
+
+    // Blue netherite tool recipes
+    {
+        let mut recipe = Recipe::new("blue_netherite_sword")?;
+        recipe.kind = "crafting_shaped".into();
+        recipe.pattern = vec![" N ".into(), " N ".into(), " S ".into()];
+        recipe
+            .ingredients
+            .insert("N".into(), "blue_netherite_ingot".into());
+        recipe.ingredients.insert("S".into(), "blue_stick".into());
+        recipe.result = "blue_netherite_sword".into();
+        recipe.count = 1;
+        if state.try_add(Entity::Recipe(recipe))? {
+            println!("Added recipe: blue_netherite_sword");
+        }
+    }
+    {
+        let mut recipe = Recipe::new("blue_netherite_pickaxe")?;
+        recipe.kind = "crafting_shaped".into();
+        recipe.pattern = vec!["NNN".into(), " S ".into(), " S ".into()];
+        recipe
+            .ingredients
+            .insert("N".into(), "blue_netherite_ingot".into());
+        recipe.ingredients.insert("S".into(), "blue_stick".into());
+        recipe.result = "blue_netherite_pickaxe".into();
+        recipe.count = 1;
+        if state.try_add(Entity::Recipe(recipe))? {
+            println!("Added recipe: blue_netherite_pickaxe");
+        }
+    }
+    {
+        let mut recipe = Recipe::new("blue_netherite_axe")?;
+        recipe.kind = "crafting_shaped".into();
+        recipe.pattern = vec!["NN ".into(), "NS ".into(), " S ".into()];
+        recipe
+            .ingredients
+            .insert("N".into(), "blue_netherite_ingot".into());
+        recipe.ingredients.insert("S".into(), "blue_stick".into());
+        recipe.result = "blue_netherite_axe".into();
+        recipe.count = 1;
+        if state.try_add(Entity::Recipe(recipe))? {
+            println!("Added recipe: blue_netherite_axe");
+        }
+    }
+    {
+        let mut recipe = Recipe::new("blue_netherite_shovel")?;
+        recipe.kind = "crafting_shaped".into();
+        recipe.pattern = vec![" N ".into(), " S ".into(), " S ".into()];
+        recipe
+            .ingredients
+            .insert("N".into(), "blue_netherite_ingot".into());
+        recipe.ingredients.insert("S".into(), "blue_stick".into());
+        recipe.result = "blue_netherite_shovel".into();
+        recipe.count = 1;
+        if state.try_add(Entity::Recipe(recipe))? {
+            println!("Added recipe: blue_netherite_shovel");
+        }
+    }
+    {
+        let mut recipe = Recipe::new("blue_netherite_hoe")?;
+        recipe.kind = "crafting_shaped".into();
+        recipe.pattern = vec!["NN ".into(), " S ".into(), " S ".into()];
+        recipe
+            .ingredients
+            .insert("N".into(), "blue_netherite_ingot".into());
+        recipe.ingredients.insert("S".into(), "blue_stick".into());
+        recipe.result = "blue_netherite_hoe".into();
+        recipe.count = 1;
+        if state.try_add(Entity::Recipe(recipe))? {
+            println!("Added recipe: blue_netherite_hoe");
+        }
+    }
+
+    // Blue netherite armor recipes
+    {
+        let mut recipe = Recipe::new("blue_netherite_helmet")?;
+        recipe.kind = "crafting_shaped".into();
+        recipe.pattern = vec!["NNN".into(), "N N".into(), "   ".into()];
+        recipe
+            .ingredients
+            .insert("N".into(), "blue_netherite_ingot".into());
+        recipe.result = "blue_netherite_helmet".into();
+        recipe.count = 1;
+        if state.try_add(Entity::Recipe(recipe))? {
+            println!("Added recipe: blue_netherite_helmet");
+        }
+    }
+    {
+        let mut recipe = Recipe::new("blue_netherite_chestplate")?;
+        recipe.kind = "crafting_shaped".into();
+        recipe.pattern = vec!["N N".into(), "NNN".into(), "NNN".into()];
+        recipe
+            .ingredients
+            .insert("N".into(), "blue_netherite_ingot".into());
+        recipe.result = "blue_netherite_chestplate".into();
+        recipe.count = 1;
+        if state.try_add(Entity::Recipe(recipe))? {
+            println!("Added recipe: blue_netherite_chestplate");
+        }
+    }
+    {
+        let mut recipe = Recipe::new("blue_netherite_leggings")?;
+        recipe.kind = "crafting_shaped".into();
+        recipe.pattern = vec!["NNN".into(), "N N".into(), "N N".into()];
+        recipe
+            .ingredients
+            .insert("N".into(), "blue_netherite_ingot".into());
+        recipe.result = "blue_netherite_leggings".into();
+        recipe.count = 1;
+        if state.try_add(Entity::Recipe(recipe))? {
+            println!("Added recipe: blue_netherite_leggings");
+        }
+    }
+    {
+        let mut recipe = Recipe::new("blue_netherite_boots")?;
+        recipe.kind = "crafting_shaped".into();
+        recipe.pattern = vec!["N N".into(), "N N".into(), "   ".into()];
+        recipe
+            .ingredients
+            .insert("N".into(), "blue_netherite_ingot".into());
+        recipe.result = "blue_netherite_boots".into();
+        recipe.count = 1;
+        if state.try_add(Entity::Recipe(recipe))? {
+            println!("Added recipe: blue_netherite_boots");
         }
     }
 
