@@ -699,6 +699,102 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
         }
     }
 
+    // Blue Skeleton mob
+    {
+        let mob = Mob {
+            id: "blue_skeleton".into(),
+            entity_type: "minecraft:skeleton".into(),
+            spawn_category: Some("monster".into()),
+            spawn_egg_id: Some("blue_skeleton_spawn_egg".into()),
+            baby_spawn_egg_id: None,
+            attributes: vec![],
+            drops: vec![],
+        };
+        if state.try_add(Entity::Mob(mob))? {
+            println!("Added mob: blue_skeleton");
+        }
+    }
+
+    // Blue Blaze mob
+    {
+        let mob = Mob {
+            id: "blue_blaze".into(),
+            entity_type: "minecraft:blaze".into(),
+            spawn_category: Some("monster".into()),
+            spawn_egg_id: Some("blue_blaze_spawn_egg".into()),
+            baby_spawn_egg_id: None,
+            attributes: vec![],
+            drops: vec![],
+        };
+        if state.try_add(Entity::Mob(mob))? {
+            println!("Added mob: blue_blaze");
+        }
+    }
+
+    // Blue Magma Cube mob
+    {
+        let mob = Mob {
+            id: "blue_magma_cube".into(),
+            entity_type: "minecraft:magma_cube".into(),
+            spawn_category: Some("monster".into()),
+            spawn_egg_id: Some("blue_magma_cube_spawn_egg".into()),
+            baby_spawn_egg_id: None,
+            attributes: vec![],
+            drops: vec![],
+        };
+        if state.try_add(Entity::Mob(mob))? {
+            println!("Added mob: blue_magma_cube");
+        }
+    }
+
+    // Blue Enderman mob
+    {
+        let mob = Mob {
+            id: "blue_enderman".into(),
+            entity_type: "minecraft:enderman".into(),
+            spawn_category: Some("monster".into()),
+            spawn_egg_id: Some("blue_enderman_spawn_egg".into()),
+            baby_spawn_egg_id: None,
+            attributes: vec![],
+            drops: vec![],
+        };
+        if state.try_add(Entity::Mob(mob))? {
+            println!("Added mob: blue_enderman");
+        }
+    }
+
+    // Blue Piglin Brute mob
+    {
+        let mob = Mob {
+            id: "blue_piglin_brute".into(),
+            entity_type: "minecraft:piglin_brute".into(),
+            spawn_category: Some("monster".into()),
+            spawn_egg_id: Some("blue_piglin_brute_spawn_egg".into()),
+            baby_spawn_egg_id: None,
+            attributes: vec![],
+            drops: vec![],
+        };
+        if state.try_add(Entity::Mob(mob))? {
+            println!("Added mob: blue_piglin_brute");
+        }
+    }
+
+    // Blue Wither boss mob
+    {
+        let mob = Mob {
+            id: "blue_wither".into(),
+            entity_type: "minecraft:wither".into(),
+            spawn_category: Some("monster".into()),
+            spawn_egg_id: Some("blue_wither_spawn_egg".into()),
+            baby_spawn_egg_id: None,
+            attributes: vec![],
+            drops: vec![],
+        };
+        if state.try_add(Entity::Mob(mob))? {
+            println!("Added mob: blue_wither");
+        }
+    }
+
     // Blue Nether biome
     {
         let biome = Biome {
