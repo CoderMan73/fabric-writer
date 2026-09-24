@@ -851,19 +851,19 @@ fn generate_model_resources(state: &ModState, _verbose: bool) -> Result<()> {
         }
 
         let item_model_path = item_models_root.join(format!("{}.json", id));
-        if !item_model_path.exists() {
-            std::fs::write(
-                item_model_path,
-                format!(r#"{{"parent":"{}:block/{}"}}"#, mod_id, id),
-            )?;
-        }
+        std::fs::write(
+            item_model_path,
+            format!(r#"{{"parent":"{}:block/{}"}}"#, mod_id, id),
+        )?;
     }
+
+    let block_item_ids: Vec<_> = state.blocks.iter().map(|b| b.id.as_str()).collect();
 
     for item in &state.items {
         let id = &item.id;
         let mod_id = &state.mod_id;
         let item_model_path = item_models_root.join(format!("{}.json", id));
-        if !item_model_path.exists() {
+        if !item_model_path.exists() && !block_item_ids.contains(&id.as_str()) {
             std::fs::write(
                 item_model_path,
                 format!(

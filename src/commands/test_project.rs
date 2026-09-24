@@ -941,6 +941,289 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
         }
     }
 
+    // Extra blocks
+    let extra_blocks = [
+        ("blue_crimson_nylium", "crimson_nylium"),
+        ("blue_warped_nylium", "warped_nylium"),
+        ("blue_crimson_stem", "crimson_stem"),
+        ("blue_warped_stem", "warped_stem"),
+        ("blue_crimson_fungus", "crimson_fungus"),
+        ("blue_warped_fungus", "warped_fungus"),
+        ("blue_crimson_roots", "crimson_roots"),
+        ("blue_warped_roots", "warped_roots"),
+        ("blue_nether_sprouts", "nether_sprouts"),
+        ("blue_weeping_vines", "weeping_vines"),
+        ("blue_twisting_vines", "twisting_vines"),
+        ("blue_brown_mushroom", "brown_mushroom"),
+        ("blue_red_mushroom", "red_mushroom"),
+        ("blue_nether_wart", "nether_wart"),
+        ("blue_fire", "fire"),
+        ("blue_soul_fire", "soul_fire"),
+        ("blue_nether_portal", "nether_portal"),
+        ("blue_nether_brick_fence", "nether_brick_fence"),
+        ("blue_nether_brick_stairs", "nether_brick_stairs"),
+        ("blue_nether_brick_slab", "nether_brick_slab"),
+        ("blue_chiseled_nether_bricks", "chiseled_nether_bricks"),
+        ("blue_cracked_nether_bricks", "cracked_nether_bricks"),
+        ("blue_polished_blackstone", "polished_blackstone"),
+        ("blue_polished_blackstone_bricks", "polished_blackstone_bricks"),
+        (
+            "blue_cracked_polished_blackstone_bricks",
+            "cracked_polished_blackstone_bricks",
+        ),
+        (
+            "blue_chiseled_polished_blackstone",
+            "chiseled_polished_blackstone",
+        ),
+        ("blue_gilded_blackstone", "gilded_blackstone"),
+        ("blue_blackstone_stairs", "blackstone_stairs"),
+        ("blue_blackstone_slab", "blackstone_slab"),
+        ("blue_blackstone_wall", "blackstone_wall"),
+        ("blue_smooth_quartz_block", "smooth_quartz_block"),
+        ("blue_smooth_quartz_slab", "smooth_quartz_slab"),
+    ];
+    for (blue_id, vanilla_id) in extra_blocks {
+        let mut block = Block::base(blue_id, tab);
+        block.properties_from = Some(vanilla_id.into());
+        if state.try_add(Entity::Block(block))? {
+            println!("Added block: {}", blue_id);
+        }
+    }
+
+    let block_item_ids = [
+        "blue_crimson_nylium", "blue_warped_nylium", "blue_crimson_stem", "blue_warped_stem",
+        "blue_crimson_fungus", "blue_warped_fungus", "blue_crimson_roots", "blue_warped_roots",
+        "blue_nether_sprouts", "blue_weeping_vines", "blue_twisting_vines",
+        "blue_brown_mushroom", "blue_red_mushroom", "blue_nether_wart",
+        "blue_nether_brick_fence", "blue_nether_brick_stairs", "blue_nether_brick_slab",
+        "blue_chiseled_nether_bricks", "blue_cracked_nether_bricks",
+        "blue_polished_blackstone", "blue_polished_blackstone_bricks",
+        "blue_cracked_polished_blackstone_bricks", "blue_chiseled_polished_blackstone",
+        "blue_polished_blackstone_stairs", "blue_polished_blackstone_slab",
+        "blue_polished_blackstone_brick_stairs", "blue_polished_blackstone_brick_slab",
+        "blue_polished_blackstone_brick_wall", "blue_blackstone_stairs",
+        "blue_blackstone_slab", "blue_blackstone_wall", "blue_gilded_blackstone",
+        "blue_smooth_quartz_block", "blue_smooth_quartz_slab",
+    ];
+    for block_id in block_item_ids {
+        let item = Item::base(block_id, tab);
+        if state.try_add(Entity::Item(item))? {
+            println!("Added item: {}", block_id);
+        }
+    }
+
+    let extra_items = [
+        "blue_netherite_scrap",
+        "blue_nether_star",
+        "blue_blaze_powder",
+        "blue_crimson_fungus",
+        "blue_warped_fungus",
+        "blue_leather",
+        "blue_obsidian",
+        "blue_music_disc",
+        "blue_stick",
+    ];
+    for item_id in extra_items {
+        let item = Item::base(item_id, tab);
+        if state.try_add(Entity::Item(item))? {
+            println!("Added item: {}", item_id);
+        }
+    }
+
+    let spawn_eggs = [
+        "blue_ghast_spawn_egg",
+        "blue_strider_spawn_egg",
+        "blue_zombie_piglin_spawn_egg",
+        "blue_hoglin_spawn_egg",
+        "blue_piglin_spawn_egg",
+        "blue_wither_skeleton_spawn_egg",
+        "blue_skeleton_spawn_egg",
+        "blue_blaze_spawn_egg",
+        "blue_magma_cube_spawn_egg",
+        "blue_enderman_spawn_egg",
+        "blue_piglin_brute_spawn_egg",
+        "blue_wither_spawn_egg",
+    ];
+    for egg_id in spawn_eggs {
+        let mut item = Item::base(egg_id, tab);
+        item.kind = ItemKind::SpawnEgg;
+        if state.try_add(Entity::Item(item))? {
+            println!("Added item: {}", egg_id);
+        }
+    }
+
+    let tool_armor_items = [
+        ("blue_netherite_sword", ItemKind::Tool, Some("netherite"), Some(8.0), Some(-2.4)),
+        ("blue_netherite_pickaxe", ItemKind::Tool, Some("netherite"), Some(2.0), Some(-2.8)),
+        ("blue_netherite_axe", ItemKind::Axe, Some("netherite"), Some(6.0), Some(-3.0)),
+        ("blue_netherite_shovel", ItemKind::Shovel, Some("netherite"), Some(3.5), Some(-3.0)),
+        ("blue_netherite_hoe", ItemKind::Hoe, Some("netherite"), Some(1.0), Some(-3.0)),
+    ];
+    for (item_id, kind, material, damage, speed) in tool_armor_items {
+        let mut item = Item::new(item_id)?;
+        item.kind = kind;
+        item.material = material.map(|s| s.into());
+        item.attack_damage = damage;
+        item.attack_speed = speed;
+        if state.try_add(Entity::Item(item))? {
+            println!("Added item: {}", item_id);
+        }
+    }
+
+    let armor_items = [
+        ("blue_netherite_helmet", "helmet"),
+        ("blue_netherite_chestplate", "chestplate"),
+        ("blue_netherite_leggings", "leggings"),
+        ("blue_netherite_boots", "boots"),
+    ];
+    for (item_id, slot) in armor_items {
+        let mut item = Item::new(item_id)?;
+        item.kind = ItemKind::Armor;
+        item.material = Some("netherite".into());
+        item.armor_slot = Some(slot.into());
+        if state.try_add(Entity::Item(item))? {
+            println!("Added item: {}", item_id);
+        }
+    }
+
+    let block_recipies = [
+        ("blue_nether_brick_stairs", "blue_nether_bricks", 4),
+        ("blue_nether_brick_slab", "blue_nether_bricks", 6),
+        ("blue_nether_brick_fence", "blue_nether_bricks", 6),
+        ("blue_polished_blackstone_stairs", "blue_polished_blackstone", 4),
+        ("blue_polished_blackstone_slab", "blue_polished_blackstone", 6),
+        (
+            "blue_polished_blackstone_brick_stairs",
+            "blue_polished_blackstone_bricks",
+            4,
+        ),
+        (
+            "blue_polished_blackstone_brick_slab",
+            "blue_polished_blackstone_bricks",
+            6,
+        ),
+        ("blue_blackstone_stairs", "blue_blackstone", 4),
+        ("blue_blackstone_slab", "blue_blackstone", 6),
+        ("blue_smooth_quartz_slab", "blue_smooth_quartz_block", 6),
+    ];
+    for (result_id, ingredient_id, count) in block_recipies {
+        let mut recipe = Recipe::new(result_id)?;
+        recipe.kind = "crafting_shaped".into();
+        recipe.ingredients.insert("X".into(), ingredient_id.into());
+        recipe.result = result_id.into();
+        recipe.count = count;
+        if state.try_add(Entity::Recipe(recipe))? {
+            println!("Added recipe: {}", result_id);
+        }
+    }
+
+    {
+        let mut recipe = Recipe::new("blue_nether_bricks_from_blue_netherrack")?;
+        recipe.kind = "crafting_shaped".into();
+        recipe.pattern = vec!["NN".into(), "NN".into()];
+        recipe
+            .ingredients
+            .insert("N".into(), "blue_netherrack".into());
+        recipe.result = "blue_nether_bricks".into();
+        recipe.count = 4;
+        if state.try_add(Entity::Recipe(recipe))? {
+            println!("Added recipe: blue_nether_bricks_from_blue_netherrack");
+        }
+    }
+
+    let tool_recipes = [
+        (
+            "blue_netherite_sword",
+            vec![" N ", " N ", " S "],
+            "N",
+            "blue_netherite_ingot",
+            "S",
+            "blue_stick",
+        ),
+        (
+            "blue_netherite_pickaxe",
+            vec!["NNN", " S ", " S "],
+            "N",
+            "blue_netherite_ingot",
+            "S",
+            "blue_stick",
+        ),
+        (
+            "blue_netherite_axe",
+            vec!["NN ", "NS ", " S "],
+            "N",
+            "blue_netherite_ingot",
+            "S",
+            "blue_stick",
+        ),
+        (
+            "blue_netherite_shovel",
+            vec![" N ", " S ", " S "],
+            "N",
+            "blue_netherite_ingot",
+            "S",
+            "blue_stick",
+        ),
+        (
+            "blue_netherite_hoe",
+            vec!["NN ", " S ", " S "],
+            "N",
+            "blue_netherite_ingot",
+            "S",
+            "blue_stick",
+        ),
+    ];
+    for (item_id, pattern, k1, v1, k2, v2) in tool_recipes {
+        let mut recipe = Recipe::new(item_id)?;
+        recipe.kind = "crafting_shaped".into();
+        recipe.pattern = pattern.into_iter().map(|s| s.into()).collect();
+        recipe.ingredients.insert(k1.into(), v1.into());
+        recipe.ingredients.insert(k2.into(), v2.into());
+        recipe.result = item_id.into();
+        recipe.count = 1;
+        if state.try_add(Entity::Recipe(recipe))? {
+            println!("Added recipe: {}", item_id);
+        }
+    }
+
+    let armor_recipes = [
+        (
+            "blue_netherite_helmet",
+            vec!["NNN", "N N", "   "],
+            "N",
+            "blue_netherite_ingot",
+        ),
+        (
+            "blue_netherite_chestplate",
+            vec!["N N", "NNN", "NNN"],
+            "N",
+            "blue_netherite_ingot",
+        ),
+        (
+            "blue_netherite_leggings",
+            vec!["NNN", "N N", "N N"],
+            "N",
+            "blue_netherite_ingot",
+        ),
+        (
+            "blue_netherite_boots",
+            vec!["N N", "N N", "   "],
+            "N",
+            "blue_netherite_ingot",
+        ),
+    ];
+    for (item_id, pattern, k, v) in armor_recipes {
+        let mut recipe = Recipe::new(item_id)?;
+        recipe.kind = "crafting_shaped".into();
+        recipe.pattern = pattern.into_iter().map(|s| s.into()).collect();
+        recipe.ingredients.insert(k.into(), v.into());
+        recipe.result = item_id.into();
+        recipe.count = 1;
+        if state.try_add(Entity::Recipe(recipe))? {
+            println!("Added recipe: {}", item_id);
+        }
+    }
+
     state.save().context("Failed to save blue nether state")?;
     regenerate_all(state, dirty, false).context("Failed to regenerate Java sources")?;
 
