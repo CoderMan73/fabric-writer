@@ -259,6 +259,32 @@ fn copy_block_textures(
     Ok(())
 }
 
+fn copy_item_textures(state: &state::ModState, source_textures: &[(&str, &str)]) -> Result<()> {
+    let textures_root = PathBuf::from("src/main/resources/assets")
+        .join(&state.mod_id)
+        .join("textures")
+        .join("item");
+
+    create_dir_all(&textures_root)?;
+
+    for (dest_name, source_file) in source_textures {
+        let dest = textures_root.join(format!("{}.png", dest_name));
+        let src = PathBuf::from(VANILLA_TEXTURE_SOURCE)
+            .join("item")
+            .join(source_file);
+        if src.exists() {
+            std::fs::copy(&src, &dest)?;
+            println!(
+                "Copied item texture: {} -> {}",
+                src.display(),
+                dest.display()
+            );
+        }
+    }
+
+    Ok(())
+}
+
 fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
     let tab = "blue_nether";
     let dirty = DirtyFlags::all();
@@ -1520,6 +1546,36 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
     }
 
     println!("Blue Nether base terrain added!");
+
+    // Copy item textures for blue nether items
+    let item_texture_map = vec![
+        ("blue_netherite_ingot", "netherite_ingot.png"),
+        ("blue_blaze_rod", "blaze_rod.png"),
+        ("blue_ghast_tear", "ghast_tear.png"),
+        ("blue_magma_cream", "magma_cream.png"),
+        ("blue_nether_wart", "nether_wart.png"),
+        ("blue_fire_charge", "fire_charge.png"),
+        ("blue_flint_and_steel", "flint_and_steel.png"),
+        ("blue_netherite_sword", "netherite_sword.png"),
+        ("blue_netherite_pickaxe", "netherite_pickaxe.png"),
+        ("blue_netherite_axe", "netherite_axe.png"),
+        ("blue_netherite_shovel", "netherite_shovel.png"),
+        ("blue_netherite_hoe", "netherite_hoe.png"),
+        ("blue_netherite_helmet", "netherite_helmet.png"),
+        ("blue_netherite_chestplate", "netherite_chestplate.png"),
+        ("blue_netherite_leggings", "netherite_leggings.png"),
+        ("blue_netherite_boots", "netherite_boots.png"),
+        ("blue_stick", "stick.png"),
+        ("blue_netherite_scrap", "netherite_scrap.png"),
+        ("blue_nether_star", "nether_star.png"),
+        ("blue_blaze_powder", "blaze_powder.png"),
+        ("blue_crimson_fungus", "crimson_fungus.png"),
+        ("blue_warped_fungus", "warped_fungus.png"),
+        ("blue_leather", "leather.png"),
+        ("blue_obsidian", "obsidian.png"),
+    ];
+    copy_item_textures(state, &item_texture_map)?;
+
     Ok(())
 }
 
