@@ -1483,6 +1483,69 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
             println!("Added sound_event: blue_nether_ambient");
         }
     }
+    {
+        let sound_event = SoundEvent {
+            id: "blue_nether_mob_ambient".into(),
+            sound_path: "mob/ghast/blue_nether_mob_ambient".into(),
+        };
+        if state.try_add(Entity::SoundEvent(sound_event))? {
+            println!("Added sound_event: blue_nether_mob_ambient");
+        }
+    }
+    {
+        let sound_event = SoundEvent {
+            id: "blue_ghast_death".into(),
+            sound_path: "mob/ghast/blue_ghast_death".into(),
+        };
+        if state.try_add(Entity::SoundEvent(sound_event))? {
+            println!("Added sound_event: blue_ghast_death");
+        }
+    }
+    {
+        let sound_event = SoundEvent {
+            id: "blue_ghast_hurt".into(),
+            sound_path: "mob/ghast/blue_ghast_hurt".into(),
+        };
+        if state.try_add(Entity::SoundEvent(sound_event))? {
+            println!("Added sound_event: blue_ghast_hurt");
+        }
+    }
+    {
+        let sound_event = SoundEvent {
+            id: "blue_blaze_breath".into(),
+            sound_path: "mob/blaze/blue_blaze_breath".into(),
+        };
+        if state.try_add(Entity::SoundEvent(sound_event))? {
+            println!("Added sound_event: blue_blaze_breath");
+        }
+    }
+    {
+        let sound_event = SoundEvent {
+            id: "blue_wither_skeleton_step".into(),
+            sound_path: "mob/skeleton/blue_wither_skeleton_step".into(),
+        };
+        if state.try_add(Entity::SoundEvent(sound_event))? {
+            println!("Added sound_event: blue_wither_skeleton_step");
+        }
+    }
+    {
+        let sound_event = SoundEvent {
+            id: "blue_piglin_ambient".into(),
+            sound_path: "mob/piglin/blue_piglin_ambient".into(),
+        };
+        if state.try_add(Entity::SoundEvent(sound_event))? {
+            println!("Added sound_event: blue_piglin_ambient");
+        }
+    }
+    {
+        let sound_event = SoundEvent {
+            id: "blue_strider_step".into(),
+            sound_path: "mob/strider/blue_strider_step".into(),
+        };
+        if state.try_add(Entity::SoundEvent(sound_event))? {
+            println!("Added sound_event: blue_strider_step");
+        }
+    }
 
     // Blue Nether tag
     {
