@@ -2085,6 +2085,7 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
         ("blue_nether_brick_fence", "nether_brick_fence"),
         ("blue_nether_brick_stairs", "nether_brick_stairs"),
         ("blue_nether_brick_wall", "nether_brick_wall"),
+        ("blue_nether_brick_slab", "nether_brick_slab"),
         ("blue_chiseled_nether_bricks", "chiseled_nether_bricks"),
         ("blue_cracked_nether_bricks", "cracked_nether_bricks"),
         ("blue_polished_blackstone", "polished_blackstone"),
@@ -2123,6 +2124,14 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
         ("blue_gilded_blackstone", "gilded_blackstone"),
         ("blue_smooth_quartz_block", "smooth_quartz"),
         ("blue_smooth_quartz_slab", "smooth_quartz_slab"),
+        ("blue_crying_obsidian", "crying_obsidian"),
+        ("blue_gold_block", "gold_block"),
+        ("blue_bone_block", "bone_block"),
+        ("blue_quartz_block", "quartz_block"),
+        ("blue_iron_chain", "iron_chain"),
+        ("blue_lantern", "lantern"),
+        ("blue_basalt", "basalt"),
+        ("blue_polished_basalt", "polished_basalt"),
     ];
     for (blue_id, vanilla_id) in structure_blocks {
         let mut block = Block::base(blue_id, tab);
