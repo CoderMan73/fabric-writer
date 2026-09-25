@@ -914,7 +914,7 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
 
     // Blue Nether biome
     {
-        let biome = Biome {
+        let mut biome = Biome {
             id: "blue_nether".into(),
             temperature: Some(2.0),
             downfall: Some(0.0),
@@ -928,6 +928,42 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
             mob_spawns: vec![],
             player_spawn_friendly: None,
         };
+        biome.mob_spawns.push(MobSpawn {
+            entity_type: "testmod:blue_zombie_piglin".into(),
+            weight: 100,
+            min_count: 2,
+            max_count: 4,
+        });
+        biome.mob_spawns.push(MobSpawn {
+            entity_type: "testmod:blue_piglin".into(),
+            weight: 50,
+            min_count: 2,
+            max_count: 4,
+        });
+        biome.mob_spawns.push(MobSpawn {
+            entity_type: "testmod:blue_ghast".into(),
+            weight: 10,
+            min_count: 1,
+            max_count: 2,
+        });
+        biome.mob_spawns.push(MobSpawn {
+            entity_type: "testmod:blue_skeleton".into(),
+            weight: 20,
+            min_count: 1,
+            max_count: 2,
+        });
+        biome.mob_spawns.push(MobSpawn {
+            entity_type: "testmod:blue_wither_skeleton".into(),
+            weight: 20,
+            min_count: 1,
+            max_count: 2,
+        });
+        biome.mob_spawns.push(MobSpawn {
+            entity_type: "testmod:blue_blaze".into(),
+            weight: 10,
+            min_count: 1,
+            max_count: 2,
+        });
         if state.try_add(Entity::Biome(biome))? {
             println!("Added biome: blue_nether");
         }
@@ -1292,6 +1328,150 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
             println!("Added advancement: enter_blue_nether");
         }
     }
+    {
+        let advancement = Advancement {
+            id: "return_to_sender_blue".into(),
+            parent: Some("enter_blue_nether".into()),
+            title: "Return to Sender (Blue)".into(),
+            description: "Destroy a blue ghast with a blue fireball".into(),
+            icon: "minecraft:ghast_tear".into(),
+            background: None,
+            frame: Some("challenge".into()),
+            show_toast: None,
+            announce_to_chat: None,
+            hidden: None,
+            criteria: vec![],
+        };
+        if state.try_add(Entity::Advancement(advancement))? {
+            println!("Added advancement: return_to_sender_blue");
+        }
+    }
+    {
+        let advancement = Advancement {
+            id: "into_blue_fire".into(),
+            parent: Some("enter_blue_nether".into()),
+            title: "Into Blue Fire".into(),
+            description: "Pick up a blue blaze rod from a blue blaze".into(),
+            icon: "minecraft:blaze_rod".into(),
+            background: None,
+            frame: None,
+            show_toast: None,
+            announce_to_chat: None,
+            hidden: None,
+            criteria: vec![],
+        };
+        if state.try_add(Entity::Advancement(advancement))? {
+            println!("Added advancement: into_blue_fire");
+        }
+    }
+    {
+        let advancement = Advancement {
+            id: "blue_netherite_ingot".into(),
+            parent: Some("into_blue_fire".into()),
+            title: "Blue Netherite Ingot".into(),
+            description: "Obtain a blue netherite ingot".into(),
+            icon: "minecraft:netherite_ingot".into(),
+            background: None,
+            frame: Some("goal".into()),
+            show_toast: None,
+            announce_to_chat: None,
+            hidden: None,
+            criteria: vec![],
+        };
+        if state.try_add(Entity::Advancement(advancement))? {
+            println!("Added advancement: blue_netherite_ingot");
+        }
+    }
+    {
+        let advancement = Advancement {
+            id: "cover_me_in_blue_debris".into(),
+            parent: Some("blue_netherite_ingot".into()),
+            title: "Cover Me in Blue Debris".into(),
+            description: "Wear a full set of blue netherite armor".into(),
+            icon: "minecraft:netherite_helmet".into(),
+            background: None,
+            frame: Some("challenge".into()),
+            show_toast: None,
+            announce_to_chat: None,
+            hidden: None,
+            criteria: vec![],
+        };
+        if state.try_add(Entity::Advancement(advancement))? {
+            println!("Added advancement: cover_me_in_blue_debris");
+        }
+    }
+    {
+        let advancement = Advancement {
+            id: "blue_wither".into(),
+            parent: Some("cover_me_in_blue_debris".into()),
+            title: "Blue Wither".into(),
+            description: "Summon the blue wither".into(),
+            icon: "minecraft:nether_star".into(),
+            background: None,
+            frame: Some("challenge".into()),
+            show_toast: None,
+            announce_to_chat: None,
+            hidden: None,
+            criteria: vec![],
+        };
+        if state.try_add(Entity::Advancement(advancement))? {
+            println!("Added advancement: blue_wither");
+        }
+    }
+    {
+        let advancement = Advancement {
+            id: "blue_fortress_explorer".into(),
+            parent: Some("enter_blue_nether".into()),
+            title: "Blue Fortress Explorer".into(),
+            description: "Enter a blue nether fortress".into(),
+            icon: "minecraft:nether_bricks".into(),
+            background: None,
+            frame: None,
+            show_toast: None,
+            announce_to_chat: None,
+            hidden: None,
+            criteria: vec![],
+        };
+        if state.try_add(Entity::Advancement(advancement))? {
+            println!("Added advancement: blue_fortress_explorer");
+        }
+    }
+    {
+        let advancement = Advancement {
+            id: "blue_bastion_raider".into(),
+            parent: Some("enter_blue_nether".into()),
+            title: "Blue Bastion Raider".into(),
+            description: "Enter a blue bastion remnant".into(),
+            icon: "minecraft:blackstone".into(),
+            background: None,
+            frame: None,
+            show_toast: None,
+            announce_to_chat: None,
+            hidden: None,
+            criteria: vec![],
+        };
+        if state.try_add(Entity::Advancement(advancement))? {
+            println!("Added advancement: blue_bastion_raider");
+        }
+    }
+    {
+        let advancement = Advancement {
+            id: "blue_fossil_hunter".into(),
+            parent: Some("blue_fortress_explorer".into()),
+            title: "Blue Fossil Hunter".into(),
+            description: "Discover a blue nether fossil".into(),
+            icon: "minecraft:bone".into(),
+            background: None,
+            frame: None,
+            show_toast: None,
+            announce_to_chat: None,
+            hidden: None,
+            criteria: vec![],
+        };
+        if state.try_add(Entity::Advancement(advancement))? {
+            println!("Added advancement: blue_fossil_hunter");
+        }
+    }
 
     // Blue Nether sound event
     {
@@ -1333,9 +1513,6 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
         ("blue_brown_mushroom", "brown_mushroom"),
         ("blue_red_mushroom", "red_mushroom"),
         ("blue_nether_wart", "nether_wart"),
-        ("blue_fire", "fire"),
-        ("blue_soul_fire", "soul_fire"),
-        ("blue_nether_portal", "nether_portal"),
         ("blue_nether_brick_fence", "nether_brick_fence"),
         ("blue_nether_brick_stairs", "nether_brick_stairs"),
         ("blue_nether_brick_slab", "nether_brick_slab"),
@@ -1693,9 +1870,6 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
         }
     }
 
-    state.save().context("Failed to save blue nether state")?;
-    regenerate_all(state, dirty, false).context("Failed to regenerate Java sources")?;
-
     // Copy vanilla textures for blue nether blocks
     let texture_map = vec![
         ("blue_netherrack", "netherrack.png"),
@@ -1876,6 +2050,7 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
     {
         let mut block = Block::base("blue_fire", tab);
         block.properties_from = Some("fire".into());
+        block.model_kind = BlockModelKind::SingleFace;
         if state.try_add(Entity::Block(block))? {
             println!("Added block: blue_fire");
         }
@@ -1883,6 +2058,7 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
     {
         let mut block = Block::base("blue_soul_fire", tab);
         block.properties_from = Some("soul_fire".into());
+        block.model_kind = BlockModelKind::SingleFace;
         if state.try_add(Entity::Block(block))? {
             println!("Added block: blue_soul_fire");
         }
@@ -1944,7 +2120,6 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
         ("blue_blackstone_stairs", "blackstone_stairs"),
         ("blue_blackstone_slab", "blackstone_slab"),
         ("blue_blackstone_wall", "blackstone_wall"),
-        ("blue_blackstone_brick_wall", "blackstone_brick_wall"),
         ("blue_gilded_blackstone", "gilded_blackstone"),
         ("blue_smooth_quartz_block", "smooth_quartz"),
         ("blue_smooth_quartz_slab", "smooth_quartz_slab"),
@@ -2347,6 +2522,9 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
         ("blue_obsidian", "obsidian.png"),
     ];
     copy_item_textures(state, &item_texture_map)?;
+
+    state.save().context("Failed to save blue nether state")?;
+    regenerate_all(state, dirty, false).context("Failed to regenerate Java sources")?;
 
     Ok(())
 }

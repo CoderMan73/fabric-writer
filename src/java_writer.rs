@@ -5,7 +5,7 @@ use std::collections::HashSet;
 use std::fs::{create_dir_all, read as fs_read, read_dir, remove_file, write as fs_write};
 use std::path::{Path, PathBuf};
 
-use crate::state::{BlockModelKind, Entity, ModState};
+use crate::state::{BlockModelKind, Entity, ItemKind, ModState};
 use crate::tokengen::{
     BuildFn, build_datagen_entrypoint, build_item_class, build_lang_provider, build_main_mod_class,
     build_mod_advancements, build_mod_biomes, build_mod_block_ids, build_mod_block_item_ids,
@@ -1080,22 +1080,6 @@ fn generate_model_resources(state: &ModState, _verbose: bool) -> Result<()> {
                     ),
                 )?;
             }
-            _ => {
-                std::fs::write(
-                    blockstate_path,
-                    format!(
-                        r#"{{"variants":{{"":{{"model":"{}:block/{}"}}}}}}"#,
-                        mod_id, id
-                    ),
-                )?;
-                std::fs::write(
-                    block_model_path,
-                    format!(
-                        r#"{{"parent":"minecraft:block/cube_all","textures":{{"all":"{}:block/{}"}}}}"#,
-                        mod_id, id
-                    ),
-                )?;
-            }
         }
 
         let item_model_path = item_models_root.join(format!("{}.json", id));
@@ -1111,14 +1095,24 @@ fn generate_model_resources(state: &ModState, _verbose: bool) -> Result<()> {
         let id = &item.id;
         let mod_id = &state.mod_id;
         let item_model_path = item_models_root.join(format!("{}.json", id));
-        if !item_model_path.exists() && !block_item_ids.contains(&id.as_str()) {
-            std::fs::write(
-                item_model_path,
-                format!(
-                    r#"{{"parent":"minecraft:item/generated","textures":{{"layer0":"{}:item/{}"}}}}"#,
-                    mod_id, id
-                ),
-            )?;
+        if !block_item_ids.contains(&id.as_str()) {
+            if item.kind == ItemKind::SpawnEgg {
+                std::fs::write(
+                    item_model_path,
+                    format!(
+                        r#"{{"parent":"minecraft:item/template_spawn_egg","layers":[{{"texture":"{}:item/{}"}}]}}"#,
+                        mod_id, id
+                    ),
+                )?;
+            } else {
+                std::fs::write(
+                    item_model_path,
+                    format!(
+                        r#"{{"parent":"minecraft:item/generated","textures":{{"layer0":"{}:item/{}"}}}}"#,
+                        mod_id, id
+                    ),
+                )?;
+            }
         }
     }
 
