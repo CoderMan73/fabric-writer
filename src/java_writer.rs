@@ -476,6 +476,7 @@ pub fn regenerate_all(state: &ModState, dirty: DirtyFlags, verbose: bool) -> Res
 
     copy_textures(state, verbose)?;
     generate_model_resources(state, verbose)?;
+    generate_loot_table_resources(state, verbose)?;
 
     for i in &state.items {
         let class_name = format!("{}Item.java", to_upper(&i.id));
@@ -673,9 +674,23 @@ fn generate_model_resources(state: &ModState, _verbose: bool) -> Result<()> {
                     ),
                 )?;
             }
-            BlockModelKind::CubeBottomTop
-            | BlockModelKind::CubeColumn
-            | BlockModelKind::Orientable => {
+            BlockModelKind::CubeColumn => {
+                std::fs::write(
+                    blockstate_path,
+                    format!(
+                        r#"{{"variants":{{"":{{"model":"{}:block/{}"}}}}}}"#,
+                        mod_id, id
+                    ),
+                )?;
+                std::fs::write(
+                    block_model_path,
+                    format!(
+                        r#"{{"parent":"minecraft:block/cube_column","textures":{{"end":"{}:block/{}_top","side":"{}:block/{}_side"}}}}"#,
+                        mod_id, id, mod_id, id
+                    ),
+                )?;
+            }
+            BlockModelKind::CubeBottomTop | BlockModelKind::Orientable => {
                 let texture_name = id;
                 std::fs::write(
                     blockstate_path,
@@ -809,6 +824,239 @@ fn generate_model_resources(state: &ModState, _verbose: bool) -> Result<()> {
                     ),
                 )?;
             }
+            BlockModelKind::Fence => {
+                std::fs::write(
+                    blockstate_path,
+                    format!(
+                        r#"{{"variants":{{"":{{"model":"{}:block/{}"}}}}}}"#,
+                        mod_id, id
+                    ),
+                )?;
+                std::fs::write(
+                    block_model_path,
+                    format!(
+                        r#"{{"parent":"minecraft:block/fence","textures":{{"texture":"{}:block/{}","post":"{}:block/{}"}}}}"#,
+                        mod_id, id, mod_id, id
+                    ),
+                )?;
+            }
+            BlockModelKind::Wall => {
+                std::fs::write(
+                    blockstate_path,
+                    format!(
+                        r#"{{"variants":{{"":{{"model":"{}:block/{}"}}}}}}"#,
+                        mod_id, id
+                    ),
+                )?;
+                std::fs::write(
+                    block_model_path,
+                    format!(
+                        r#"{{"parent":"minecraft:block/wall","textures":{{"texture":"{}:block/{}"}}}}"#,
+                        mod_id, id
+                    ),
+                )?;
+            }
+            BlockModelKind::Cross | BlockModelKind::TintedCross => {
+                std::fs::write(
+                    blockstate_path,
+                    format!(
+                        r#"{{"variants":{{"":{{"model":"{}:block/{}"}}}}}}"#,
+                        mod_id, id
+                    ),
+                )?;
+                std::fs::write(
+                    block_model_path,
+                    format!(
+                        r#"{{"parent":"minecraft:block/cross","textures":{{"cross":"{}:block/{}"}}}}"#,
+                        mod_id, id
+                    ),
+                )?;
+            }
+            BlockModelKind::Crop => {
+                std::fs::write(
+                    blockstate_path,
+                    format!(
+                        r#"{{"variants":{{"age=0":{{"model":"{}:block/{}_stage0"}},"age=1":{{"model":"{}:block/{}_stage1"}},"age=2":{{"model":"{}:block/{}_stage2"}},"age=3":{{"model":"{}:block/{}_stage3"}}}}}}"#,
+                        mod_id, id, mod_id, id, mod_id, id, mod_id, id
+                    ),
+                )?;
+                for stage in 0..4 {
+                    std::fs::write(
+                        block_models_root.join(format!("{}_stage{}.json", id, stage)),
+                        format!(
+                            r#"{{"parent":"minecraft:block/crop","textures":{{"crop":"{}:block/{}_stage{}"}}}}"#,
+                            mod_id, id, stage
+                        ),
+                    )?;
+                }
+            }
+            BlockModelKind::SingleFace => {
+                std::fs::write(
+                    blockstate_path,
+                    format!(
+                        r#"{{"variants":{{"":{{"model":"{}:block/{}"}}}}}}"#,
+                        mod_id, id
+                    ),
+                )?;
+                std::fs::write(
+                    block_model_path,
+                    format!(
+                        r#"{{"parent":"minecraft:block/template_single_face","textures":{{"texture":"{}:block/{}"}}}}"#,
+                        mod_id, id
+                    ),
+                )?;
+            }
+            BlockModelKind::Ore => {
+                std::fs::write(
+                    blockstate_path,
+                    format!(
+                        r#"{{"variants":{{"":{{"model":"{}:block/{}"}}}}}}"#,
+                        mod_id, id
+                    ),
+                )?;
+                std::fs::write(
+                    block_model_path,
+                    format!(
+                        r#"{{"parent":"minecraft:block/ore","textures":{{"all":"{}:block/{}"}}}}"#,
+                        mod_id, id
+                    ),
+                )?;
+            }
+            BlockModelKind::Carpet => {
+                std::fs::write(
+                    blockstate_path,
+                    format!(
+                        r#"{{"variants":{{"":{{"model":"{}:block/{}"}}}}}}"#,
+                        mod_id, id
+                    ),
+                )?;
+                std::fs::write(
+                    block_model_path,
+                    format!(
+                        r#"{{"parent":"minecraft:block/carpet","textures":{{"wool":"{}:block/{}"}}}}"#,
+                        mod_id, id
+                    ),
+                )?;
+            }
+            BlockModelKind::Ladder => {
+                std::fs::write(
+                    blockstate_path,
+                    format!(
+                        r#"{{"variants":{{"":{{"model":"{}:block/{}"}}}}}}"#,
+                        mod_id, id
+                    ),
+                )?;
+                std::fs::write(
+                    block_model_path,
+                    format!(
+                        r#"{{"parent":"minecraft:block/ladder","textures":{{"texture":"{}:block/{}"}}}}"#,
+                        mod_id, id
+                    ),
+                )?;
+            }
+            BlockModelKind::Lever => {
+                std::fs::write(
+                    blockstate_path,
+                    format!(
+                        r#"{{"variants":{{"":{{"model":"{}:block/{}"}}}}}}"#,
+                        mod_id, id
+                    ),
+                )?;
+                std::fs::write(
+                    block_model_path,
+                    format!(
+                        r#"{{"parent":"minecraft:block/lever","textures":{{"texture":"{}:block/{}"}}}}"#,
+                        mod_id, id
+                    ),
+                )?;
+            }
+            BlockModelKind::Button => {
+                std::fs::write(
+                    blockstate_path,
+                    format!(
+                        r#"{{"variants":{{"":{{"model":"{}:block/{}"}}}}}}"#,
+                        mod_id, id
+                    ),
+                )?;
+                std::fs::write(
+                    block_model_path,
+                    format!(
+                        r#"{{"parent":"minecraft:block/button","textures":{{"texture":"{}:block/{}"}}}}"#,
+                        mod_id, id
+                    ),
+                )?;
+            }
+            BlockModelKind::PressurePlate => {
+                std::fs::write(
+                    blockstate_path,
+                    format!(
+                        r#"{{"variants":{{"":{{"model":"{}:block/{}"}}}}}}"#,
+                        mod_id, id
+                    ),
+                )?;
+                std::fs::write(
+                    block_model_path,
+                    format!(
+                        r#"{{"parent":"minecraft:block/pressure_plate","textures":{{"texture":"{}:block/{}"}}}}"#,
+                        mod_id, id
+                    ),
+                )?;
+            }
+            BlockModelKind::Door => {
+                std::fs::write(
+                    blockstate_path,
+                    format!(
+                        r#"{{"variants":{{"facing=east,half=lower,hinge=left":{{"model":"{}:block/{}_bottom"}},"facing=east,half=upper,hinge=left":{{"model":"{}:block/{}_top"}}}}}}"#,
+                        mod_id, id, mod_id, id
+                    ),
+                )?;
+                std::fs::write(
+                    block_models_root.join(format!("{}_bottom.json", id)),
+                    format!(
+                        r#"{{"parent":"minecraft:block/door_bottom","textures":{{"door":"{}:block/{}"}}}}"#,
+                        mod_id, id
+                    ),
+                )?;
+                std::fs::write(
+                    block_models_root.join(format!("{}_top.json", id)),
+                    format!(
+                        r#"{{"parent":"minecraft:block/door_top","textures":{{"door":"{}:block/{}"}}}}"#,
+                        mod_id, id
+                    ),
+                )?;
+            }
+            BlockModelKind::Trapdoor => {
+                std::fs::write(
+                    blockstate_path,
+                    format!(
+                        r#"{{"variants":{{"":{{"model":"{}:block/{}"}}}}}}"#,
+                        mod_id, id
+                    ),
+                )?;
+                std::fs::write(
+                    block_model_path,
+                    format!(
+                        r#"{{"parent":"minecraft:block/trapdoor","textures":{{"texture":"{}:block/{}"}}}}"#,
+                        mod_id, id
+                    ),
+                )?;
+            }
+            BlockModelKind::FenceGate => {
+                std::fs::write(
+                    blockstate_path,
+                    format!(
+                        r#"{{"variants":{{"":{{"model":"{}:block/{}"}}}}}}"#,
+                        mod_id, id
+                    ),
+                )?;
+                std::fs::write(
+                    block_model_path,
+                    format!(
+                        r#"{{"parent":"minecraft:block/fence_gate","textures":{{"texture":"{}:block/{}"}}}}"#,
+                        mod_id, id
+                    ),
+                )?;
+            }
             BlockModelKind::Lantern => {
                 std::fs::write(
                     blockstate_path,
@@ -872,6 +1120,60 @@ fn generate_model_resources(state: &ModState, _verbose: bool) -> Result<()> {
                 ),
             )?;
         }
+    }
+
+    Ok(())
+}
+
+fn generate_loot_table_resources(state: &ModState, _verbose: bool) -> Result<()> {
+    let data_root = PathBuf::from("src/main/resources/data")
+        .join(&state.mod_id)
+        .join("loot_table");
+    create_dir_all(&data_root)?;
+
+    for table in &state.loot_tables {
+        let id = &table.id;
+        let loot_type = &table.loot_type;
+        let rolls = table.rolls.unwrap_or(1);
+        let pool_dir = data_root.join(loot_type);
+        create_dir_all(&pool_dir)?;
+        let path = pool_dir.join(format!("{}.json", id));
+
+        let entries: Vec<String> = table
+            .entries
+            .iter()
+            .map(|e| {
+                let name = if e.item.contains(':') {
+                    e.item.clone()
+                } else {
+                    format!("{}:{}", state.mod_id, e.item)
+                };
+                let mut entry = format!(r#"{{"type":"minecraft:item","name":"{}""#, name);
+                if let Some(w) = e.weight {
+                    entry.push_str(&format!(r#","weight":{}"#, w));
+                }
+                if e.min_count != e.max_count || e.min_count != 1 {
+                    entry.push_str(&format!(
+                        r#","functions":[{{"function":"minecraft:set_count","count":{{"min":{},"max":{}}}}}]"#,
+                        e.min_count, e.max_count
+                    ));
+                } else if e.min_count != 1 {
+                    entry.push_str(&format!(
+                        r#","functions":[{{"function":"minecraft:set_count","count":{}}}]"#,
+                        e.min_count
+                    ));
+                }
+                entry.push('}');
+                entry
+            })
+            .collect();
+
+        let entries_str = entries.join(",");
+        let json = format!(
+            r#"{{"pools":[{{"rolls":{},"entries":[{}]}}]}}"#,
+            rolls, entries_str
+        );
+        std::fs::write(path, json)?;
     }
 
     Ok(())

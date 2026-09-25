@@ -18,9 +18,11 @@ pub(crate) fn build_mod_item_ids(state: &ModState) -> Tokens {
 
             $("// Mod Item ID Registration")
             $(for i in &state.items =>
-                public static final $(resource_key())<$(item())> $(to_upper(&i.id)) = create(
-                    $(quoted(&i.id))
-                );
+                $(if i.kind != ItemKind::SpawnEgg =>
+                    public static final $(resource_key())<$(item())> $(to_upper(&i.id)) = create(
+                        $(quoted(&i.id))
+                    );$['\r']
+                )
             )
         }
     }
@@ -34,6 +36,9 @@ pub(crate) fn build_mod_items(state: &ModState) -> Tokens {
         |i| i.creative_tab.as_deref() == Some("ingredients"),
     );
 
+    let block_ids: std::collections::HashSet<_> =
+        state.blocks.iter().map(|b| b.id.as_str()).collect();
+
     quote! {
         public class ModItems {
             private static $(item()) register($(resource_key())<$(item())> itemKey, $(function())<$(item()).Properties, $(item())> itemFactory, $(item()).Properties settings) {
@@ -44,11 +49,13 @@ pub(crate) fn build_mod_items(state: &ModState) -> Tokens {
 
             $("// Item Registration")
             $(for i in &state.items =>
-                $(if !i.tooltip.is_empty() =>
-                    public static final $(item()) $(to_upper(&i.id)) = register(ModItemIds.$(to_upper(&i.id)), $(item_factory(i, true)), $(item_properties(i, true)));$['\r']
-                )
-                $(if i.tooltip.is_empty() =>
-                    public static final $(item()) $(to_upper(&i.id)) = register(ModItemIds.$(to_upper(&i.id)), $(item_factory(i, false)), $(item_properties(i, false)));$['\r']
+                $(if i.kind != ItemKind::SpawnEgg && !block_ids.contains(i.id.as_str()) =>
+                    $(if !i.tooltip.is_empty() =>
+                        public static final $(item()) $(to_upper(&i.id)) = register(ModItemIds.$(to_upper(&i.id)), $(item_factory(i, true)), $(item_properties(i, true)));$['\r']
+                    )
+                    $(if i.tooltip.is_empty() =>
+                        public static final $(item()) $(to_upper(&i.id)) = register(ModItemIds.$(to_upper(&i.id)), $(item_factory(i, false)), $(item_properties(i, false)));$['\r']
+                    )
                 )
             )
 
@@ -58,7 +65,9 @@ pub(crate) fn build_mod_items(state: &ModState) -> Tokens {
                         .register((creativeTab) ->
                         {
                             $(for i in &state.items =>
-                                creativeTab.accept($(mod_items(state)).$(to_upper(&i.id)));$['\r']
+                                $(if i.kind != ItemKind::SpawnEgg && !block_ids.contains(i.id.as_str()) =>
+                                    creativeTab.accept($(mod_items(state)).$(to_upper(&i.id)));$['\r']
+                                )
                             )
                         });
                 )
@@ -200,6 +209,9 @@ pub(crate) fn build_mod_creative_tabs(state: &ModState) -> Tokens {
 
     let first_tab_id = &state.creative_tabs[0].id;
 
+    let block_ids: std::collections::HashSet<_> =
+        state.blocks.iter().map(|b| b.id.as_str()).collect();
+
     let mut tab_defs = Vec::new();
     for tab in &state.creative_tabs {
         let tab_name = to_upper(&tab.id);
@@ -215,6 +227,9 @@ pub(crate) fn build_mod_creative_tabs(state: &ModState) -> Tokens {
         let mut display_items = quote! {};
 
         for item in &state.items {
+            if block_ids.contains(item.id.as_str()) || item.kind == ItemKind::SpawnEgg {
+                continue;
+            }
             if let Some(ct) = &item.creative_tab
                 && *ct == tab.id
                 && ct != "ingredients"
@@ -228,6 +243,9 @@ pub(crate) fn build_mod_creative_tabs(state: &ModState) -> Tokens {
 
         if tab.id == *first_tab_id {
             for item in &state.items {
+                if block_ids.contains(item.id.as_str()) || item.kind == ItemKind::SpawnEgg {
+                    continue;
+                }
                 if item.creative_tab.is_none() || item.creative_tab.as_deref() == Some("default") {
                     quote_in! { display_items =>
                         output.accept($(mod_items(state)).$(to_upper(&item.id)));$['\r']
@@ -452,6 +470,12 @@ fn recipe_call(recipe: &Recipe, state: &ModState) -> Tokens {
     let count = recipe.count;
     let recipe_id = strip_namespace(&recipe.id);
     let full_id = format!("{}:{}", state.mod_id, recipe_id);
+    let result_id = strip_namespace(&recipe.result);
+    let save_expr = if recipe_id == result_id {
+        quote! { .save(exporter); }
+    } else {
+        quote! { .save(exporter, $(quoted(&full_id))); }
+    };
     match recipe.kind.as_str() {
         "crafting_shaped" => {
             let pattern_lines = &recipe.pattern;
@@ -461,7 +485,7 @@ fn recipe_call(recipe: &Recipe, state: &ModState) -> Tokens {
                     $(for p in pattern_lines => .pattern($(quoted(p))))
                     $(for (k, v) in defines => .define($(format!("'{}'", k.chars().next().unwrap_or('?'))), $(ingredient_ref(v, state))))
                     .unlockedBy(getHasName($(result_ref2)), has($(result_ref3)))
-                    .save(exporter);
+                    $(save_expr)
             }
         }
         "crafting_shapeless" => {
@@ -470,7 +494,7 @@ fn recipe_call(recipe: &Recipe, state: &ModState) -> Tokens {
                 shapeless($(recipe_category()).MISC, $(result_ref), $(count))
                     $(for (_, v) in ingredients => .requires($(ingredient_ref(v, state))))
                     .unlockedBy(getHasName($(result_ref2)), has($(result_ref3)))
-                    .save(exporter);
+                    $(save_expr)
             }
         }
         "smelting" | "blasting" | "smoking" | "campfire_cooking" => {
@@ -523,7 +547,7 @@ fn recipe_call(recipe: &Recipe, state: &ModState) -> Tokens {
             quote! {
                 stonecutterResultFromBase($(recipe_category()).$(category.to_uppercase()), $(result_ref), $(input), $(count))
                     .unlockedBy(getHasName($(result_ref2)), has($(result_ref3)))
-                    .save(exporter);
+                    $(save_expr)
             }
         }
         "smithing" => {
@@ -548,7 +572,7 @@ fn recipe_call(recipe: &Recipe, state: &ModState) -> Tokens {
                     $(recipe_category()).$(category.to_uppercase()),
                     $(result_ref)
                 ).unlocks("has_netherite_ingot", has($(item_tags()).NETHERITE_TOOL_MATERIALS))
-                 .save(exporter, $(quoted(&full_id)));
+                 $(save_expr)
             }
         }
         _ => quote! { /* unsupported recipe type: $(quoted(&recipe.kind)) */ },
@@ -585,10 +609,10 @@ fn ingredient_ref(value: &str, state: &ModState) -> Tokens {
     } else {
         let item_id = strip_namespace(value);
         let const_name = to_upper(item_id);
-        if state.items.iter().any(|i| i.id == item_id) {
-            quote! { $(ingredient()).of($(mod_items(state)).$(const_name)) }
-        } else if state.blocks.iter().any(|b| b.id == item_id) {
+        if state.blocks.iter().any(|b| b.id == item_id) {
             quote! { $(ingredient()).of($(mod_blocks(state)).$(const_name)) }
+        } else if state.items.iter().any(|i| i.id == item_id) {
+            quote! { $(ingredient()).of($(mod_items(state)).$(const_name)) }
         } else {
             let id_ref: Tokens = quote! {
                 $(identifier()).fromNamespaceAndPath(
