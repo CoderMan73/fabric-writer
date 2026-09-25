@@ -1621,6 +1621,8 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
             || blue_id == "blue_twisting_vines"
             || blue_id == "blue_brown_mushroom"
             || blue_id == "blue_red_mushroom"
+            || blue_id == "blue_crimson_fungus"
+            || blue_id == "blue_warped_fungus"
         {
             block.model_kind = BlockModelKind::Cross;
         } else if blue_id == "blue_nether_wart" {
@@ -2104,6 +2106,20 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
     for (blue_id, vanilla_id) in plant_blocks {
         let mut block = Block::base(blue_id, tab);
         block.properties_from = Some(vanilla_id.into());
+        if blue_id.ends_with("_stem") {
+            block.model_kind = BlockModelKind::CubeColumn;
+        } else if blue_id == "blue_crimson_roots"
+            || blue_id == "blue_warped_roots"
+            || blue_id == "blue_nether_sprouts"
+            || blue_id == "blue_weeping_vines"
+            || blue_id == "blue_twisting_vines"
+            || blue_id == "blue_brown_mushroom"
+            || blue_id == "blue_red_mushroom"
+            || blue_id == "blue_crimson_fungus"
+            || blue_id == "blue_warped_fungus"
+        {
+            block.model_kind = BlockModelKind::Cross;
+        }
         if state.try_add(Entity::Block(block))? {
             println!("Added block: {}", blue_id);
         }
