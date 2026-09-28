@@ -258,6 +258,16 @@ New content types follow the same pattern as items/blocks/recipes:
 - Fabric docs: `E:\Coding_Projects\MCSourceCode\fabric-docs\develop`
 - Fabric example code: `E:\Coding_Projects\MCSourceCode\fabric-docs\reference\latest\src`
 
+## Research-First Rule
+
+Always use the docs and reference examples as the primary source of truth.
+
+- Search `E:\Coding_Projects\MCSourceCode\fabric-docs` first for the exact feature being implemented.
+- Use the reference example code in those docs as the implementation pattern.
+- Do not inspect or edit Fabric-generated files directly.
+- Do not invent parallel workarounds in Java/Rust to bypass documented APIs.
+- If the documented path is unclear or insufficient, stop and surface that instead of hacking around it.
+
 ## Common Pitfalls
 
 1. **Java path:** `fw init` validates JDK version (25+ for MC 26.2). The path must point to the JDK root, not the `bin` directory.

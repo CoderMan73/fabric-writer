@@ -1,7 +1,7 @@
 use anyhow::{Context, Result};
 use genco::fmt::{self, IoWriter};
 use genco::lang::java::{self, Java, Tokens};
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::fs::{create_dir_all, read as fs_read, read_dir, remove_file, write as fs_write};
 use std::path::{Path, PathBuf};
 
@@ -155,6 +155,12 @@ impl DirtyFlags {
                 ..Default::default()
             },
             Entity::Dimension(_) => Self {
+                mod_dimensions: true,
+                mod_class: true,
+                datagen_entrypoint: true,
+                ..Default::default()
+            },
+            Entity::DimensionType(_) => Self {
                 mod_dimensions: true,
                 mod_class: true,
                 datagen_entrypoint: true,
@@ -477,6 +483,12 @@ pub fn regenerate_all(state: &ModState, dirty: DirtyFlags, verbose: bool) -> Res
     copy_textures(state, verbose)?;
     generate_model_resources(state, verbose)?;
     generate_loot_table_resources(state, verbose)?;
+    generate_biome_resources(state, verbose)?;
+    generate_configured_feature_resources(state, verbose)?;
+    generate_placed_feature_resources(state, verbose)?;
+    generate_dimension_type_resources(state, verbose)?;
+    generate_dimension_resources(state, verbose)?;
+    generate_structure_set_resources(state, verbose)?;
 
     for i in &state.items {
         let class_name = format!("{}Item.java", to_upper(&i.id));
@@ -1168,6 +1180,341 @@ fn generate_loot_table_resources(state: &ModState, _verbose: bool) -> Result<()>
             rolls, entries_str
         );
         std::fs::write(path, json)?;
+    }
+
+    Ok(())
+}
+
+fn generate_biome_resources(state: &ModState, _verbose: bool) -> Result<()> {
+    let data_root = PathBuf::from("src/main/resources/data")
+        .join(&state.mod_id)
+        .join("worldgen")
+        .join("biome");
+    create_dir_all(&data_root)?;
+
+    for biome in &state.biomes {
+        let id = &biome.id;
+        let mut effects = String::new();
+        let mut attributes = String::new();
+        let mut has_effects = false;
+        let mut has_attributes = false;
+
+        if let Some(water_color) = biome.water_color {
+            effects.push_str(&format!(
+                r#""water_color":"{}""#,
+                format!("#{:06X}", water_color as u32)
+            ));
+            has_effects = true;
+        }
+        if let Some(sky_color) = biome.sky_color {
+            if has_attributes {
+                attributes.push(',');
+            }
+            attributes.push_str(&format!(
+                r#""minecraft:visual/sky_color":"{}""#,
+                format!("#{:06X}", sky_color as u32)
+            ));
+            has_attributes = true;
+        }
+        if let Some(water_fog_color) = biome.water_fog_color {
+            if has_attributes {
+                attributes.push(',');
+            }
+            attributes.push_str(&format!(
+                r#""minecraft:visual/water_fog_color":"{}""#,
+                format!("#{:06X}", water_fog_color as u32)
+            ));
+            has_attributes = true;
+        }
+        if let Some(fog_color) = biome.fog_color {
+            if has_attributes {
+                attributes.push(',');
+            }
+            attributes.push_str(&format!(
+                r#""minecraft:visual/fog_color":"{}""#,
+                format!("#{:06X}", fog_color as u32)
+            ));
+            has_attributes = true;
+        }
+
+        let effects_obj = if has_effects {
+            format!("\"effects\":{{{}}},", effects)
+        } else {
+            String::new()
+        };
+
+        let attributes_obj = if has_attributes {
+            format!("\"attributes\":{{{}}},", attributes)
+        } else {
+            String::new()
+        };
+
+        let mut spawners: HashMap<&str, Vec<String>> = HashMap::new();
+        for spawn in &biome.mob_spawns {
+            let category = spawn.category.as_deref().unwrap_or("monster");
+            spawners.entry(category).or_default().push(format!(
+                r#"{{"type":"{}","weight":{},"minCount":{},"maxCount":{}}}"#,
+                spawn.entity_type, spawn.weight, spawn.min_count, spawn.max_count
+            ));
+        }
+
+        let mut spawners_str = String::new();
+        for (category, entries) in spawners {
+            if !spawners_str.is_empty() {
+                spawners_str.push(',');
+            }
+            spawners_str.push_str(&format!(
+                r#""{}":[{}]"#,
+                category,
+                entries.join(",")
+            ));
+        }
+
+        let temperature = biome
+            .temperature
+            .map(|t| format!(r#""temperature":{},"#, t))
+            .unwrap_or_default();
+        let downfall = biome
+            .downfall
+            .map(|d| format!(r#""downfall":{},"#, d))
+            .unwrap_or_default();
+        let has_precipitation = biome
+            .has_precipitation
+            .map(|p| format!(r#""has_precipitation":{},"#, p))
+            .unwrap_or_default();
+
+        let features = if biome.features.is_empty() && state.features.is_empty() {
+            String::from("[]")
+        } else {
+            let mut feature_refs: Vec<String> = biome
+                .features
+                .iter()
+                .map(|f| format!(r#""{}""#, f))
+                .collect();
+            for feature in &state.features {
+                feature_refs.push(format!(r#""{}:{}""#, state.mod_id, feature.id));
+            }
+            if feature_refs.is_empty() {
+                String::from("[]")
+            } else {
+                format!(r#"[{}]"#, feature_refs.join(","))
+            }
+        };
+
+        let structures = if biome.structures.is_empty() {
+            String::from("[]")
+        } else {
+            format!(
+                r#""structures":[{}],"#,
+                biome
+                    .structures
+                    .iter()
+                    .map(|s| format!(r#""{}""#, s))
+                    .collect::<Vec<_>>()
+                    .join(",")
+            )
+        };
+
+        let json = format!(
+            r#"{{{}{}{}{}{}"spawners":{{{},"spawn_costs":{{}},"features":{},"structures":{}}}"#,
+            attributes_obj, effects_obj, temperature, downfall, has_precipitation, spawners_str, features, structures
+        );
+
+        std::fs::write(data_root.join(format!("{}.json", id)), json)?;
+    }
+
+    Ok(())
+}
+
+fn generate_configured_feature_resources(state: &ModState, _verbose: bool) -> Result<()> {
+    let data_root = PathBuf::from("src/main/resources/data")
+        .join(&state.mod_id)
+        .join("worldgen")
+        .join("configured_feature");
+    create_dir_all(&data_root)?;
+
+    for feature in &state.features {
+        let id = &feature.id;
+        let mut config = String::new();
+
+        match feature.feature_type.as_str() {
+            "ore" => {
+                config.push_str(&format!(
+                    r#""type":"minecraft:ore","target":{{"target":"{}","state":{{"Name":"{}"}}}},"size":{{"min_inclusive":{{"below":64}},"max_inclusive":{{"below":0}}}}"#,
+                    feature.block.as_deref().unwrap_or("minecraft:stone"),
+                    feature.block.as_deref().unwrap_or("minecraft:stone")
+                ));
+            }
+            "blob" => {
+                config.push_str(&format!(
+                    r#""type":"minecraft:random_blob","state":{{"Name":"{}"}},"radius":{{"type":"minecraft:uniform","value":{{"min_inclusive":{},"max_inclusive":{}}}}}"#,
+                    feature.block.as_deref().unwrap_or("minecraft:stone"),
+                    feature.radius.unwrap_or(2),
+                    feature.radius.unwrap_or(4)
+                ));
+            }
+            "delta" => {
+                config.push_str(&format!(
+                    r#""type":"minecraft:delta_feature","state":{{"Name":"{}"}},"size":{}"#,
+                    feature.block.as_deref().unwrap_or("minecraft:netherrack"),
+                    feature.radius.unwrap_or(3)
+                ));
+            }
+            _ => {
+                config.push_str(&format!(
+                    r#""type":"{}","block":"{}""#,
+                    feature.feature_type, feature.block.as_deref().unwrap_or("minecraft:stone")
+                ));
+            }
+        }
+
+        let json = format!(r#"{{{}}}"#, config);
+        std::fs::write(data_root.join(format!("{}.json", id)), json)?;
+    }
+
+    Ok(())
+}
+
+fn generate_placed_feature_resources(state: &ModState, _verbose: bool) -> Result<()> {
+    let data_root = PathBuf::from("src/main/resources/data")
+        .join(&state.mod_id)
+        .join("worldgen")
+        .join("placed_feature");
+    create_dir_all(&data_root)?;
+
+    for feature in &state.features {
+        let id = &feature.id;
+        let mut placement = String::new();
+
+        match feature.feature_type.as_str() {
+            "ore" => {
+                placement.push_str(r#""type":"minecraft:count","count":{{"type":"minecraft:uniform","value":{{"min_inclusive":1,"max_inclusive":8}}}}"#);
+                placement.push(',');
+                placement.push_str(r#""type":"minecraft:in_square""#);
+                placement.push(',');
+                placement.push_str(r#""type":"minecraft:height_range","height":{{"type":"minecraft:uniform","value":{{"min_inclusive":{"below":64},"max_inclusive":{"below":0}}}}}"#);
+            }
+            "blob" => {
+                placement.push_str(r#""type":"minecraft:in_square""#);
+                placement.push(',');
+                placement.push_str(r#""type":"minecraft:height_range","height":{{"type":"minecraft:uniform","value":{{"min_inclusive":{"below":64},"max_inclusive":{"below":0}}}}}"#);
+            }
+            "delta" => {
+                placement.push_str(r#""type":"minecraft:in_square""#);
+                placement.push(',');
+                placement.push_str(r#""type":"minecraft:height_range","height":{{"type":"minecraft:uniform","value":{{"min_inclusive":{"below":64},"max_inclusive":{"below":0}}}}}"#);
+            }
+            _ => {
+                placement.push_str(r#""type":"minecraft:in_square""#);
+            }
+        }
+
+        let json = format!(
+            r#"{{"feature":"{}","placement":[{{{}}}]}}"#,
+            format!("{}:{}", state.mod_id, id),
+            placement
+        );
+        std::fs::write(data_root.join(format!("{}.json", id)), json)?;
+    }
+
+    Ok(())
+}
+
+fn generate_dimension_type_resources(state: &ModState, _verbose: bool) -> Result<()> {
+    let data_root = PathBuf::from("src/main/resources/data")
+        .join(&state.mod_id)
+        .join("dimension_type");
+    create_dir_all(&data_root)?;
+
+    for dim_type in &state.dimension_types {
+        let id = &dim_type.id;
+        let mut properties = Vec::new();
+
+        if let Some(ultrawarm) = dim_type.ultrawarm {
+            properties.push(format!(r#""ultrawarm":{}"#, ultrawarm));
+        }
+        if let Some(natural) = dim_type.natural {
+            properties.push(format!(r#""natural":{}"#, natural));
+        }
+        if let Some(piglin_safe) = dim_type.piglin_safe {
+            properties.push(format!(r#""piglin_safe":{}"#, piglin_safe));
+        }
+        if let Some(respawn_anchor_works) = dim_type.respawn_anchor_works {
+            properties.push(format!(r#""respawn_anchor_works":{}"#, respawn_anchor_works));
+        }
+        if let Some(bed_works) = dim_type.bed_works {
+            properties.push(format!(r#""bed_works":{}"#, bed_works));
+        }
+        if let Some(has_raids) = dim_type.has_raids {
+            properties.push(format!(r#""has_raids":{}"#, has_raids));
+        }
+        if let Some(has_skylight) = dim_type.has_skylight {
+            properties.push(format!(r#""has_skylight":{}"#, has_skylight));
+        }
+        if let Some(has_ceiling) = dim_type.has_ceiling {
+            properties.push(format!(r#""has_ceiling":{}"#, has_ceiling));
+        }
+        if let Some(coordinate_scale) = dim_type.coordinate_scale {
+            properties.push(format!(r#""coordinate_scale":{}"#, coordinate_scale));
+        }
+        if let Some(logical_height) = dim_type.logical_height {
+            properties.push(format!(r#""logical_height":{}"#, logical_height));
+        }
+        if let Some(min_y) = dim_type.min_y {
+            properties.push(format!(r#""min_y":{}"#, min_y));
+        }
+        if let Some(height) = dim_type.height {
+            properties.push(format!(r#""height":{}"#, height));
+        }
+        if let Some(monster_spawn_light_level) = dim_type.monster_spawn_light_level {
+            properties.push(format!(r#""monster_spawn_light_level":{}"#, monster_spawn_light_level));
+        }
+        if let Some(monster_spawn_block_light_limit) = dim_type.monster_spawn_block_light_limit {
+            properties.push(format!(r#""monster_spawn_block_light_limit":{}"#, monster_spawn_block_light_limit));
+        }
+        if let Some(ambient_light) = dim_type.ambient_light {
+            properties.push(format!(r#""ambient_light":{}"#, ambient_light));
+        }
+
+        let json = format!(r#"{{{}}}"#, properties.join(","));
+        std::fs::write(data_root.join(format!("{}.json", id)), json)?;
+    }
+
+    Ok(())
+}
+
+fn generate_dimension_resources(state: &ModState, _verbose: bool) -> Result<()> {
+    let data_root = PathBuf::from("src/main/resources/data")
+        .join(&state.mod_id)
+        .join("dimension");
+    create_dir_all(&data_root)?;
+
+    for dimension in &state.dimensions {
+        let id = &dimension.id;
+        let json = format!(r#"{{"type":"{}"}}"#, dimension.dimension_type);
+        std::fs::write(data_root.join(format!("{}.json", id)), json)?;
+    }
+
+    Ok(())
+}
+
+fn generate_structure_set_resources(state: &ModState, _verbose: bool) -> Result<()> {
+    let data_root = PathBuf::from("src/main/resources/data")
+        .join(&state.mod_id)
+        .join("worldgen")
+        .join("structure_set");
+    create_dir_all(&data_root)?;
+
+    for structure in &state.structures {
+        let id = &structure.id;
+        let spacing = structure.spacing.unwrap_or(32);
+        let separation = structure.separation.unwrap_or(8);
+        let salt = structure.salt.unwrap_or(123456789);
+        let json = format!(
+            r#"{{"placement":{{"type":"minecraft:random_spread","spacing":{},"separation":{},"salt":{}}},"structures":["{}"]}}"#,
+            spacing, separation, salt, structure.structure_type
+        );
+        std::fs::write(data_root.join(format!("{}.json", id)), json)?;
     }
 
     Ok(())

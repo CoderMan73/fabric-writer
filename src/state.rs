@@ -19,6 +19,7 @@ impl ModState {
             Entity::Mob(_) => self.mobs.iter().any(|m| m.id == *id),
             Entity::Biome(_) => self.biomes.iter().any(|b| b.id == *id),
             Entity::Dimension(_) => self.dimensions.iter().any(|d| d.id == *id),
+            Entity::DimensionType(_) => self.dimension_types.iter().any(|d| d.id == *id),
             Entity::Structure(_) => self.structures.iter().any(|s| s.id == *id),
             Entity::Feature(_) => self.features.iter().any(|f| f.id == *id),
             Entity::LootTable(_) => self.loot_tables.iter().any(|l| l.id == *id),
@@ -37,6 +38,7 @@ impl ModState {
             || self.mobs.iter().any(|m| m.id == id)
             || self.biomes.iter().any(|b| b.id == id)
             || self.dimensions.iter().any(|d| d.id == id)
+            || self.dimension_types.iter().any(|d| d.id == id)
             || self.structures.iter().any(|s| s.id == id)
             || self.features.iter().any(|f| f.id == id)
             || self.loot_tables.iter().any(|l| l.id == id)
@@ -60,6 +62,7 @@ impl ModState {
             Entity::Mob(mob) => self.mobs.push(mob),
             Entity::Biome(biome) => self.biomes.push(biome),
             Entity::Dimension(dim) => self.dimensions.push(dim),
+            Entity::DimensionType(dim_type) => self.dimension_types.push(dim_type),
             Entity::Structure(structure) => self.structures.push(structure),
             Entity::Feature(feature) => self.features.push(feature),
             Entity::LootTable(loot) => self.loot_tables.push(loot),
@@ -125,6 +128,11 @@ impl ModState {
                 let before = self.dimensions.len();
                 self.dimensions.retain(|d| d.id != dim.id);
                 (dim.id, "dimensions", before, self.dimensions.len())
+            }
+            Entity::DimensionType(dim_type) => {
+                let before = self.dimension_types.len();
+                self.dimension_types.retain(|d| d.id != dim_type.id);
+                (dim_type.id, "dimension_types", before, self.dimension_types.len())
             }
             Entity::Structure(structure) => {
                 let before = self.structures.len();
@@ -218,6 +226,8 @@ pub enum Entity {
     Biome(Biome),
     /// A dimension entity.
     Dimension(Dimension),
+    /// A dimension type entity.
+    DimensionType(DimensionType),
     /// A structure entity.
     Structure(Structure),
     /// A feature entity.
@@ -242,6 +252,7 @@ impl Entity {
             Entity::Mob(m) => &m.id,
             Entity::Biome(b) => &b.id,
             Entity::Dimension(d) => &d.id,
+            Entity::DimensionType(dt) => &dt.id,
             Entity::Structure(s) => &s.id,
             Entity::Feature(f) => &f.id,
             Entity::LootTable(l) => &l.id,
@@ -260,6 +271,7 @@ impl Entity {
             Entity::Mob(_) => "Mob",
             Entity::Biome(_) => "Biome",
             Entity::Dimension(_) => "Dimension",
+            Entity::DimensionType(_) => "DimensionType",
             Entity::Structure(_) => "Structure",
             Entity::Feature(_) => "Feature",
             Entity::LootTable(_) => "LootTable",
@@ -457,6 +469,10 @@ pub struct ModState {
     /// Sound events tracked in state.
     #[serde(default)]
     pub sound_events: Vec<SoundEvent>,
+
+    /// Dimension types tracked in state.
+    #[serde(default)]
+    pub dimension_types: Vec<DimensionType>,
 
     /// Tags tracked in state.
     #[serde(default)]
@@ -868,6 +884,10 @@ pub struct MobSpawn {
     /// Entity type id.
     pub entity_type: String,
 
+    /// Spawn category (e.g. `"monster"`, `"creature"`, `"ambient"`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub category: Option<String>,
+
     /// Spawn weight.
     pub weight: i32,
 
@@ -894,6 +914,73 @@ pub struct Dimension {
     /// Portal igniter item id.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub portal_igniter: Option<String>,
+}
+
+/// A dimension type definition tracked in [`ModState::dimension_types`].
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct DimensionType {
+    /// Lowercase dimension type identifier.
+    pub id: String,
+
+    /// Whether the dimension is ultrawarm like the Nether.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ultrawarm: Option<bool>,
+
+    /// Whether the dimension is natural.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub natural: Option<bool>,
+
+    /// Whether piglins are safe in this dimension.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub piglin_safe: Option<bool>,
+
+    /// Whether respawn anchors work.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub respawn_anchor_works: Option<bool>,
+
+    /// Whether beds work.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub bed_works: Option<bool>,
+
+    /// Whether raids can happen.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub has_raids: Option<bool>,
+
+    /// Whether the dimension has skylight.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub has_skylight: Option<bool>,
+
+    /// Whether the dimension has a ceiling.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub has_ceiling: Option<bool>,
+
+    /// Coordinate scale.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub coordinate_scale: Option<f64>,
+
+    /// Logical height.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub logical_height: Option<i32>,
+
+    /// Minimum Y coordinate.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub min_y: Option<i32>,
+
+    /// Height of the dimension.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub height: Option<i32>,
+
+    /// Monster spawn light level.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub monster_spawn_light_level: Option<i32>,
+
+    /// Monster spawn block light limit.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub monster_spawn_block_light_limit: Option<i32>,
+
+    /// Ambient light level.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ambient_light: Option<f32>,
 }
 
 /// A structure definition tracked in [`ModState::structures`].
