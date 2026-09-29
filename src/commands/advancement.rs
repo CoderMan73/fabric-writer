@@ -45,6 +45,7 @@ fn build_advancement(args: &AdvancementAddArgs) -> crate::state::Advancement {
         announce_to_chat: args.announce_to_chat,
         hidden: args.hidden,
         criteria: Vec::new(),
+        rewards: None,
     }
 }
 

@@ -88,26 +88,21 @@ mod imports_inner {
     static_import!(CREATIVE_MODE_TAB, creative_mode_tab, "net.minecraft.world.item", "CreativeModeTab");
 
     static_import!(BIOME, biome, "net.minecraft.world.level.biome", "Biome");
-    static_import!(BIOME_BUILDER, biome_builder, "net.minecraft.world.level.biome", "Biome.BiomeBuilder");
-    static_import!(BIOME_SPECIAL_EFFECTS, biome_special_effects, "net.minecraft.world.level.biome", "BiomeSpecialEffects");
-    static_import!(BIOME_GENERATION_SETTINGS, biome_generation_settings, "net.minecraft.world.level.biome", "BiomeGenerationSettings");
-    static_import!(MOB_SPAWN_SETTINGS, mob_spawn_settings, "net.minecraft.world.level.biome", "MobSpawnSettings");
+
     static_import!(DIMENSION_TYPE, dimension_type, "net.minecraft.world.level.dimension", "DimensionType");
     static_import!(LEVEL_STEM, level_stem, "net.minecraft.world.level.dimension", "LevelStem");
     static_import!(STRUCTURE_SET, structure_set, "net.minecraft.world.level.levelgen.structure", "StructureSet");
     static_import!(CONFIGURED_FEATURE, configured_feature, "net.minecraft.world.level.levelgen.feature", "ConfiguredFeature");
     static_import!(LOOT_TABLE, loot_table, "net.minecraft.world.level.storage.loot", "LootTable");
-    static_import!(LOOT_POOL, loot_pool, "net.minecraft.world.level.storage.loot", "LootPool");
-    static_import!(LOOT_ENTRY, loot_entry, "net.minecraft.world.level.storage.loot", "LootPoolEntry");
-    static_import!(LOOT_ENTRY_MANAGER, loot_entry_manager, "net.minecraft.world.level.storage.loot", "LootEntryManager");
+
     static_import!(ADVANCEMENT, advancement, "net.minecraft.advancements", "Advancement");
-    static_import!(ADVANCEMENT_TREE, advancement_tree, "net.minecraft.advancements", "AdvancementTree");
-    static_import!(ADVANCEMENT_TYPE, advancement_type, "net.minecraft.advancements", "AdvancementType");
+
     static_import!(SOUND_EVENT, sound_event, "net.minecraft.sounds", "SoundEvent");
-    static_import!(TAG, tag, "net.minecraft.tags", "Tag");
+    static_import!(PLACED_FEATURE, placed_feature, "net.minecraft.world.level.levelgen.placement", "PlacedFeature");
     static_import!(TAG_KEY, tag_key, "net.minecraft.tags", "TagKey");
-    static_import!(HOLDER, holder, "net.minecraft.core", "Holder");
-    static_import!(HOLDER_GETTER, holder_getter, "net.minecraft.core", "HolderGetter");
+
+    static_import!(FABRIC_DYNAMIC_REGISTRY_PROVIDER, fabric_dynamic_registry_provider, "net.fabricmc.fabric.api.datagen.v1.provider", "FabricDynamicRegistryProvider");
+    static_import!(FABRIC_DYNAMIC_REGISTRY_PROVIDER_ENTRIES, fabric_dynamic_registry_provider_entries, "net.fabricmc.fabric.api.datagen.v1.provider", "FabricDynamicRegistryProvider.Entries");
 
     dynamic_import!(mod_blocks, "ModBlocks");
     dynamic_import!(mod_items, "ModItems");

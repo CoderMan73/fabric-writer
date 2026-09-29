@@ -395,6 +395,11 @@ pub(crate) fn build_lang_provider(state: &ModState) -> Tokens {
 }
 
 pub(crate) fn build_datagen_entrypoint(state: &ModState) -> Tokens {
+    let has_worldgen = !state.biomes.is_empty()
+        || !state.features.is_empty()
+        || !state.structures.is_empty()
+        || !state.dimensions.is_empty()
+        || !state.dimension_types.is_empty();
     quote! {
         public class $(format!("{}DataGenerator", state.mod_name)) implements $(data_generator_entrypoint()) {
             @Override
@@ -408,6 +413,50 @@ pub(crate) fn build_datagen_entrypoint(state: &ModState) -> Tokens {
                 $(if !&state.recipes.is_empty() =>
                     pack.addProvider($(format!("{}RecipeProvider", state.mod_name))::new);
                 )
+                $(if has_worldgen =>
+                    pack.addProvider($(format!("{}WorldgenProvider", state.mod_name))::new);
+                )
+            }
+        }
+    }
+}
+
+pub(crate) fn build_worldgen_provider(state: &ModState) -> Tokens {
+    let has_biomes = !state.biomes.is_empty();
+    let has_features = !state.features.is_empty();
+    let has_structures = !state.structures.is_empty();
+    let has_dimensions = !state.dimensions.is_empty();
+    let has_dimension_types = !state.dimension_types.is_empty();
+
+    quote! {
+        public class $(format!("{}WorldgenProvider", state.mod_name)) extends $(fabric_dynamic_registry_provider()) {
+            public $(format!("{}WorldgenProvider", state.mod_name))($(fabric_pack_output()) output, $(completable_future())<$(holder_lookup()).Provider> registriesFuture) {
+                super(output, registriesFuture);
+            }
+
+            @Override
+            protected void configure($(holder_lookup()).Provider registries, $(fabric_dynamic_registry_provider_entries()) entries) {
+                $(if has_biomes =>
+                    entries.addAll(registries.lookupOrThrow($(registries()).BIOME));$['\r']
+                )
+                $(if has_features =>
+                    entries.addAll(registries.lookupOrThrow($(registries()).CONFIGURED_FEATURE));$['\r']
+                    entries.addAll(registries.lookupOrThrow($(registries()).PLACED_FEATURE));$['\r']
+                )
+                $(if has_structures =>
+                    entries.addAll(registries.lookupOrThrow($(registries()).STRUCTURE_SET));$['\r']
+                )
+                $(if has_dimensions =>
+                    entries.addAll(registries.lookupOrThrow($(registries()).LEVEL_STEM));$['\r']
+                )
+                $(if has_dimension_types =>
+                    entries.addAll(registries.lookupOrThrow($(registries()).DIMENSION_TYPE));$['\r']
+                )
+            }
+
+            @Override
+            public String getName() {
+                return "World Generation";
             }
         }
     }
@@ -1047,64 +1096,194 @@ pub(crate) fn build_mod_mobs(state: &ModState) -> Tokens {
     class_body
 }
 
-pub(crate) fn build_mod_biomes(_state: &ModState) -> Tokens {
+pub(crate) fn build_mod_biomes(state: &ModState) -> Tokens {
+    if state.biomes.is_empty() {
+        return quote! {
+            public class ModBiomes {
+                public static void initialize() {
+                }
+            }
+        };
+    }
+
     quote! {
         public class ModBiomes {
+            $("// Biome Registration")
+            $(for b in &state.biomes =>
+                public static final $(resource_key())<$(biome())> $(to_upper(&b.id)) = $(resource_key()).create(
+                    $(registries()).BIOME,
+                    $(identifier()).fromNamespaceAndPath($(&state.mod_name).MOD_ID, $(quoted(&b.id)))
+                );$['\r']
+            )
+
             public static void initialize() {
             }
         }
     }
 }
 
-pub(crate) fn build_mod_dimensions(_state: &ModState) -> Tokens {
+pub(crate) fn build_mod_dimensions(state: &ModState) -> Tokens {
+    if state.dimensions.is_empty() && state.dimension_types.is_empty() {
+        return quote! {
+            public class ModDimensions {
+                public static void initialize() {
+                }
+            }
+        };
+    }
+
     quote! {
         public class ModDimensions {
+            $("// Dimension Registration")
+            $(for dim in &state.dimensions =>
+                public static final $(resource_key())<$(level_stem())> $(to_upper(&dim.id))_DIMENSION = $(resource_key()).create(
+                    $(registries()).LEVEL_STEM,
+                    $(identifier()).fromNamespaceAndPath($(&state.mod_name).MOD_ID, $(quoted(&dim.id)))
+                );$['\r']
+            )
+            $(for dim_type in &state.dimension_types =>
+                public static final $(resource_key())<$(dimension_type())> $(to_upper(&dim_type.id))_TYPE = $(resource_key()).create(
+                    $(registries()).DIMENSION_TYPE,
+                    $(identifier()).fromNamespaceAndPath($(&state.mod_name).MOD_ID, $(quoted(&dim_type.id)))
+                );$['\r']
+            )
+
             public static void initialize() {
             }
         }
     }
 }
 
-pub(crate) fn build_mod_structures(_state: &ModState) -> Tokens {
+pub(crate) fn build_mod_structures(state: &ModState) -> Tokens {
+    if state.structures.is_empty() {
+        return quote! {
+            public class ModStructures {
+                public static void initialize() {
+                }
+            }
+        };
+    }
+
     quote! {
         public class ModStructures {
+            $("// Structure Registration")
+            $(for structure in &state.structures =>
+                public static final $(resource_key())<$(structure_set())> $(to_upper(&structure.id)) = $(resource_key()).create(
+                    $(registries()).STRUCTURE_SET,
+                    $(identifier()).fromNamespaceAndPath($(&state.mod_name).MOD_ID, $(quoted(&structure.id)))
+                );$['\r']
+            )
+
             public static void initialize() {
             }
         }
     }
 }
 
-pub(crate) fn build_mod_features(_state: &ModState) -> Tokens {
+pub(crate) fn build_mod_features(state: &ModState) -> Tokens {
+    if state.features.is_empty() {
+        return quote! {
+            public class ModFeatures {
+                public static void initialize() {
+                }
+            }
+        };
+    }
+
     quote! {
         public class ModFeatures {
+            $("// Feature Registration")
+            $(for feature in &state.features =>
+                public static final $(resource_key())<$(configured_feature())<?, ?>> $(to_upper(&feature.id))_CONFIGURED = $(resource_key()).create(
+                    $(registries()).CONFIGURED_FEATURE,
+                    $(identifier()).fromNamespaceAndPath($(&state.mod_name).MOD_ID, $(quoted(&feature.id)))
+                );$['\r']
+                public static final $(resource_key())<$(placed_feature())> $(to_upper(&feature.id))_PLACED = $(resource_key()).create(
+                    $(registries()).PLACED_FEATURE,
+                    $(identifier()).fromNamespaceAndPath($(&state.mod_name).MOD_ID, $(quoted(&feature.id)))
+                );$['\r']
+            )
+
             public static void initialize() {
             }
         }
     }
 }
 
-pub(crate) fn build_mod_loot_tables(_state: &ModState) -> Tokens {
+pub(crate) fn build_mod_loot_tables(state: &ModState) -> Tokens {
+    if state.loot_tables.is_empty() {
+        return quote! {
+            public class ModLootTables {
+                public static void initialize() {
+                }
+            }
+        };
+    }
+
     quote! {
         public class ModLootTables {
+            $("// Loot Table Registration")
+            $(for table in &state.loot_tables =>
+                public static final $(resource_key())<$(loot_table())> $(to_upper(&table.id)) = $(resource_key()).create(
+                    $(registries()).LOOT_TABLE,
+                    $(identifier()).fromNamespaceAndPath($(&state.mod_name).MOD_ID, $(quoted(&table.id)))
+                );$['\r']
+            )
+
             public static void initialize() {
             }
         }
     }
 }
 
-pub(crate) fn build_mod_advancements(_state: &ModState) -> Tokens {
+pub(crate) fn build_mod_advancements(state: &ModState) -> Tokens {
+    if state.advancements.is_empty() {
+        return quote! {
+            public class ModAdvancements {
+                public static void initialize() {
+                }
+            }
+        };
+    }
+
     quote! {
         public class ModAdvancements {
+            $("// Advancement Registration")
+            $(for adv in &state.advancements =>
+                public static final $(resource_key())<$(advancement())> $(to_upper(&adv.id)) = $(resource_key()).create(
+                    $(registries()).ADVANCEMENT,
+                    $(identifier()).fromNamespaceAndPath($(&state.mod_name).MOD_ID, $(quoted(&adv.id)))
+                );$['\r']
+            )
+
             public static void initialize() {
             }
         }
     }
 }
 
-pub(crate) fn build_mod_sound_events(_state: &ModState) -> Tokens {
+pub(crate) fn build_mod_sound_events(state: &ModState) -> Tokens {
+    if state.sound_events.is_empty() {
+        return quote! {
+            public class ModSoundEvents {
+                public static void initialize() {
+                }
+            }
+        };
+    }
+
     quote! {
         public class ModSoundEvents {
+            $(for sound in &state.sound_events =>
+                public static $(sound_event()) $(to_upper(&sound.id))() {
+                    return Registry.register($(registries()).SOUND_EVENT, $(identifier()).fromNamespaceAndPath($(&state.mod_name).MOD_ID, $(format!("{}", sound.id))), $(sound_event()).createVariableRangeEvent($(identifier()).fromNamespaceAndPath($(&state.mod_name).MOD_ID, $(format!("{}", sound.sound_path)))));
+                }
+            )
+
             public static void initialize() {
+                $(for sound in &state.sound_events =>
+                    $(to_upper(&sound.id))();
+                )
             }
         }
     }

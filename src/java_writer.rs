@@ -12,7 +12,7 @@ use crate::tokengen::{
     build_mod_blocks, build_mod_creative_tabs, build_mod_dimensions, build_mod_features,
     build_mod_item_ids, build_mod_items, build_mod_loot_tables, build_mod_mobs,
     build_mod_sound_events, build_mod_structures, build_mod_tags, build_model_provider,
-    build_recipe_provider, to_upper,
+    build_recipe_provider, build_worldgen_provider, to_upper,
 };
 
 const PLACEHOLDER_ITEM: &[u8] = include_bytes!("../assets/placeholder_item.png");
@@ -82,6 +82,9 @@ pub struct DirtyFlags {
 
     /// `ModTags.java`
     pub mod_tags: bool,
+
+    /// `<ModName>WorldgenProvider.java`
+    pub worldgen_provider: bool,
 }
 
 impl DirtyFlags {
@@ -108,6 +111,7 @@ impl DirtyFlags {
             mod_advancements: true,
             mod_sound_events: true,
             mod_tags: true,
+            worldgen_provider: true,
         }
     }
 
@@ -152,30 +156,35 @@ impl DirtyFlags {
                 mod_biomes: true,
                 mod_class: true,
                 datagen_entrypoint: true,
+                worldgen_provider: true,
                 ..Default::default()
             },
             Entity::Dimension(_) => Self {
                 mod_dimensions: true,
                 mod_class: true,
                 datagen_entrypoint: true,
+                worldgen_provider: true,
                 ..Default::default()
             },
             Entity::DimensionType(_) => Self {
                 mod_dimensions: true,
                 mod_class: true,
                 datagen_entrypoint: true,
+                worldgen_provider: true,
                 ..Default::default()
             },
             Entity::Structure(_) => Self {
                 mod_structures: true,
                 mod_class: true,
                 datagen_entrypoint: true,
+                worldgen_provider: true,
                 ..Default::default()
             },
             Entity::Feature(_) => Self {
                 mod_features: true,
                 mod_class: true,
                 datagen_entrypoint: true,
+                worldgen_provider: true,
                 ..Default::default()
             },
             Entity::LootTable(_) => Self {
@@ -227,6 +236,7 @@ impl DirtyFlags {
             "mod_advancements" => self.mod_advancements,
             "mod_sound_events" => self.mod_sound_events,
             "mod_tags" => self.mod_tags,
+            "worldgen_provider" => self.worldgen_provider,
             _ => false,
         }
     }
@@ -256,6 +266,14 @@ fn providers_exist(state: &ModState) -> bool {
 
 fn recipes_exist(state: &ModState) -> bool {
     !state.recipes.is_empty()
+}
+
+fn worldgen_exists(state: &ModState) -> bool {
+    !state.biomes.is_empty()
+        || !state.features.is_empty()
+        || !state.structures.is_empty()
+        || !state.dimensions.is_empty()
+        || !state.dimension_types.is_empty()
 }
 
 fn file_specs() -> &'static [(&'static str, FileSpec)] {
@@ -420,6 +438,14 @@ fn file_specs() -> &'static [(&'static str, FileSpec)] {
                 should_exist: |state| !state.tags.is_empty(),
             },
         ),
+        (
+            "<ModName>WorldgenProvider.java",
+            FileSpec {
+                field: "worldgen_provider",
+                build: build_worldgen_provider,
+                should_exist: worldgen_exists,
+            },
+        ),
     ]
 }
 
@@ -439,6 +465,7 @@ pub fn regenerate_all(state: &ModState, dirty: DirtyFlags, verbose: bool) -> Res
     let mod_class_name = format!("{}.java", state.mod_name);
     let datagen_class_name = format!("{}DataGenerator.java", state.mod_name);
     let recipe_provider_class_name = format!("{}RecipeProvider.java", state.mod_name);
+    let worldgen_provider_class_name = format!("{}WorldgenProvider.java", state.mod_name);
 
     for (name, spec) in file_specs() {
         let path = resolve_path(
@@ -448,6 +475,7 @@ pub fn regenerate_all(state: &ModState, dirty: DirtyFlags, verbose: bool) -> Res
             &mod_class_name,
             &datagen_class_name,
             &recipe_provider_class_name,
+            &worldgen_provider_class_name,
         );
         let dirty_bit = dirty.is_set(spec.field);
 
@@ -489,6 +517,9 @@ pub fn regenerate_all(state: &ModState, dirty: DirtyFlags, verbose: bool) -> Res
     generate_dimension_type_resources(state, verbose)?;
     generate_dimension_resources(state, verbose)?;
     generate_structure_set_resources(state, verbose)?;
+    generate_advancement_resources(state, verbose)?;
+    generate_tag_resources(state, verbose)?;
+    generate_sound_resources(state, verbose)?;
 
     for i in &state.items {
         let class_name = format!("{}Item.java", to_upper(&i.id));
@@ -523,6 +554,7 @@ fn resolve_path(
     mod_class_name: &str,
     datagen_class_name: &str,
     recipe_provider_class_name: &str,
+    worldgen_provider_class_name: &str,
 ) -> PathBuf {
     match name {
         "ModItemIds.java" => java_root.join(name),
@@ -532,6 +564,7 @@ fn resolve_path(
         "<ModName>DataGenerator.java" => client_root.join(datagen_class_name),
         "ModelProvider.java" => client_root.join(name),
         "<ModName>RecipeProvider.java" => client_root.join(recipe_provider_class_name),
+        "<ModName>WorldgenProvider.java" => client_root.join(worldgen_provider_class_name),
         "ModBlocks.java" => java_root.join(name),
         "ModBlockIds.java" => java_root.join(name),
         "ModBlockItemIds.java" => java_root.join(name),
@@ -1134,14 +1167,20 @@ fn generate_model_resources(state: &ModState, _verbose: bool) -> Result<()> {
 fn generate_loot_table_resources(state: &ModState, _verbose: bool) -> Result<()> {
     let data_root = PathBuf::from("src/main/resources/data")
         .join(&state.mod_id)
-        .join("loot_table");
+        .join("loot_tables");
     create_dir_all(&data_root)?;
 
     for table in &state.loot_tables {
         let id = &table.id;
         let loot_type = &table.loot_type;
+        let dir_name = match loot_type.as_str() {
+            "chest" => "chests",
+            "entity" => "entities",
+            "block" => "blocks",
+            _ => loot_type.as_str(),
+        };
         let rolls = table.rolls.unwrap_or(1);
-        let pool_dir = data_root.join(loot_type);
+        let pool_dir = data_root.join(dir_name);
         create_dir_all(&pool_dir)?;
         let path = pool_dir.join(format!("{}.json", id));
 
@@ -1185,6 +1224,176 @@ fn generate_loot_table_resources(state: &ModState, _verbose: bool) -> Result<()>
     Ok(())
 }
 
+fn generate_advancement_resources(state: &ModState, _verbose: bool) -> Result<()> {
+    let data_root = PathBuf::from("src/main/resources/data")
+        .join(&state.mod_id)
+        .join("advancement");
+    create_dir_all(&data_root)?;
+
+    for adv in &state.advancements {
+        let id = &adv.id;
+        let path = data_root.join(format!("{}.json", id));
+
+        let mut parts: Vec<String> = Vec::new();
+
+        if let Some(parent) = &adv.parent {
+            parts.push(format!(r#""parent":"{}""#, parent));
+        }
+
+        let mut display_parts: Vec<String> = Vec::new();
+        display_parts.push(format!(r#""title":"{}""#, adv.title));
+        display_parts.push(format!(r#""description":"{}""#, adv.description));
+        display_parts.push(format!(r#""icon":{{"item":"{}"}}"#, adv.icon));
+
+        if let Some(bg) = &adv.background {
+            display_parts.push(format!(r#""background":"{}""#, bg));
+        }
+
+        let frame = adv.frame.as_deref().unwrap_or("task");
+        display_parts.push(format!(r#""frame":"{}""#, frame));
+
+        let show_toast = adv.show_toast.unwrap_or(true);
+        display_parts.push(format!(r#""show_toast":{}"#, show_toast));
+
+        let announce = adv.announce_to_chat.unwrap_or(true);
+        display_parts.push(format!(r#""announce_to_chat":{}"#, announce));
+
+        if let Some(hidden) = adv.hidden {
+            display_parts.push(format!(r#""hidden":{}"#, hidden));
+        }
+
+        parts.push(format!(r#""display":{{{}}}"#, display_parts.join(",")));
+
+        let mut criteria_str: Vec<String> = Vec::new();
+        for criterion in &adv.criteria {
+            let mut cond_parts: Vec<String> = Vec::new();
+            for (k, v) in &criterion.conditions {
+                cond_parts.push(format!(r#""{}":"{}""#, k, v));
+            }
+            let criterion_json = {
+                let mut s = String::from("{");
+                s.push_str(&format!("\"trigger\":\"{}\"", criterion.trigger));
+                if !cond_parts.is_empty() {
+                    s.push_str(",\"conditions\":{");
+                    s.push_str(&cond_parts.join(","));
+                    s.push('}');
+                }
+                s.push('}');
+                s
+            };
+
+            criteria_str.push(format!(r#""{}":{}"#, criterion.id, criterion_json));
+        }
+
+        parts.push(format!(r#""criteria":{{{}}}"#, criteria_str.join(",")));
+
+        if let Some(rewards) = &adv.rewards {
+            let mut reward_parts: Vec<String> = Vec::new();
+            if let Some(exp) = rewards.experience {
+                reward_parts.push(format!(r#""experience":{}"#, exp));
+            }
+            if !rewards.loot.is_empty() {
+                let loot_str: Vec<String> =
+                    rewards.loot.iter().map(|l| format!(r#""{}""#, l)).collect();
+                reward_parts.push(format!(r#""loot":[{}]"#, loot_str.join(",")));
+            }
+            if !rewards.item.is_empty() {
+                let item_str: Vec<String> =
+                    rewards.item.iter().map(|i| format!(r#""{}""#, i)).collect();
+                reward_parts.push(format!(r#""item":[{}]"#, item_str.join(",")));
+            }
+            if !rewards.recipes.is_empty() {
+                let recipe_str: Vec<String> = rewards
+                    .recipes
+                    .iter()
+                    .map(|r| format!(r#""{}""#, r))
+                    .collect();
+                reward_parts.push(format!(r#""recipes":[{}]"#, recipe_str.join(",")));
+            }
+            if !reward_parts.is_empty() {
+                parts.push(format!(r#""rewards":{{{}}}"#, reward_parts.join(",")));
+            }
+        }
+
+        let json = format!(r#"{{{}}}"#, parts.join(","));
+        std::fs::write(path, json)?;
+    }
+
+    Ok(())
+}
+
+fn generate_tag_resources(state: &ModState, _verbose: bool) -> Result<()> {
+    let data_root = PathBuf::from("src/main/resources/data")
+        .join(&state.mod_id)
+        .join("tags");
+    create_dir_all(&data_root)?;
+
+    for tag in &state.tags {
+        let dir_name = match tag.tag_type.as_str() {
+            "block" => "blocks",
+            "item" => "items",
+            "entity" => "entity_types",
+            "fluid" => "fluids",
+            other => other,
+        };
+        let tag_dir = data_root.join(dir_name);
+        create_dir_all(&tag_dir)?;
+        let path = tag_dir.join(format!("{}.json", tag.id));
+
+        let values: Vec<String> = tag
+            .values
+            .iter()
+            .map(|v| {
+                if v.contains(':') {
+                    format!(r#""{}""#, v)
+                } else {
+                    format!(r#""{}:{}""#, state.mod_id, v)
+                }
+            })
+            .collect();
+
+        let replace = tag.replace.unwrap_or(false);
+        let json = format!(
+            r#"{{"replace":{},"values":[{}]}}"#,
+            replace,
+            values.join(",")
+        );
+        std::fs::write(path, json)?;
+    }
+
+    Ok(())
+}
+
+fn generate_sound_resources(state: &ModState, _verbose: bool) -> Result<()> {
+    if state.sound_events.is_empty() {
+        return Ok(());
+    }
+
+    let assets_root = PathBuf::from("src/main/resources/assets").join(&state.mod_id);
+    create_dir_all(&assets_root)?;
+
+    let path = assets_root.join("sounds.json");
+
+    let mut entries: Vec<String> = Vec::new();
+    for sound in &state.sound_events {
+        let full_path = if sound.sound_path.contains(':') {
+            sound.sound_path.clone()
+        } else {
+            format!("{}:{}", state.mod_id, sound.sound_path)
+        };
+        let subtitle = format!("sound.{}.{}", state.mod_id, sound.id);
+        entries.push(format!(
+            r#""{}":{{"subtitle":"{}","sounds":["{}"]}}"#,
+            sound.id, subtitle, full_path
+        ));
+    }
+
+    let json = format!(r#"{{{}}}"#, entries.join(","));
+    std::fs::write(path, json)?;
+
+    Ok(())
+}
+
 fn generate_biome_resources(state: &ModState, _verbose: bool) -> Result<()> {
     let data_root = PathBuf::from("src/main/resources/data")
         .join(&state.mod_id)
@@ -1200,10 +1409,7 @@ fn generate_biome_resources(state: &ModState, _verbose: bool) -> Result<()> {
         let mut has_attributes = false;
 
         if let Some(water_color) = biome.water_color {
-            effects.push_str(&format!(
-                r#""water_color":"{}""#,
-                format!("#{:06X}", water_color as u32)
-            ));
+            effects.push_str(&format!(r##""water_color":"#{:06X}""##, water_color as u32));
             has_effects = true;
         }
         if let Some(sky_color) = biome.sky_color {
@@ -1211,8 +1417,8 @@ fn generate_biome_resources(state: &ModState, _verbose: bool) -> Result<()> {
                 attributes.push(',');
             }
             attributes.push_str(&format!(
-                r#""minecraft:visual/sky_color":"{}""#,
-                format!("#{:06X}", sky_color as u32)
+                r##""minecraft:visual/sky_color":"#{:06X}""##,
+                sky_color as u32
             ));
             has_attributes = true;
         }
@@ -1221,8 +1427,8 @@ fn generate_biome_resources(state: &ModState, _verbose: bool) -> Result<()> {
                 attributes.push(',');
             }
             attributes.push_str(&format!(
-                r#""minecraft:visual/water_fog_color":"{}""#,
-                format!("#{:06X}", water_fog_color as u32)
+                r##""minecraft:visual/water_fog_color":"#{:06X}""##,
+                water_fog_color as u32
             ));
             has_attributes = true;
         }
@@ -1231,8 +1437,8 @@ fn generate_biome_resources(state: &ModState, _verbose: bool) -> Result<()> {
                 attributes.push(',');
             }
             attributes.push_str(&format!(
-                r#""minecraft:visual/fog_color":"{}""#,
-                format!("#{:06X}", fog_color as u32)
+                r##""minecraft:visual/fog_color":"#{:06X}""##,
+                fog_color as u32
             ));
             has_attributes = true;
         }
@@ -1263,11 +1469,7 @@ fn generate_biome_resources(state: &ModState, _verbose: bool) -> Result<()> {
             if !spawners_str.is_empty() {
                 spawners_str.push(',');
             }
-            spawners_str.push_str(&format!(
-                r#""{}":[{}]"#,
-                category,
-                entries.join(",")
-            ));
+            spawners_str.push_str(&format!(r#""{}":[{}]"#, category, entries.join(",")));
         }
 
         let temperature = biome
@@ -1317,7 +1519,14 @@ fn generate_biome_resources(state: &ModState, _verbose: bool) -> Result<()> {
 
         let json = format!(
             r#"{{{}{}{}{}{}"spawners":{{{},"spawn_costs":{{}},"features":{},"structures":{}}}"#,
-            attributes_obj, effects_obj, temperature, downfall, has_precipitation, spawners_str, features, structures
+            attributes_obj,
+            effects_obj,
+            temperature,
+            downfall,
+            has_precipitation,
+            spawners_str,
+            features,
+            structures
         );
 
         std::fs::write(data_root.join(format!("{}.json", id)), json)?;
@@ -1363,7 +1572,8 @@ fn generate_configured_feature_resources(state: &ModState, _verbose: bool) -> Re
             _ => {
                 config.push_str(&format!(
                     r#""type":"{}","block":"{}""#,
-                    feature.feature_type, feature.block.as_deref().unwrap_or("minecraft:stone")
+                    feature.feature_type,
+                    feature.block.as_deref().unwrap_or("minecraft:stone")
                 ));
             }
         }
@@ -1410,9 +1620,8 @@ fn generate_placed_feature_resources(state: &ModState, _verbose: bool) -> Result
         }
 
         let json = format!(
-            r#"{{"feature":"{}","placement":[{{{}}}]}}"#,
-            format!("{}:{}", state.mod_id, id),
-            placement
+            "{{\"feature\":\"{}:{}\",\"placement\":[{{{}}}]}}",
+            state.mod_id, id, placement
         );
         std::fs::write(data_root.join(format!("{}.json", id)), json)?;
     }
@@ -1440,7 +1649,10 @@ fn generate_dimension_type_resources(state: &ModState, _verbose: bool) -> Result
             properties.push(format!(r#""piglin_safe":{}"#, piglin_safe));
         }
         if let Some(respawn_anchor_works) = dim_type.respawn_anchor_works {
-            properties.push(format!(r#""respawn_anchor_works":{}"#, respawn_anchor_works));
+            properties.push(format!(
+                r#""respawn_anchor_works":{}"#,
+                respawn_anchor_works
+            ));
         }
         if let Some(bed_works) = dim_type.bed_works {
             properties.push(format!(r#""bed_works":{}"#, bed_works));
@@ -1467,10 +1679,16 @@ fn generate_dimension_type_resources(state: &ModState, _verbose: bool) -> Result
             properties.push(format!(r#""height":{}"#, height));
         }
         if let Some(monster_spawn_light_level) = dim_type.monster_spawn_light_level {
-            properties.push(format!(r#""monster_spawn_light_level":{}"#, monster_spawn_light_level));
+            properties.push(format!(
+                r#""monster_spawn_light_level":{}"#,
+                monster_spawn_light_level
+            ));
         }
         if let Some(monster_spawn_block_light_limit) = dim_type.monster_spawn_block_light_limit {
-            properties.push(format!(r#""monster_spawn_block_light_limit":{}"#, monster_spawn_block_light_limit));
+            properties.push(format!(
+                r#""monster_spawn_block_light_limit":{}"#,
+                monster_spawn_block_light_limit
+            ));
         }
         if let Some(ambient_light) = dim_type.ambient_light {
             properties.push(format!(r#""ambient_light":{}"#, ambient_light));
@@ -1533,6 +1751,7 @@ fn prune_orphaned_java(
             let mod_class_name = format!("{}.java", state.mod_name);
             let datagen_class_name = format!("{}DataGenerator.java", state.mod_name);
             let recipe_provider_class_name = format!("{}RecipeProvider.java", state.mod_name);
+            let worldgen_provider_class_name = format!("{}WorldgenProvider.java", state.mod_name);
             let path = resolve_path(
                 name,
                 java_root,
@@ -1540,6 +1759,7 @@ fn prune_orphaned_java(
                 &mod_class_name,
                 &datagen_class_name,
                 &recipe_provider_class_name,
+                &worldgen_provider_class_name,
             );
             expected.insert(path);
         }

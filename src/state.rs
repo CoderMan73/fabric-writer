@@ -132,7 +132,12 @@ impl ModState {
             Entity::DimensionType(dim_type) => {
                 let before = self.dimension_types.len();
                 self.dimension_types.retain(|d| d.id != dim_type.id);
-                (dim_type.id, "dimension_types", before, self.dimension_types.len())
+                (
+                    dim_type.id,
+                    "dimension_types",
+                    before,
+                    self.dimension_types.len(),
+                )
             }
             Entity::Structure(structure) => {
                 let before = self.structures.len();
@@ -1112,6 +1117,30 @@ pub struct Advancement {
     /// Trigger criteria.
     #[serde(default)]
     pub criteria: Vec<AdvancementCriterion>,
+
+    /// Rewards granted upon completion.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub rewards: Option<AdvancementRewards>,
+}
+
+/// Rewards granted by an advancement.
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct AdvancementRewards {
+    /// Experience points awarded.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub experience: Option<i32>,
+
+    /// Loot table IDs awarded.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub loot: Vec<String>,
+
+    /// Item IDs awarded.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub item: Vec<String>,
+
+    /// Recipe IDs awarded (unlocked).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub recipes: Vec<String>,
 }
 
 /// An advancement criterion.

@@ -1,8 +1,8 @@
 use crate::java_writer::{DirtyFlags, regenerate_all};
 use crate::state::{
-    self, Advancement, Biome, Block, BlockModelKind, CreativeTab, Dimension, DimensionType, Drop, Entity, Feature,
-    Item, ItemKind, LootEntry, LootTable, Mob, MobSpawn, PotionEffect, Recipe, SoundEvent, Structure,
-    Tag,
+    self, Advancement, Biome, Block, BlockModelKind, CreativeTab, Dimension, DimensionType, Drop,
+    Entity, Feature, Item, ItemKind, LootEntry, LootTable, Mob, MobSpawn, PotionEffect, Recipe,
+    SoundEvent, Structure, Tag,
 };
 use anyhow::{Context, Result};
 use clap::{Parser, ValueEnum};
@@ -233,9 +233,12 @@ fn tint_texture(src: &std::path::Path, dest: &std::path::Path, color: [u8; 3]) -
     for (x, y, pixel) in img.enumerate_pixels() {
         let mut p = *pixel;
         let alpha = ((p[0] as u32 + p[1] as u32 + p[2] as u32) / 3) as u8;
-        p[0] = ((p[0] as u16 * color[0] as u16 / 255) + (alpha as u16 * (255 - color[0] as u16) / 255)) as u8;
-        p[1] = ((p[1] as u16 * color[1] as u16 / 255) + (alpha as u16 * (255 - color[1] as u16) / 255)) as u8;
-        p[2] = ((p[2] as u16 * color[2] as u16 / 255) + (alpha as u16 * (255 - color[2] as u16) / 255)) as u8;
+        p[0] = ((p[0] as u16 * color[0] as u16 / 255)
+            + (alpha as u16 * (255 - color[0] as u16) / 255)) as u8;
+        p[1] = ((p[1] as u16 * color[1] as u16 / 255)
+            + (alpha as u16 * (255 - color[1] as u16) / 255)) as u8;
+        p[2] = ((p[2] as u16 * color[2] as u16 / 255)
+            + (alpha as u16 * (255 - color[2] as u16) / 255)) as u8;
         out.put_pixel(x, y, p);
     }
     out.save(dest)?;
@@ -283,7 +286,11 @@ fn copy_block_textures(
     Ok(())
 }
 
-fn copy_item_textures(state: &state::ModState, source_textures: &[(&str, &str)], tint: Option<[u8; 3]>) -> Result<()> {
+fn copy_item_textures(
+    state: &state::ModState,
+    source_textures: &[(&str, &str)],
+    tint: Option<[u8; 3]>,
+) -> Result<()> {
     let textures_root = PathBuf::from("src/main/resources/assets")
         .join(&state.mod_id)
         .join("textures")
@@ -666,14 +673,12 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
             spawn_egg_id: Some("blue_ghast_spawn_egg".into()),
             baby_spawn_egg_id: None,
             attributes: vec![],
-            drops: vec![
-                Drop {
-                    item: "blue_ghast_tear".into(),
-                    min_count: 1,
-                    max_count: 1,
-                    loot_type: Some("entity".into()),
-                },
-            ],
+            drops: vec![Drop {
+                item: "blue_ghast_tear".into(),
+                min_count: 1,
+                max_count: 1,
+                loot_type: Some("entity".into()),
+            }],
         };
         if state.try_add(Entity::Mob(mob))? {
             println!("Added mob: blue_ghast");
@@ -689,14 +694,12 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
             spawn_egg_id: Some("blue_strider_spawn_egg".into()),
             baby_spawn_egg_id: None,
             attributes: vec![],
-            drops: vec![
-                Drop {
-                    item: "blue_leather".into(),
-                    min_count: 1,
-                    max_count: 2,
-                    loot_type: Some("entity".into()),
-                },
-            ],
+            drops: vec![Drop {
+                item: "blue_leather".into(),
+                min_count: 1,
+                max_count: 2,
+                loot_type: Some("entity".into()),
+            }],
         };
         if state.try_add(Entity::Mob(mob))? {
             println!("Added mob: blue_strider");
@@ -712,14 +715,12 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
             spawn_egg_id: Some("blue_zombie_piglin_spawn_egg".into()),
             baby_spawn_egg_id: None,
             attributes: vec![],
-            drops: vec![
-                Drop {
-                    item: "blue_netherite_scrap".into(),
-                    min_count: 1,
-                    max_count: 1,
-                    loot_type: Some("entity".into()),
-                },
-            ],
+            drops: vec![Drop {
+                item: "blue_netherite_scrap".into(),
+                min_count: 1,
+                max_count: 1,
+                loot_type: Some("entity".into()),
+            }],
         };
         if state.try_add(Entity::Mob(mob))? {
             println!("Added mob: blue_zombie_piglin");
@@ -764,14 +765,12 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
             spawn_egg_id: Some("blue_piglin_spawn_egg".into()),
             baby_spawn_egg_id: None,
             attributes: vec![],
-            drops: vec![
-                Drop {
-                    item: "blue_netherite_scrap".into(),
-                    min_count: 1,
-                    max_count: 1,
-                    loot_type: Some("entity".into()),
-                },
-            ],
+            drops: vec![Drop {
+                item: "blue_netherite_scrap".into(),
+                min_count: 1,
+                max_count: 1,
+                loot_type: Some("entity".into()),
+            }],
         };
         if state.try_add(Entity::Mob(mob))? {
             println!("Added mob: blue_piglin");
@@ -787,14 +786,12 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
             spawn_egg_id: Some("blue_wither_skeleton_spawn_egg".into()),
             baby_spawn_egg_id: None,
             attributes: vec![],
-            drops: vec![
-                Drop {
-                    item: "blue_bone_block".into(),
-                    min_count: 1,
-                    max_count: 2,
-                    loot_type: Some("entity".into()),
-                },
-            ],
+            drops: vec![Drop {
+                item: "blue_bone_block".into(),
+                min_count: 1,
+                max_count: 2,
+                loot_type: Some("entity".into()),
+            }],
         };
         if state.try_add(Entity::Mob(mob))? {
             println!("Added mob: blue_wither_skeleton");
@@ -810,14 +807,12 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
             spawn_egg_id: Some("blue_skeleton_spawn_egg".into()),
             baby_spawn_egg_id: None,
             attributes: vec![],
-            drops: vec![
-                Drop {
-                    item: "blue_bone_block".into(),
-                    min_count: 1,
-                    max_count: 2,
-                    loot_type: Some("entity".into()),
-                },
-            ],
+            drops: vec![Drop {
+                item: "blue_bone_block".into(),
+                min_count: 1,
+                max_count: 2,
+                loot_type: Some("entity".into()),
+            }],
         };
         if state.try_add(Entity::Mob(mob))? {
             println!("Added mob: blue_skeleton");
@@ -833,14 +828,12 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
             spawn_egg_id: Some("blue_blaze_spawn_egg".into()),
             baby_spawn_egg_id: None,
             attributes: vec![],
-            drops: vec![
-                Drop {
-                    item: "blue_blaze_rod".into(),
-                    min_count: 1,
-                    max_count: 2,
-                    loot_type: Some("entity".into()),
-                },
-            ],
+            drops: vec![Drop {
+                item: "blue_blaze_rod".into(),
+                min_count: 1,
+                max_count: 2,
+                loot_type: Some("entity".into()),
+            }],
         };
         if state.try_add(Entity::Mob(mob))? {
             println!("Added mob: blue_blaze");
@@ -856,14 +849,12 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
             spawn_egg_id: Some("blue_magma_cube_spawn_egg".into()),
             baby_spawn_egg_id: None,
             attributes: vec![],
-            drops: vec![
-                Drop {
-                    item: "blue_magma_cream".into(),
-                    min_count: 1,
-                    max_count: 2,
-                    loot_type: Some("entity".into()),
-                },
-            ],
+            drops: vec![Drop {
+                item: "blue_magma_cream".into(),
+                min_count: 1,
+                max_count: 2,
+                loot_type: Some("entity".into()),
+            }],
         };
         if state.try_add(Entity::Mob(mob))? {
             println!("Added mob: blue_magma_cube");
@@ -879,14 +870,12 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
             spawn_egg_id: Some("blue_enderman_spawn_egg".into()),
             baby_spawn_egg_id: None,
             attributes: vec![],
-            drops: vec![
-                Drop {
-                    item: "blue_netherrack".into(),
-                    min_count: 1,
-                    max_count: 1,
-                    loot_type: Some("entity".into()),
-                },
-            ],
+            drops: vec![Drop {
+                item: "blue_netherrack".into(),
+                min_count: 1,
+                max_count: 1,
+                loot_type: Some("entity".into()),
+            }],
         };
         if state.try_add(Entity::Mob(mob))? {
             println!("Added mob: blue_enderman");
@@ -902,14 +891,12 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
             spawn_egg_id: Some("blue_piglin_brute_spawn_egg".into()),
             baby_spawn_egg_id: None,
             attributes: vec![],
-            drops: vec![
-                Drop {
-                    item: "blue_netherite_scrap".into(),
-                    min_count: 1,
-                    max_count: 1,
-                    loot_type: Some("entity".into()),
-                },
-            ],
+            drops: vec![Drop {
+                item: "blue_netherite_scrap".into(),
+                min_count: 1,
+                max_count: 1,
+                loot_type: Some("entity".into()),
+            }],
         };
         if state.try_add(Entity::Mob(mob))? {
             println!("Added mob: blue_piglin_brute");
@@ -925,14 +912,12 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
             spawn_egg_id: Some("blue_wither_spawn_egg".into()),
             baby_spawn_egg_id: None,
             attributes: vec![],
-            drops: vec![
-                Drop {
-                    item: "blue_nether_star".into(),
-                    min_count: 1,
-                    max_count: 1,
-                    loot_type: Some("entity".into()),
-                },
-            ],
+            drops: vec![Drop {
+                item: "blue_nether_star".into(),
+                min_count: 1,
+                max_count: 1,
+                loot_type: Some("entity".into()),
+            }],
         };
         if state.try_add(Entity::Mob(mob))? {
             println!("Added mob: blue_wither");
@@ -1393,6 +1378,7 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
             announce_to_chat: None,
             hidden: None,
             criteria: vec![],
+            rewards: None,
         };
         if state.try_add(Entity::Advancement(advancement))? {
             println!("Added advancement: enter_blue_nether");
@@ -1411,6 +1397,7 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
             announce_to_chat: None,
             hidden: None,
             criteria: vec![],
+            rewards: None,
         };
         if state.try_add(Entity::Advancement(advancement))? {
             println!("Added advancement: return_to_sender_blue");
@@ -1429,6 +1416,7 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
             announce_to_chat: None,
             hidden: None,
             criteria: vec![],
+            rewards: None,
         };
         if state.try_add(Entity::Advancement(advancement))? {
             println!("Added advancement: into_blue_fire");
@@ -1447,6 +1435,7 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
             announce_to_chat: None,
             hidden: None,
             criteria: vec![],
+            rewards: None,
         };
         if state.try_add(Entity::Advancement(advancement))? {
             println!("Added advancement: blue_netherite_ingot");
@@ -1465,6 +1454,7 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
             announce_to_chat: None,
             hidden: None,
             criteria: vec![],
+            rewards: None,
         };
         if state.try_add(Entity::Advancement(advancement))? {
             println!("Added advancement: cover_me_in_blue_debris");
@@ -1483,6 +1473,7 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
             announce_to_chat: None,
             hidden: None,
             criteria: vec![],
+            rewards: None,
         };
         if state.try_add(Entity::Advancement(advancement))? {
             println!("Added advancement: blue_wither");
@@ -1501,6 +1492,7 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
             announce_to_chat: None,
             hidden: None,
             criteria: vec![],
+            rewards: None,
         };
         if state.try_add(Entity::Advancement(advancement))? {
             println!("Added advancement: blue_fortress_explorer");
@@ -1519,6 +1511,7 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
             announce_to_chat: None,
             hidden: None,
             criteria: vec![],
+            rewards: None,
         };
         if state.try_add(Entity::Advancement(advancement))? {
             println!("Added advancement: blue_bastion_raider");
@@ -1537,6 +1530,7 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
             announce_to_chat: None,
             hidden: None,
             criteria: vec![],
+            rewards: None,
         };
         if state.try_add(Entity::Advancement(advancement))? {
             println!("Added advancement: blue_fossil_hunter");
