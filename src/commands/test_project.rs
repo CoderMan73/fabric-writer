@@ -227,21 +227,28 @@ const VANILLA_TEXTURE_SOURCE: &str =
 const BLUE_TINT: Option<[u8; 3]> = Some([80, 120, 255]);
 
 fn tint_texture(src: &std::path::Path, dest: &std::path::Path, color: [u8; 3]) -> Result<()> {
-    use image::RgbImage;
-    let img = image::open(src)?.to_rgb8();
-    let mut out = RgbImage::new(img.width(), img.height());
+    use image::RgbaImage;
+    let img = image::open(src)?.to_rgba8();
+    let mut out = RgbaImage::new(img.width(), img.height());
     for (x, y, pixel) in img.enumerate_pixels() {
-        let mut p = *pixel;
-        let alpha = ((p[0] as u32 + p[1] as u32 + p[2] as u32) / 3) as u8;
-        p[0] = ((p[0] as u16 * color[0] as u16 / 255)
-            + (alpha as u16 * (255 - color[0] as u16) / 255)) as u8;
-        p[1] = ((p[1] as u16 * color[1] as u16 / 255)
-            + (alpha as u16 * (255 - color[1] as u16) / 255)) as u8;
-        p[2] = ((p[2] as u16 * color[2] as u16 / 255)
-            + (alpha as u16 * (255 - color[2] as u16) / 255)) as u8;
-        out.put_pixel(x, y, p);
+        let alpha = pixel[3];
+        let gray =
+            ((pixel[0] as u32 * 30 + pixel[1] as u32 * 59 + pixel[2] as u32 * 11) / 100) as u8;
+        out.put_pixel(x, y, image::Rgba([gray, gray, gray, alpha]));
     }
-    out.save(dest)?;
+    let mut final_img = RgbaImage::new(out.width(), out.height());
+    for (x, y, pixel) in out.enumerate_pixels() {
+        let l = pixel[0] as u16;
+        let alpha = pixel[3];
+        let new_pixel = image::Rgba([
+            (l * color[0] as u16 / 255) as u8,
+            (l * color[1] as u16 / 255) as u8,
+            (l * color[2] as u16 / 255) as u8,
+            alpha,
+        ]);
+        final_img.put_pixel(x, y, new_pixel);
+    }
+    final_img.save(dest)?;
     Ok(())
 }
 
@@ -266,10 +273,17 @@ fn copy_block_textures(
         if src.exists() {
             if let Some(color) = tint {
                 tint_texture(&src, &dest, color)?;
+                let hex = format!("#{:02X}{:02X}{:02X}", color[0], color[1], color[2]);
+                println!(
+                    "{} -> desaturated -> tint({}) -> {}",
+                    src.display(),
+                    hex,
+                    dest.display()
+                );
             } else {
                 std::fs::copy(&src, &dest)?;
+                println!("{} -> {}", src.display(), dest.display());
             }
-            println!("Copied texture: {} -> {}", src.display(), dest.display());
         }
         let mcmeta_src = src.with_extension("png.mcmeta");
         if mcmeta_src.exists() {
@@ -306,14 +320,17 @@ fn copy_item_textures(
         if src.exists() {
             if let Some(color) = tint {
                 tint_texture(&src, &dest, color)?;
+                let hex = format!("#{:02X}{:02X}{:02X}", color[0], color[1], color[2]);
+                println!(
+                    "{} -> desaturated -> tint({}) -> {}",
+                    src.display(),
+                    hex,
+                    dest.display()
+                );
             } else {
                 std::fs::copy(&src, &dest)?;
+                println!("{} -> {}", src.display(), dest.display());
             }
-            println!(
-                "Copied item texture: {} -> {}",
-                src.display(),
-                dest.display()
-            );
         }
     }
 
@@ -941,42 +958,42 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
             player_spawn_friendly: None,
         };
         biome.mob_spawns.push(MobSpawn {
-            entity_type: "testmod:blue_zombie_piglin".into(),
+            entity_type: "minecraft:zombified_piglin".into(),
             category: Some("monster".into()),
             weight: 100,
             min_count: 2,
             max_count: 4,
         });
         biome.mob_spawns.push(MobSpawn {
-            entity_type: "testmod:blue_piglin".into(),
+            entity_type: "minecraft:piglin".into(),
             category: Some("creature".into()),
             weight: 50,
             min_count: 2,
             max_count: 4,
         });
         biome.mob_spawns.push(MobSpawn {
-            entity_type: "testmod:blue_ghast".into(),
+            entity_type: "minecraft:ghast".into(),
             category: Some("monster".into()),
             weight: 10,
             min_count: 1,
             max_count: 2,
         });
         biome.mob_spawns.push(MobSpawn {
-            entity_type: "testmod:blue_skeleton".into(),
+            entity_type: "minecraft:skeleton".into(),
             category: Some("monster".into()),
             weight: 20,
             min_count: 1,
             max_count: 2,
         });
         biome.mob_spawns.push(MobSpawn {
-            entity_type: "testmod:blue_wither_skeleton".into(),
+            entity_type: "minecraft:wither_skeleton".into(),
             category: Some("monster".into()),
             weight: 20,
             min_count: 1,
             max_count: 2,
         });
         biome.mob_spawns.push(MobSpawn {
-            entity_type: "testmod:blue_blaze".into(),
+            entity_type: "minecraft:blaze".into(),
             category: Some("monster".into()),
             weight: 10,
             min_count: 1,
@@ -1004,28 +1021,28 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
             player_spawn_friendly: None,
         };
         biome.mob_spawns.push(MobSpawn {
-            entity_type: "testmod:blue_ghast".into(),
+            entity_type: "minecraft:ghast".into(),
             category: Some("monster".into()),
             weight: 10,
             min_count: 1,
             max_count: 1,
         });
         biome.mob_spawns.push(MobSpawn {
-            entity_type: "testmod:blue_skeleton".into(),
+            entity_type: "minecraft:skeleton".into(),
             category: Some("monster".into()),
             weight: 20,
             min_count: 2,
             max_count: 4,
         });
         biome.mob_spawns.push(MobSpawn {
-            entity_type: "testmod:blue_enderman".into(),
+            entity_type: "minecraft:enderman".into(),
             category: Some("monster".into()),
             weight: 5,
             min_count: 1,
             max_count: 2,
         });
         biome.mob_spawns.push(MobSpawn {
-            entity_type: "testmod:blue_strider".into(),
+            entity_type: "minecraft:strider".into(),
             category: Some("creature".into()),
             weight: 10,
             min_count: 1,
@@ -1053,28 +1070,28 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
             player_spawn_friendly: None,
         };
         biome.mob_spawns.push(MobSpawn {
-            entity_type: "testmod:blue_hoglin".into(),
+            entity_type: "minecraft:hoglin".into(),
             category: Some("creature".into()),
             weight: 9,
             min_count: 2,
             max_count: 4,
         });
         biome.mob_spawns.push(MobSpawn {
-            entity_type: "testmod:blue_piglin".into(),
+            entity_type: "minecraft:piglin".into(),
             category: Some("creature".into()),
             weight: 15,
             min_count: 2,
             max_count: 4,
         });
         biome.mob_spawns.push(MobSpawn {
-            entity_type: "testmod:blue_zombie_piglin".into(),
+            entity_type: "minecraft:zombified_piglin".into(),
             category: Some("monster".into()),
             weight: 5,
             min_count: 2,
             max_count: 4,
         });
         biome.mob_spawns.push(MobSpawn {
-            entity_type: "testmod:blue_strider".into(),
+            entity_type: "minecraft:strider".into(),
             category: Some("creature".into()),
             weight: 10,
             min_count: 1,
@@ -1102,14 +1119,14 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
             player_spawn_friendly: None,
         };
         biome.mob_spawns.push(MobSpawn {
-            entity_type: "testmod:blue_enderman".into(),
+            entity_type: "minecraft:enderman".into(),
             category: Some("monster".into()),
             weight: 20,
             min_count: 1,
             max_count: 2,
         });
         biome.mob_spawns.push(MobSpawn {
-            entity_type: "testmod:blue_strider".into(),
+            entity_type: "minecraft:strider".into(),
             category: Some("creature".into()),
             weight: 10,
             min_count: 1,
@@ -1137,14 +1154,14 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
             player_spawn_friendly: None,
         };
         biome.mob_spawns.push(MobSpawn {
-            entity_type: "testmod:blue_magma_cube".into(),
+            entity_type: "minecraft:magma_cube".into(),
             category: Some("monster".into()),
             weight: 20,
             min_count: 2,
             max_count: 4,
         });
         biome.mob_spawns.push(MobSpawn {
-            entity_type: "testmod:blue_ghast".into(),
+            entity_type: "minecraft:ghast".into(),
             category: Some("monster".into()),
             weight: 5,
             min_count: 1,
@@ -1241,7 +1258,7 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
     {
         let structure = Structure {
             id: "blue_nether_fossil".into(),
-            structure_type: "minecraft:fossil".into(),
+            structure_type: "minecraft:nether_fossil".into(),
             spawn: None,
             spacing: Some(64),
             separation: Some(32),
@@ -1387,7 +1404,7 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
     {
         let advancement = Advancement {
             id: "return_to_sender_blue".into(),
-            parent: Some("enter_blue_nether".into()),
+            parent: Some("testmod:enter_blue_nether".into()),
             title: "Return to Sender (Blue)".into(),
             description: "Destroy a blue ghast with a blue fireball".into(),
             icon: "minecraft:ghast_tear".into(),
@@ -1406,7 +1423,7 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
     {
         let advancement = Advancement {
             id: "into_blue_fire".into(),
-            parent: Some("enter_blue_nether".into()),
+            parent: Some("testmod:enter_blue_nether".into()),
             title: "Into Blue Fire".into(),
             description: "Pick up a blue blaze rod from a blue blaze".into(),
             icon: "minecraft:blaze_rod".into(),
@@ -1425,7 +1442,7 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
     {
         let advancement = Advancement {
             id: "blue_netherite_ingot".into(),
-            parent: Some("into_blue_fire".into()),
+            parent: Some("testmod:into_blue_fire".into()),
             title: "Blue Netherite Ingot".into(),
             description: "Obtain a blue netherite ingot".into(),
             icon: "minecraft:netherite_ingot".into(),
@@ -1444,7 +1461,7 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
     {
         let advancement = Advancement {
             id: "cover_me_in_blue_debris".into(),
-            parent: Some("blue_netherite_ingot".into()),
+            parent: Some("testmod:blue_netherite_ingot".into()),
             title: "Cover Me in Blue Debris".into(),
             description: "Wear a full set of blue netherite armor".into(),
             icon: "minecraft:netherite_helmet".into(),
@@ -1463,7 +1480,7 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
     {
         let advancement = Advancement {
             id: "blue_wither".into(),
-            parent: Some("cover_me_in_blue_debris".into()),
+            parent: Some("testmod:cover_me_in_blue_debris".into()),
             title: "Blue Wither".into(),
             description: "Summon the blue wither".into(),
             icon: "minecraft:nether_star".into(),
@@ -1482,7 +1499,7 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
     {
         let advancement = Advancement {
             id: "blue_fortress_explorer".into(),
-            parent: Some("enter_blue_nether".into()),
+            parent: Some("testmod:enter_blue_nether".into()),
             title: "Blue Fortress Explorer".into(),
             description: "Enter a blue nether fortress".into(),
             icon: "minecraft:nether_bricks".into(),
@@ -1501,7 +1518,7 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
     {
         let advancement = Advancement {
             id: "blue_bastion_raider".into(),
-            parent: Some("enter_blue_nether".into()),
+            parent: Some("testmod:enter_blue_nether".into()),
             title: "Blue Bastion Raider".into(),
             description: "Enter a blue bastion remnant".into(),
             icon: "minecraft:blackstone".into(),
@@ -1520,7 +1537,7 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
     {
         let advancement = Advancement {
             id: "blue_fossil_hunter".into(),
-            parent: Some("blue_fortress_explorer".into()),
+            parent: Some("testmod:blue_fortress_explorer".into()),
             title: "Blue Fossil Hunter".into(),
             description: "Discover a blue nether fossil".into(),
             icon: "minecraft:bone".into(),
@@ -1670,12 +1687,16 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
         block.properties_from = Some(vanilla_id.into());
         if blue_id.contains("_slab") {
             block.model_kind = BlockModelKind::Slab;
+            block.block_class = "SlabBlock".into();
         } else if blue_id.contains("_stairs") {
             block.model_kind = BlockModelKind::Stairs;
+            block.block_class = "StairBlock".into();
         } else if blue_id.contains("_wall") {
             block.model_kind = BlockModelKind::Wall;
+            block.block_class = "WallBlock".into();
         } else if blue_id.contains("_fence") {
             block.model_kind = BlockModelKind::Fence;
+            block.block_class = "FenceBlock".into();
         } else if blue_id.ends_with("_stem") {
             block.model_kind = BlockModelKind::CubeColumn;
         } else if blue_id == "blue_crimson_roots"
@@ -1691,6 +1712,7 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
             block.model_kind = BlockModelKind::Cross;
         } else if blue_id == "blue_nether_wart" {
             block.model_kind = BlockModelKind::Crop;
+            block.block_class = "NetherWartBlock".into();
         }
         if state.try_add(Entity::Block(block))? {
             println!("Added block: {}", blue_id);
@@ -2052,6 +2074,10 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
         ("blue_brown_mushroom", "brown_mushroom.png"),
         ("blue_red_mushroom", "red_mushroom.png"),
         ("blue_nether_wart", "nether_wart_stage0.png"),
+        ("blue_nether_wart_stage0", "nether_wart_stage0.png"),
+        ("blue_nether_wart_stage1", "nether_wart_stage1.png"),
+        ("blue_nether_wart_stage2", "nether_wart_stage2.png"),
+        ("blue_nether_wart_stage3", "nether_wart_stage2.png"),
         ("blue_nether_brick_fence", "nether_brick_fence.png"),
         ("blue_nether_brick_stairs", "nether_brick_stairs.png"),
         ("blue_chiseled_nether_bricks", "chiseled_nether_bricks.png"),
@@ -2282,12 +2308,16 @@ fn add_blue_nether_base(state: &mut state::ModState) -> Result<()> {
         block.properties_from = Some(vanilla_id.into());
         if blue_id.contains("_slab") {
             block.model_kind = BlockModelKind::Slab;
+            block.block_class = "SlabBlock".into();
         } else if blue_id.contains("_stairs") {
             block.model_kind = BlockModelKind::Stairs;
+            block.block_class = "StairBlock".into();
         } else if blue_id.contains("_wall") {
             block.model_kind = BlockModelKind::Wall;
+            block.block_class = "WallBlock".into();
         } else if blue_id.contains("_fence") {
             block.model_kind = BlockModelKind::Fence;
+            block.block_class = "FenceBlock".into();
         }
         if state.try_add(Entity::Block(block))? {
             println!("Added block: {}", blue_id);

@@ -614,19 +614,14 @@ pub fn write(path: &Path, tokens: Tokens, package: &str) -> Result<()> {
     Ok(())
 }
 
-fn copy_textures_for<'a, I>(
+fn copy_textures_for(
     dir: &Path,
-    ids: I,
+    expected: &HashSet<String>,
     placeholder: &[u8],
     kind: &str,
     verbose: bool,
-) -> Result<()>
-where
-    I: IntoIterator<Item = &'a String>,
-{
+) -> Result<()> {
     create_dir_all(dir).with_context(|| format!("Failed to create {} textures directory", kind))?;
-
-    let expected: HashSet<String> = ids.into_iter().map(|id| format!("{}.png", id)).collect();
 
     if dir.exists() {
         for entry in
@@ -645,7 +640,7 @@ where
         }
     }
 
-    for id in &expected {
+    for id in expected {
         let dest = dir.join(id);
         if !dest.exists() {
             std::fs::write(&dest, placeholder).with_context(|| {
@@ -670,16 +665,42 @@ fn copy_textures(state: &ModState, verbose: bool) -> Result<()> {
     let textures_root = PathBuf::from("src/main/resources/assets")
         .join(&state.mod_id)
         .join("textures");
+    let item_expected: HashSet<String> = state
+        .items
+        .iter()
+        .map(|i| format!("{}.png", i.id))
+        .collect();
     copy_textures_for(
         &textures_root.join("item"),
-        state.items.iter().map(|i| &i.id),
+        &item_expected,
         PLACEHOLDER_ITEM,
         "item",
         verbose,
     )?;
+    let mut block_expected: HashSet<String> = HashSet::new();
+    for block in &state.blocks {
+        let id = &block.id;
+        block_expected.insert(format!("{}.png", id));
+        match block.model_kind {
+            BlockModelKind::CubeColumn => {
+                block_expected.insert(format!("{}_top.png", id));
+            }
+            BlockModelKind::CubeBottomTop | BlockModelKind::Orientable => {
+                block_expected.insert(format!("{}_top.png", id));
+                block_expected.insert(format!("{}_bottom.png", id));
+                block_expected.insert(format!("{}_side.png", id));
+            }
+            BlockModelKind::Crop => {
+                for stage in 0..4 {
+                    block_expected.insert(format!("{}_stage{}.png", id, stage));
+                }
+            }
+            _ => {}
+        }
+    }
     copy_textures_for(
         &textures_root.join("block"),
-        state.blocks.iter().map(|b| &b.id),
+        &block_expected,
         PLACEHOLDER_BLOCK,
         "block",
         verbose,
@@ -695,6 +716,61 @@ fn generate_model_resources(state: &ModState, _verbose: bool) -> Result<()> {
     create_dir_all(&blockstates_root)?;
     create_dir_all(&block_models_root)?;
     create_dir_all(&item_models_root)?;
+
+    let mut expected_models: HashSet<String> = HashSet::new();
+    for block in &state.blocks {
+        let id = &block.id;
+        match block.model_kind {
+            BlockModelKind::Slab => {
+                expected_models.insert(format!("{}_slab_bottom.json", id));
+                expected_models.insert(format!("{}_slab_top.json", id));
+                expected_models.insert(format!("{}_slab_double.json", id));
+            }
+            BlockModelKind::Stairs => {
+                expected_models.insert(format!("{}.json", id));
+                expected_models.insert(format!("{}_inner_right.json", id));
+                expected_models.insert(format!("{}_inner_left.json", id));
+                expected_models.insert(format!("{}_outer_right.json", id));
+                expected_models.insert(format!("{}_outer_left.json", id));
+            }
+            BlockModelKind::Lantern => {
+                expected_models.insert(format!("{}.json", id));
+                expected_models.insert(format!("{}_hanging.json", id));
+            }
+            BlockModelKind::Crop => {
+                for stage in 0..4 {
+                    expected_models.insert(format!("{}_stage{}.json", id, stage));
+                }
+            }
+            _ => {
+                expected_models.insert(format!("{}.json", id));
+            }
+        }
+    }
+    if block_models_root.exists() {
+        for entry in read_dir(&block_models_root)? {
+            let entry = entry?;
+            let name = entry.file_name().to_string_lossy().into_owned();
+            if name.ends_with(".json") && !expected_models.contains(&name) {
+                remove_file(entry.path()).ok();
+            }
+        }
+    }
+
+    let expected_blockstates: HashSet<String> = state
+        .blocks
+        .iter()
+        .map(|b| format!("{}.json", b.id))
+        .collect();
+    if blockstates_root.exists() {
+        for entry in read_dir(&blockstates_root)? {
+            let entry = entry?;
+            let name = entry.file_name().to_string_lossy().into_owned();
+            if name.ends_with(".json") && !expected_blockstates.contains(&name) {
+                remove_file(entry.path()).ok();
+            }
+        }
+    }
 
     for block in &state.blocks {
         let id = &block.id;
@@ -730,7 +806,7 @@ fn generate_model_resources(state: &ModState, _verbose: bool) -> Result<()> {
                 std::fs::write(
                     block_model_path,
                     format!(
-                        r#"{{"parent":"minecraft:block/cube_column","textures":{{"end":"{}:block/{}_top","side":"{}:block/{}_side"}}}}"#,
+                        r#"{{"parent":"minecraft:block/cube_column","textures":{{"end":"{}:block/{}_top","side":"{}:block/{}"}}}}"#,
                         mod_id, id, mod_id, id
                     ),
                 )?;
@@ -763,7 +839,7 @@ fn generate_model_resources(state: &ModState, _verbose: bool) -> Result<()> {
                 std::fs::write(
                     block_models_root.join(format!("{}_slab_bottom.json", id)),
                     format!(
-                        r#"{{"parent":"minecraft:block/slab_bottom","textures":{{"bottom":"{}:block/{}","top":"{}:block/{}","side":"{}:block/{}"}}}}"#,
+                        r#"{{"parent":"minecraft:block/slab","textures":{{"bottom":"{}:block/{}","top":"{}:block/{}","side":"{}:block/{}"}}}}"#,
                         mod_id, id, mod_id, id, mod_id, id
                     ),
                 )?;
@@ -786,7 +862,7 @@ fn generate_model_resources(state: &ModState, _verbose: bool) -> Result<()> {
                 std::fs::write(
                     blockstate_path,
                     format!(
-                        r#"{{"variants":{{"facing=east,half=bottom,shape=straight":{{"model":"{}:block/{}_stairs"}},"facing=west,half=bottom,shape=straight":{{"model":"{}:block/{}_stairs","y":90,"uvlock":true}},"facing=south,half=bottom,shape=straight":{{"model":"{}:block/{}_stairs","y":180,"uvlock":true}},"facing=north,half=bottom,shape=straight":{{"model":"{}:block/{}_stairs","y":270,"uvlock":true}},"facing=east,half=bottom,shape=outer_right":{{"model":"{}:block/{}_stairs_outer_right"}},"facing=west,half=bottom,shape=outer_right":{{"model":"{}:block/{}_stairs_outer_right","y":90,"uvlock":true}},"facing=south,half=bottom,shape=outer_right":{{"model":"{}:block/{}_stairs_outer_right","y":180,"uvlock":true}},"facing=north,half=bottom,shape=outer_right":{{"model":"{}:block/{}_stairs_outer_right","y":270,"uvlock":true}},"facing=east,half=bottom,shape=outer_left":{{"model":"{}:block/{}_stairs_outer_left"}},"facing=west,half=bottom,shape=outer_left":{{"model":"{}:block/{}_stairs_outer_left","y":90,"uvlock":true}},"facing=south,half=bottom,shape=outer_left":{{"model":"{}:block/{}_stairs_outer_left","y":180,"uvlock":true}},"facing=north,half=bottom,shape=outer_left":{{"model":"{}:block/{}_stairs_outer_left","y":270,"uvlock":true}},"facing=east,half=bottom,shape=inner_right":{{"model":"{}:block/{}_stairs_inner_right"}},"facing=west,half=bottom,shape=inner_right":{{"model":"{}:block/{}_stairs_inner_right","y":90,"uvlock":true}},"facing=south,half=bottom,shape=inner_right":{{"model":"{}:block/{}_stairs_inner_right","y":180,"uvlock":true}},"facing=north,half=bottom,shape=inner_right":{{"model":"{}:block/{}_stairs_inner_right","y":270,"uvlock":true}},"facing=east,half=bottom,shape=inner_left":{{"model":"{}:block/{}_stairs_inner_left"}},"facing=west,half=bottom,shape=inner_left":{{"model":"{}:block/{}_stairs_inner_left","y":90,"uvlock":true}},"facing=south,half=bottom,shape=inner_left":{{"model":"{}:block/{}_stairs_inner_left","y":180,"uvlock":true}},"facing=north,half=bottom,shape=inner_left":{{"model":"{}:block/{}_stairs_inner_left","y":270,"uvlock":true}},"half=top":{{"model":"{}:block/{}_stairs","x":180,"uvlock":true}}}}"#,
+                        r#"{{"variants":{{"facing=east,half=bottom,shape=straight":{{"model":"{}:block/{}"}},"facing=west,half=bottom,shape=straight":{{"model":"{}:block/{}","y":90,"uvlock":true}},"facing=south,half=bottom,shape=straight":{{"model":"{}:block/{}","y":180,"uvlock":true}},"facing=north,half=bottom,shape=straight":{{"model":"{}:block/{}","y":270,"uvlock":true}},"facing=east,half=bottom,shape=outer_right":{{"model":"{}:block/{}_outer_right"}},"facing=west,half=bottom,shape=outer_right":{{"model":"{}:block/{}_outer_right","y":90,"uvlock":true}},"facing=south,half=bottom,shape=outer_right":{{"model":"{}:block/{}_outer_right","y":180,"uvlock":true}},"facing=north,half=bottom,shape=outer_right":{{"model":"{}:block/{}_outer_right","y":270,"uvlock":true}},"facing=east,half=bottom,shape=outer_left":{{"model":"{}:block/{}_outer_left"}},"facing=west,half=bottom,shape=outer_left":{{"model":"{}:block/{}_outer_left","y":90,"uvlock":true}},"facing=south,half=bottom,shape=outer_left":{{"model":"{}:block/{}_outer_left","y":180,"uvlock":true}},"facing=north,half=bottom,shape=outer_left":{{"model":"{}:block/{}_outer_left","y":270,"uvlock":true}},"facing=east,half=bottom,shape=inner_right":{{"model":"{}:block/{}_inner_right"}},"facing=west,half=bottom,shape=inner_right":{{"model":"{}:block/{}_inner_right","y":90,"uvlock":true}},"facing=south,half=bottom,shape=inner_right":{{"model":"{}:block/{}_inner_right","y":180,"uvlock":true}},"facing=north,half=bottom,shape=inner_right":{{"model":"{}:block/{}_inner_right","y":270,"uvlock":true}},"facing=east,half=bottom,shape=inner_left":{{"model":"{}:block/{}_inner_left"}},"facing=west,half=bottom,shape=inner_left":{{"model":"{}:block/{}_inner_left","y":90,"uvlock":true}},"facing=south,half=bottom,shape=inner_left":{{"model":"{}:block/{}_inner_left","y":180,"uvlock":true}},"facing=north,half=bottom,shape=inner_left":{{"model":"{}:block/{}_inner_left","y":270,"uvlock":true}},"half=top":{{"model":"{}:block/{}","x":180,"uvlock":true}}}}}}"#,
                         mod_id,
                         id,
                         mod_id,
@@ -841,8 +917,10 @@ fn generate_model_resources(state: &ModState, _verbose: bool) -> Result<()> {
                 ] {
                     let parent = if suffix.is_empty() {
                         "minecraft:block/stairs".to_string()
+                    } else if suffix.contains("inner") {
+                        "minecraft:block/inner_stairs".to_string()
                     } else {
-                        format!("minecraft:block/stairs{}", suffix)
+                        "minecraft:block/outer_stairs".to_string()
                     };
                     std::fs::write(
                         block_models_root.join(format!("{}{}.json", id, suffix)),
@@ -880,8 +958,8 @@ fn generate_model_resources(state: &ModState, _verbose: bool) -> Result<()> {
                 std::fs::write(
                     block_model_path,
                     format!(
-                        r#"{{"parent":"minecraft:block/fence","textures":{{"texture":"{}:block/{}","post":"{}:block/{}"}}}}"#,
-                        mod_id, id, mod_id, id
+                        r#"{{"parent":"minecraft:block/fence_inventory","textures":{{"texture":"{}:block/{}"}}}}"#,
+                        mod_id, id
                     ),
                 )?;
             }
@@ -896,7 +974,7 @@ fn generate_model_resources(state: &ModState, _verbose: bool) -> Result<()> {
                 std::fs::write(
                     block_model_path,
                     format!(
-                        r#"{{"parent":"minecraft:block/wall","textures":{{"texture":"{}:block/{}"}}}}"#,
+                        r#"{{"parent":"minecraft:block/wall_inventory","textures":{{"wall":"{}:block/{}"}}}}"#,
                         mod_id, id
                     ),
                 )?;
@@ -1149,6 +1227,17 @@ fn generate_model_resources(state: &ModState, _verbose: bool) -> Result<()> {
                         mod_id, id
                     ),
                 )?;
+            } else if matches!(
+                item.kind,
+                ItemKind::Tool | ItemKind::Axe | ItemKind::Shovel | ItemKind::Hoe
+            ) {
+                std::fs::write(
+                    item_model_path,
+                    format!(
+                        r#"{{"parent":"minecraft:item/handheld","textures":{{"layer0":"{}:item/{}"}}}}"#,
+                        mod_id, id
+                    ),
+                )?;
             } else {
                 std::fs::write(
                     item_model_path,
@@ -1243,7 +1332,7 @@ fn generate_advancement_resources(state: &ModState, _verbose: bool) -> Result<()
         let mut display_parts: Vec<String> = Vec::new();
         display_parts.push(format!(r#""title":"{}""#, adv.title));
         display_parts.push(format!(r#""description":"{}""#, adv.description));
-        display_parts.push(format!(r#""icon":{{"item":"{}"}}"#, adv.icon));
+        display_parts.push(format!(r#""icon":{{"id":"{}"}}"#, adv.icon));
 
         if let Some(bg) = &adv.background {
             display_parts.push(format!(r#""background":"{}""#, bg));
@@ -1265,6 +1354,9 @@ fn generate_advancement_resources(state: &ModState, _verbose: bool) -> Result<()
         parts.push(format!(r#""display":{{{}}}"#, display_parts.join(",")));
 
         let mut criteria_str: Vec<String> = Vec::new();
+        if adv.criteria.is_empty() {
+            criteria_str.push(r#""tick":{"trigger":"minecraft:tick"}"#.to_string());
+        }
         for criterion in &adv.criteria {
             let mut cond_parts: Vec<String> = Vec::new();
             for (k, v) in &criterion.conditions {
@@ -1364,13 +1456,24 @@ fn generate_tag_resources(state: &ModState, _verbose: bool) -> Result<()> {
     Ok(())
 }
 
-fn generate_sound_resources(state: &ModState, _verbose: bool) -> Result<()> {
+fn generate_sound_resources(state: &ModState, verbose: bool) -> Result<()> {
     if state.sound_events.is_empty() {
         return Ok(());
     }
 
     let assets_root = PathBuf::from("src/main/resources/assets").join(&state.mod_id);
     create_dir_all(&assets_root)?;
+
+    let sounds_dir = assets_root.join("sounds");
+    create_dir_all(&sounds_dir)?;
+
+    let placeholder_ogg = find_placeholder_ogg();
+    if placeholder_ogg.is_none() && verbose {
+        vlog(
+            "skipped (no placeholder ogg)",
+            &PathBuf::from("sound placeholder"),
+        );
+    }
 
     let path = assets_root.join("sounds.json");
 
@@ -1386,12 +1489,41 @@ fn generate_sound_resources(state: &ModState, _verbose: bool) -> Result<()> {
             r#""{}":{{"subtitle":"{}","sounds":["{}"]}}"#,
             sound.id, subtitle, full_path
         ));
+
+        if let Some(ref ogg_src) = placeholder_ogg {
+            let sound_rel = &sound.sound_path;
+            let ogg_dest = sounds_dir
+                .join(sound_rel.replace(':', "/"))
+                .with_extension("ogg");
+            if let Some(parent) = ogg_dest.parent() {
+                create_dir_all(parent)?;
+            }
+            if !ogg_dest.exists() {
+                std::fs::copy(ogg_src, &ogg_dest)?;
+                if verbose {
+                    vlog("wrote", &ogg_dest);
+                }
+            }
+        }
     }
 
     let json = format!(r#"{{{}}}"#, entries.join(","));
     std::fs::write(path, json)?;
 
     Ok(())
+}
+
+fn find_placeholder_ogg() -> Option<PathBuf> {
+    let candidates = [
+        "E:\\Coding_Projects\\MCSourceCode\\fabric-api\\26.2\\fabric-sound-api-v1\\src\\client\\resources\\assets\\fabric-sound-api-v1\\sounds\\empty.ogg",
+        "E:\\Coding_Projects\\MCSourceCode\\fabric-docs\\reference\\1.20.4\\src\\main\\resources\\assets\\example-mod\\sounds\\metal_whistle.ogg",
+    ];
+    for c in &candidates {
+        if PathBuf::from(c).exists() {
+            return Some(PathBuf::from(c));
+        }
+    }
+    None
 }
 
 fn generate_biome_resources(state: &ModState, _verbose: bool) -> Result<()> {
@@ -1403,131 +1535,116 @@ fn generate_biome_resources(state: &ModState, _verbose: bool) -> Result<()> {
 
     for biome in &state.biomes {
         let id = &biome.id;
-        let mut effects = String::new();
-        let mut attributes = String::new();
-        let mut has_effects = false;
-        let mut has_attributes = false;
+        let mut json = String::from("{");
 
-        if let Some(water_color) = biome.water_color {
-            effects.push_str(&format!(r##""water_color":"#{:06X}""##, water_color as u32));
-            has_effects = true;
+        // ClimateSettings fields (spread at top level via MapCodec)
+        if let Some(p) = biome.has_precipitation {
+            json.push_str(&format!(r#""has_precipitation":{},"#, p));
         }
-        if let Some(sky_color) = biome.sky_color {
-            if has_attributes {
-                attributes.push(',');
-            }
-            attributes.push_str(&format!(
-                r##""minecraft:visual/sky_color":"#{:06X}""##,
-                sky_color as u32
+        if let Some(t) = biome.temperature {
+            json.push_str(&format!(r#""temperature":{},"#, t));
+        }
+        if let Some(d) = biome.downfall {
+            json.push_str(&format!(r#""downfall":{},"#, d));
+        }
+
+        // attributes (optional, EnvironmentAttributeMap)
+        let mut attrs = String::new();
+        if let Some(sky) = biome.sky_color {
+            attrs.push_str(&format!(
+                "\"minecraft:visual/sky_color\":\"#{:06X}\"",
+                sky as u32
             ));
-            has_attributes = true;
         }
-        if let Some(water_fog_color) = biome.water_fog_color {
-            if has_attributes {
-                attributes.push(',');
+        if let Some(wf) = biome.water_fog_color {
+            if !attrs.is_empty() {
+                attrs.push(',');
             }
-            attributes.push_str(&format!(
-                r##""minecraft:visual/water_fog_color":"#{:06X}""##,
-                water_fog_color as u32
+            attrs.push_str(&format!(
+                "\"minecraft:visual/water_fog_color\":\"#{:06X}\"",
+                wf as u32
             ));
-            has_attributes = true;
         }
-        if let Some(fog_color) = biome.fog_color {
-            if has_attributes {
-                attributes.push(',');
+        if let Some(fog) = biome.fog_color {
+            if !attrs.is_empty() {
+                attrs.push(',');
             }
-            attributes.push_str(&format!(
-                r##""minecraft:visual/fog_color":"#{:06X}""##,
-                fog_color as u32
+            attrs.push_str(&format!(
+                "\"minecraft:visual/fog_color\":\"#{:06X}\"",
+                fog as u32
             ));
-            has_attributes = true;
+        }
+        if !attrs.is_empty() {
+            json.push_str("\"attributes\":{");
+            json.push_str(&attrs);
+            json.push_str("},");
         }
 
-        let effects_obj = if has_effects {
-            format!("\"effects\":{{{}}},", effects)
-        } else {
-            String::new()
-        };
+        // effects (BiomeSpecialEffects, required)
+        if let Some(wc) = biome.water_color {
+            json.push_str("\"effects\":{\"water_color\":\"#");
+            json.push_str(&format!("{:06X}", wc as u32));
+            json.push_str("\"},");
+        }
 
-        let attributes_obj = if has_attributes {
-            format!("\"attributes\":{{{}}},", attributes)
-        } else {
-            String::new()
-        };
+        // carvers (BiomeGenerationSettings, required) — string reference in MC 26.2
+        json.push_str("\"carvers\":\"minecraft:nether_cave\",");
 
+        // features (list of lists per GenerationStep.Decoration, 11 steps)
+        // In MC 26.2, each entry is a string reference to a placed_feature
+        let mut feature_refs: Vec<String> = biome
+            .features
+            .iter()
+            .map(|f| format!("\"{}\"", f))
+            .collect();
+        for feature in &state.features {
+            feature_refs.push(format!("\"{}:{}\"", state.mod_id, feature.id));
+        }
+        let mut features_json = String::from("[");
+        for i in 0..11 {
+            if i > 0 {
+                features_json.push(',');
+            }
+            if i == 9 && !feature_refs.is_empty() {
+                features_json.push('[');
+                features_json.push_str(&feature_refs.join(","));
+                features_json.push(']');
+            } else {
+                features_json.push_str("[]");
+            }
+        }
+        features_json.push(']');
+        json.push_str(&format!(r#""features":{},"#, features_json));
+
+        // spawners (MobSpawnSettings)
         let mut spawners: HashMap<&str, Vec<String>> = HashMap::new();
         for spawn in &biome.mob_spawns {
             let category = spawn.category.as_deref().unwrap_or("monster");
             spawners.entry(category).or_default().push(format!(
-                r#"{{"type":"{}","weight":{},"minCount":{},"maxCount":{}}}"#,
-                spawn.entity_type, spawn.weight, spawn.min_count, spawn.max_count
+                r#"{{"type":"{}","minCount":{},"maxCount":{},"weight":{}}}"#,
+                spawn.entity_type, spawn.min_count, spawn.max_count, spawn.weight
             ));
         }
 
-        let mut spawners_str = String::new();
-        for (category, entries) in spawners {
-            if !spawners_str.is_empty() {
-                spawners_str.push(',');
+        json.push_str("\"spawners\":{");
+        let mut first_spawner = true;
+        for (category, entries) in &spawners {
+            if !first_spawner {
+                json.push(',');
             }
-            spawners_str.push_str(&format!(r#""{}":[{}]"#, category, entries.join(",")));
+            first_spawner = false;
+            json.push_str(&format!(r#""{}":[{}]"#, category, entries.join(",")));
         }
+        json.push_str("},");
 
-        let temperature = biome
-            .temperature
-            .map(|t| format!(r#""temperature":{},"#, t))
-            .unwrap_or_default();
-        let downfall = biome
-            .downfall
-            .map(|d| format!(r#""downfall":{},"#, d))
-            .unwrap_or_default();
-        let has_precipitation = biome
-            .has_precipitation
-            .map(|p| format!(r#""has_precipitation":{},"#, p))
-            .unwrap_or_default();
+        // spawn_costs (required, can be empty object)
+        json.push_str("\"spawn_costs\":{},");
 
-        let features = if biome.features.is_empty() && state.features.is_empty() {
-            String::from("[]")
-        } else {
-            let mut feature_refs: Vec<String> = biome
-                .features
-                .iter()
-                .map(|f| format!(r#""{}""#, f))
-                .collect();
-            for feature in &state.features {
-                feature_refs.push(format!(r#""{}:{}""#, state.mod_id, feature.id));
-            }
-            if feature_refs.is_empty() {
-                String::from("[]")
-            } else {
-                format!(r#"[{}]"#, feature_refs.join(","))
-            }
-        };
-
-        let structures = if biome.structures.is_empty() {
-            String::from("[]")
-        } else {
-            format!(
-                r#""structures":[{}],"#,
-                biome
-                    .structures
-                    .iter()
-                    .map(|s| format!(r#""{}""#, s))
-                    .collect::<Vec<_>>()
-                    .join(",")
-            )
-        };
-
-        let json = format!(
-            r#"{{{}{}{}{}{}"spawners":{{{},"spawn_costs":{{}},"features":{},"structures":{}}}"#,
-            attributes_obj,
-            effects_obj,
-            temperature,
-            downfall,
-            has_precipitation,
-            spawners_str,
-            features,
-            structures
-        );
+        // Remove trailing comma
+        if json.ends_with(',') {
+            json.pop();
+        }
+        json.push('}');
 
         std::fs::write(data_root.join(format!("{}.json", id)), json)?;
     }
@@ -1548,37 +1665,55 @@ fn generate_configured_feature_resources(state: &ModState, _verbose: bool) -> Re
 
         match feature.feature_type.as_str() {
             "ore" => {
-                config.push_str(&format!(
-                    r#""type":"minecraft:ore","target":{{"target":"{}","state":{{"Name":"{}"}}}},"size":{{"min_inclusive":{{"below":64}},"max_inclusive":{{"below":0}}}}"#,
-                    feature.block.as_deref().unwrap_or("minecraft:stone"),
-                    feature.block.as_deref().unwrap_or("minecraft:stone")
-                ));
+                let block = feature.block.as_deref().unwrap_or("minecraft:stone");
+                config.push_str("\"type\":\"minecraft:ore\",\"config\":{\"discard_chance_on_air_exposure\":0,\"size\":8,\"targets\":[{\"state\":{\"Name\":\"");
+                config.push_str(block);
+                config.push_str(
+                    "\"},\"target\":{\"predicate_type\":\"minecraft:block_match\",\"block\":\"",
+                );
+                config.push_str(block);
+                config.push_str("\"}}]}");
             }
             "blob" => {
-                config.push_str(&format!(
-                    r#""type":"minecraft:random_blob","state":{{"Name":"{}"}},"radius":{{"type":"minecraft:uniform","value":{{"min_inclusive":{},"max_inclusive":{}}}}}"#,
-                    feature.block.as_deref().unwrap_or("minecraft:stone"),
-                    feature.radius.unwrap_or(2),
-                    feature.radius.unwrap_or(4)
-                ));
+                let block = feature.block.as_deref().unwrap_or("minecraft:stone");
+                config.push_str(
+                    "\"type\":\"minecraft:block_blob\",\"config\":{\"state\":{\"Name\":\"",
+                );
+                config.push_str(block);
+                config.push_str("\"},\"can_place_on\":{\"type\":\"minecraft:matching_blocks\",\"blocks\":[\"minecraft:netherrack\"]}}");
             }
             "delta" => {
-                config.push_str(&format!(
-                    r#""type":"minecraft:delta_feature","state":{{"Name":"{}"}},"size":{}"#,
-                    feature.block.as_deref().unwrap_or("minecraft:netherrack"),
-                    feature.radius.unwrap_or(3)
-                ));
+                let block = feature.block.as_deref().unwrap_or("minecraft:magma_block");
+                let size = feature.radius.unwrap_or(3);
+                let min_size = size.saturating_sub(3);
+                config.push_str(
+                    "\"type\":\"minecraft:delta_feature\",\"config\":{\"contents\":{\"Name\":\"",
+                );
+                config.push_str(block);
+                config.push_str("\"},\"rim\":{\"Name\":\"minecraft:magma_block\"},\"rim_size\":{\"type\":\"minecraft:uniform\",\"min_inclusive\":0,\"max_inclusive\":2},\"size\":{\"type\":\"minecraft:uniform\",\"min_inclusive\":");
+                config.push_str(&min_size.to_string());
+                config.push_str(",\"max_inclusive\":");
+                config.push_str(&size.to_string());
+                config.push_str("}}");
+            }
+            "patch" => {
+                let block = feature.block.as_deref().unwrap_or("minecraft:stone");
+                config.push_str("\"type\":\"minecraft:simple_block\",\"config\":{\"to_place\":{\"type\":\"minecraft:simple_state_provider\",\"state\":{\"Name\":\"");
+                config.push_str(block);
+                config.push_str("\"}}}");
             }
             _ => {
-                config.push_str(&format!(
-                    r#""type":"{}","block":"{}""#,
-                    feature.feature_type,
-                    feature.block.as_deref().unwrap_or("minecraft:stone")
-                ));
+                config.push_str("\"type\":\"");
+                config.push_str(&feature.feature_type);
+                config.push_str("\",\"config\":{\"block\":\"");
+                config.push_str(feature.block.as_deref().unwrap_or("minecraft:stone"));
+                config.push_str("\"}");
             }
         }
 
-        let json = format!(r#"{{{}}}"#, config);
+        let mut json = String::from("{");
+        json.push_str(&config);
+        json.push('}');
         std::fs::write(data_root.join(format!("{}.json", id)), json)?;
     }
 
@@ -1594,34 +1729,32 @@ fn generate_placed_feature_resources(state: &ModState, _verbose: bool) -> Result
 
     for feature in &state.features {
         let id = &feature.id;
-        let mut placement = String::new();
+        let mut placement: Vec<String> = Vec::new();
 
         match feature.feature_type.as_str() {
             "ore" => {
-                placement.push_str(r#""type":"minecraft:count","count":{{"type":"minecraft:uniform","value":{{"min_inclusive":1,"max_inclusive":8}}}}"#);
-                placement.push(',');
-                placement.push_str(r#""type":"minecraft:in_square""#);
-                placement.push(',');
-                placement.push_str(r#""type":"minecraft:height_range","height":{{"type":"minecraft:uniform","value":{{"min_inclusive":{"below":64},"max_inclusive":{"below":0}}}}}"#);
+                placement.push(r#"{"type":"minecraft:count","count":{"type":"minecraft:uniform","max_inclusive":8,"min_inclusive":1}}"#.to_string());
+                placement.push(r#"{"type":"minecraft:in_square"}"#.to_string());
+                placement.push(r#"{"type":"minecraft:height_range","height":{"type":"minecraft:uniform","max_inclusive":{"below_top":0},"min_inclusive":{"above_bottom":0}}}"#.to_string());
             }
             "blob" => {
-                placement.push_str(r#""type":"minecraft:in_square""#);
-                placement.push(',');
-                placement.push_str(r#""type":"minecraft:height_range","height":{{"type":"minecraft:uniform","value":{{"min_inclusive":{"below":64},"max_inclusive":{"below":0}}}}}"#);
+                placement.push(r#"{"type":"minecraft:in_square"}"#.to_string());
+                placement.push(r#"{"type":"minecraft:height_range","height":{"type":"minecraft:uniform","max_inclusive":{"below_top":0},"min_inclusive":{"above_bottom":0}}}"#.to_string());
             }
             "delta" => {
-                placement.push_str(r#""type":"minecraft:in_square""#);
-                placement.push(',');
-                placement.push_str(r#""type":"minecraft:height_range","height":{{"type":"minecraft:uniform","value":{{"min_inclusive":{"below":64},"max_inclusive":{"below":0}}}}}"#);
+                placement.push(r#"{"type":"minecraft:in_square"}"#.to_string());
+                placement.push(r#"{"type":"minecraft:height_range","height":{"type":"minecraft:uniform","max_inclusive":{"below_top":0},"min_inclusive":{"above_bottom":0}}}"#.to_string());
             }
             _ => {
-                placement.push_str(r#""type":"minecraft:in_square""#);
+                placement.push(r#"{"type":"minecraft:in_square"}"#.to_string());
             }
         }
 
         let json = format!(
-            "{{\"feature\":\"{}:{}\",\"placement\":[{{{}}}]}}",
-            state.mod_id, id, placement
+            r#"{{"feature":"{}:{}","placement":[{}]}}"#,
+            state.mod_id,
+            id,
+            placement.join(",")
         );
         std::fs::write(data_root.join(format!("{}.json", id)), json)?;
     }
@@ -1693,6 +1826,8 @@ fn generate_dimension_type_resources(state: &ModState, _verbose: bool) -> Result
         if let Some(ambient_light) = dim_type.ambient_light {
             properties.push(format!(r#""ambient_light":{}"#, ambient_light));
         }
+        properties.push("\"infiniburn\":\"#minecraft:infiniburn_nether\"".to_string());
+        properties.push("\"has_ender_dragon_fight\":false".to_string());
 
         let json = format!(r#"{{{}}}"#, properties.join(","));
         std::fs::write(data_root.join(format!("{}.json", id)), json)?;
@@ -1709,7 +1844,10 @@ fn generate_dimension_resources(state: &ModState, _verbose: bool) -> Result<()> 
 
     for dimension in &state.dimensions {
         let id = &dimension.id;
-        let json = format!(r#"{{"type":"{}"}}"#, dimension.dimension_type);
+        let json = format!(
+            r#"{{"type":"{}","generator":{{"type":"minecraft:noise","biome_source":{{"type":"minecraft:multi_noise","preset":"minecraft:nether"}},"settings":"minecraft:nether"}}}}"#,
+            dimension.dimension_type
+        );
         std::fs::write(data_root.join(format!("{}.json", id)), json)?;
     }
 
@@ -1728,10 +1866,17 @@ fn generate_structure_set_resources(state: &ModState, _verbose: bool) -> Result<
         let spacing = structure.spacing.unwrap_or(32);
         let separation = structure.separation.unwrap_or(8);
         let salt = structure.salt.unwrap_or(123456789);
-        let json = format!(
-            r#"{{"placement":{{"type":"minecraft:random_spread","spacing":{},"separation":{},"salt":{}}},"structures":["{}"]}}"#,
-            spacing, separation, salt, structure.structure_type
-        );
+
+        let mut json = String::new();
+        json.push_str("{\"placement\":{\"type\":\"minecraft:random_spread\",\"spacing\":");
+        json.push_str(&spacing.to_string());
+        json.push_str(",\"separation\":");
+        json.push_str(&separation.to_string());
+        json.push_str(",\"salt\":");
+        json.push_str(&salt.to_string());
+        json.push_str("},\"structures\":[{\"structure\":\"");
+        json.push_str(&structure.structure_type);
+        json.push_str("\",\"weight\":1}]}");
         std::fs::write(data_root.join(format!("{}.json", id)), json)?;
     }
 

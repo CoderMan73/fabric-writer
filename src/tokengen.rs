@@ -100,16 +100,19 @@ pub(crate) fn build_mod_blocks(state: &ModState) -> Tokens {
         .collect();
 
     let block_factories: Vec<Tokens> = state
-        .blocks
-        .iter()
-        .map(|b| {
-            if b.block_class == "Block" {
-                quote! { $(block())::new }
-            } else {
-                quote! { $(format!("{}", b.block_class))::new }
-            }
-        })
-        .collect();
+         .blocks
+         .iter()
+         .map(|b| {
+             if b.block_class == "Block" {
+                 quote! { $(block())::new }
+             } else if b.block_class == "StairBlock" {
+                 let props_src = b.properties_from.as_deref().unwrap_or("dirt");
+                 quote! { properties -> new $(format!("{}", b.block_class))($(blocks()).$(to_upper(props_src)).defaultBlockState(), properties) }
+             } else {
+                 quote! { $(format!("{}", b.block_class))::new }
+             }
+         })
+         .collect();
 
     let mut class_body = quote! {
         public class ModBlocks {
@@ -425,8 +428,8 @@ pub(crate) fn build_worldgen_provider(state: &ModState) -> Tokens {
     let has_biomes = !state.biomes.is_empty();
     let has_features = !state.features.is_empty();
     let has_structures = !state.structures.is_empty();
-    let has_dimensions = !state.dimensions.is_empty();
-    let has_dimension_types = !state.dimension_types.is_empty();
+    let _has_dimensions = !state.dimensions.is_empty();
+    let _has_dimension_types = !state.dimension_types.is_empty();
 
     quote! {
         public class $(format!("{}WorldgenProvider", state.mod_name)) extends $(fabric_dynamic_registry_provider()) {
@@ -445,12 +448,6 @@ pub(crate) fn build_worldgen_provider(state: &ModState) -> Tokens {
                 )
                 $(if has_structures =>
                     entries.addAll(registries.lookupOrThrow($(registries()).STRUCTURE_SET));$['\r']
-                )
-                $(if has_dimensions =>
-                    entries.addAll(registries.lookupOrThrow($(registries()).LEVEL_STEM));$['\r']
-                )
-                $(if has_dimension_types =>
-                    entries.addAll(registries.lookupOrThrow($(registries()).DIMENSION_TYPE));$['\r']
                 )
             }
 
@@ -1276,7 +1273,7 @@ pub(crate) fn build_mod_sound_events(state: &ModState) -> Tokens {
         public class ModSoundEvents {
             $(for sound in &state.sound_events =>
                 public static $(sound_event()) $(to_upper(&sound.id))() {
-                    return Registry.register($(registries()).SOUND_EVENT, $(identifier()).fromNamespaceAndPath($(&state.mod_name).MOD_ID, $(format!("{}", sound.id))), $(sound_event()).createVariableRangeEvent($(identifier()).fromNamespaceAndPath($(&state.mod_name).MOD_ID, $(format!("{}", sound.sound_path)))));
+                    return $(registry()).register($(built_in_registries()).SOUND_EVENT, $(identifier()).fromNamespaceAndPath($(&state.mod_name).MOD_ID, $(quoted(&sound.id))), $(sound_event()).createVariableRangeEvent($(identifier()).fromNamespaceAndPath($(&state.mod_name).MOD_ID, $(quoted(&sound.sound_path)))));
                 }
             )
 
@@ -1302,7 +1299,7 @@ pub(crate) fn build_mod_tags(state: &ModState) -> Tokens {
     let tag_methods = quote! {
         $(for tag_def in &state.tags =>
             public static $(tag_key()) $(to_upper(&tag_def.id))() {
-                return $(tag_key()).create($(registries()).BLOCK, $(identifier()).fromNamespaceAndPath($(&state.mod_name).MOD_ID, "$(tag_def.id)"));
+                return $(tag_key()).create($(registries()).$(format!("{}", registry_field_for(&tag_def.tag_type))), $(identifier()).fromNamespaceAndPath($(&state.mod_name).MOD_ID, $(quoted(&tag_def.id))));
             }
         )
     };
@@ -1327,4 +1324,14 @@ fn to_pascal_case(s: &str) -> String {
             }
         })
         .collect()
+}
+
+fn registry_field_for(tag_type: &str) -> &'static str {
+    match tag_type {
+        "block" => "BLOCK",
+        "item" => "ITEM",
+        "entity" => "ENTITY_TYPE",
+        "fluid" => "FLUID",
+        _ => "BLOCK",
+    }
 }
