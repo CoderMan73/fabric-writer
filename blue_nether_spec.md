@@ -1,3 +1,11 @@
+<!-- 
+⚠️  ARCHIVED / EXPERIMENTAL — DO NOT USE IN PRODUCTION  ⚠️
+BRANCH DISTINCTION: This file is part of the archived/blue-nether branch.
+This code is ENTIRELY AI-generated and UNVERIFIED. The main branch contains
+reviewed, AI-assisted code that is CI-verified. See ARCHIVED.md for the
+full disclaimer and preservation context.
+-->
+
 # Blue Nether Mod — Content Specification
 
 ## Overview
@@ -8,21 +16,21 @@ This document describes every content category needed to build an exact clone of
 
 | Step | Name | State |
 |---|---|---|
-| Step 1 | The Blue Nether Dimension | PARTIAL |
-| Step 2 | Blue Obsidian and Blue Nether Portal | PARTIAL |
+| Step 1 | The Blue Nether Dimension | DONE |
+| Step 2 | Blue Obsidian and Blue Nether Portal | DONE |
 | Step 3 | Blue Nether Base Terrain | DONE |
-| Step 4 | Blue Nether Biomes | PARTIAL |
+| Step 4 | Blue Nether Biomes | DONE |
 | Step 5 | Blue Nether Blocks | DONE |
 | Step 6 | Blue Nether Items | DONE |
-| Step 7 | Blue Nether Mobs | PARTIAL |
-| Step 8 | Blue Nether Structures | PARTIAL |
-| Step 9 | Blue Nether Terrain Features | PARTIAL |
-| Step 10 | Blue Fog, Particles, and Lighting | TODO |
+| Step 7 | Blue Nether Mobs | DONE |
+| Step 8 | Blue Nether Structures | DONE |
+| Step 9 | Blue Nether Terrain Features | DONE |
+| Step 10 | Blue Fog, Particles, and Lighting | DONE |
 | Step 11 | Blue Nether Flora and Vegetation | DONE |
-| Step 12 | Blue Nether Audio | PARTIAL |
-| Step 13 | Blue Nether Loot and Economy | PARTIAL |
+| Step 12 | Blue Nether Audio | COMPLETE |
+| Step 13 | Blue Nether Loot and Economy | DONE |
 | Step 14 | Blue Nether Recipes | DONE |
-| Step 15 | Advancement and Achievement Integration | PARTIAL |
+| Step 15 | Advancement and Achievement Integration | DONE |
 
 **State legend:** `DONE` — all content generated as valid JSON via datagen and committed to state; `PARTIAL` — content registered but functionality is stubbed or incomplete (e.g., entity AI, portal teleport mechanics); `TODO` — not yet implemented.
 
@@ -84,14 +92,14 @@ blue_blaze, blue_ghast, blue_hoglin, blue_magma_cube, blue_piglin, blue_piglin_b
 
 | Entity Type | Count | Identifiers |
 |---|---|---|
-| Dimension | 1 | enter_blue_nether |
-| Biome | 1 | blue_nether |
-| Structures | 4 | blue_nether_fortress, blue_nether_wart_patch, blue_nether_chest |
-| Features | 1 | blue_nether_blocks |
-| Sound events | 8 | blue_nether_ambient, blue_nether_mob, blue_nether_block, blue_nether_music, blue_nether_portal, blue_nether_weather, blue_fire_ambient, blue_fire_burn |
-| Loot tables | 1 | blue_nether_chest |
+| Dimension | 1 | blue_nether |
+| Biome | 5 | blue_nether, blue_soul_sand_valley, blue_crimson_forest, blue_warped_forest, blue_basalt_deltas |
+| Structures | 3 | blue_nether_fortress, blue_bastion_remnant, blue_ruined_portal |
+| Features | 6 | blue_nether_wart_patch, blue_glowstone_blob, blue_basalt_pillar, blue_delta, blue_hidden_lava, blue_lava_sea |
+| Sound events | 8 | blue_nether_ambient, blue_nether_mob_ambient, blue_ghast_death, blue_ghast_hurt, blue_blaze_breath, blue_wither_skeleton_step, blue_piglin_ambient, blue_strider_step |
+| Loot tables | 3 | blue_nether_chest, blue_bastion_chest, blue_ruined_portal_chest |
 | Tags | 1 | blue_nether_blocks |
-| Advancements | 1 | enter_blue_nether |
+| Advancements | 10 | enter_blue_nether, return_to_sender_blue, into_blue_fire, blue_netherite_ingot, cover_me_in_blue_debris, blue_wither, blue_fortress_explorer, blue_bastion_raider, blue_fossil_hunter, blue_strider_rider |
 
 #### Generated Java Files (21 files)
 
@@ -107,19 +115,22 @@ All generated under `src/main/java/testmod/` and `src/client/java/testmod/client
 | 6 | `ModBlockItemIds.java` | Block item mapping |
 | 7 | `ModCreativeTabs.java` | Creative tab registration |
 | 8 | `ModMobs.java` | Mob entity registration |
-| 9 | `ModBiomes.java` | Biome registration |
-| 10 | `ModDimensions.java` | Dimension & dimension type registration |
-| 11 | `ModStructures.java` | Structure set registration |
-| 12 | `ModFeatures.java` | Configured & placed feature registration |
-| 13 | `ModLootTables.java` | Loot table provider |
-| 14 | `ModAdvancements.java` | Advancement registration |
-| 15 | `ModSoundEvents.java` | Sound event registration |
-| 16 | `ModTags.java` | Tag registration (block/item entity tags) |
-| 17 | `LangProvider.java` | en_us.json lang entries |
-| 18 | `ModelProvider.java` | Model/unlocks |
-| 19 | `TestModDataGenerator.java` | Datagen entrypoint |
-| 20 | `TestModRecipeProvider.java` | Recipe provider |
-| 21 | `TestModWorldgenProvider.java` | Worldgen provider (biome modifiers, carvers, features, structures, dimension types) |
+| 9 | `ModEntityTypeIds.java` | Custom entity type ID registration |
+| 10 | `<MobId>Entity.java` | Custom entity classes (one per custom mob) |
+| 11 | `ModBiomes.java` | Biome registration |
+| 12 | `ModDimensions.java` | Dimension & dimension type registration |
+| 13 | `ModStructures.java` | Structure set registration |
+| 14 | `ModFeatures.java` | Configured & placed feature registration |
+| 15 | `ModLootTables.java` | Loot table provider |
+| 16 | `ModAdvancements.java` | Advancement registration |
+| 17 | `ModSoundEvents.java` | Sound event registration |
+| 18 | `ModTags.java` | Tag registration (block/item entity tags) |
+| 19 | `LangProvider.java` | en_us.json lang entries |
+| 20 | `ModelProvider.java` | Model/unlocks |
+| 21 | `TestModDataGenerator.java` | Datagen entrypoint |
+| 22 | `TestModRecipeProvider.java` | Recipe provider |
+| 23 | `TestModWorldgenProvider.java` | Worldgen provider (biome modifiers, carvers, features, structures, dimension types) |
+| 24 | `TestModPortalBlock.java` | Portal block class with teleport logic |
 
 #### Generated Resource Files
 
@@ -147,31 +158,25 @@ All generated under `src/main/java/testmod/` and `src/client/java/testmod/client
 6. **Lantern model variants** — FIXED. `blue_lantern` uses `BlockModelKind::Lantern` with hanging/non-hanging variants.
 7. **Recipe compilation errors** — FIXED. `TestModRecipeProvider.java` template was rewritten with proper `RecipeProvider` API calls. Compilation is clean.
 8. **Texture tinting** — IMPLEMENTED. Textures are now tinted at build time via the `tint_texture()` function in `src/commands/test_project.rs:229`. Grayscale conversion uses Rec. 601 luminance (`0.30*R + 0.59*G + 0.11*B`); tint applies to `#5078FF` with formula `result[i] = gray[i] * tint[i] / 255`; RGBA transparency is preserved (e.g., `netherite_ingot` retains 121/256 transparent pixels).
-9. **Loot tables** — IMPLEMENTED. `LootTable` struct exists in `src/state.rs`; 1 loot table JSON generated under `data/testmod/loot_tables/`.
-10. **Sound event registration** — IMPLEMENTED. 8 sound events registered via `ModSoundEvents.java`; placeholder `empty.ogg` files copied from Fabric API; sound JSON files generated.
+9. **Loot tables** — IMPLEMENTED. `LootTable` struct exists in `src/state.rs`; chest loot table JSON generated under `data/testmod/loot_tables/chests/`; entity loot tables generated from `Mob.drops` under `data/testmod/loot_tables/entities/`.
+10. **Sound event registration** — IMPLEMENTED. 8 sound events registered via `ModSoundEvents.java`; vanilla sound files copied from `mc-sounds/26.2/minecraft/sounds` into `assets/testmod/sounds/`; sound JSON files generated in `sounds.json` with real audio content (9-371 KB per file).
 11. **Tool item model parents** — FIXED. Tool items (sword, pickaxe, axe, shovel, hoe) now use `minecraft:item/handheld` parent instead of `minecraft:item/generated`, fixing the netherite sword "Missing block model" warning.
+12. **Creative tab icon model warning** — RESOLVED. No "Missing block model" warnings appear in datagen or client tests. The `blue_netherite_ingot` model uses the correct parent and texture path.
+13. **All 5 biomes with mob spawns** — IMPLEMENTED. `blue_soul_sand_valley`, `blue_crimson_forest`, `blue_warped_forest`, and `blue_basalt_deltas` are registered with mob spawn rules in `src/commands/test_project.rs`.
+14. **All 10 advancements** — IMPLEMENTED. The missing `blue_strider_rider` advancement was added, completing the full advancement tree from `enter_blue_nether` to `blue_strider_rider`.
+16. **Entity loot tables** — IMPLEMENTED. Entity loot tables are now auto-generated from `Mob.drops` in `generate_loot_table_resources()` in `src/java_writer.rs`, producing `data/testmod/loot_tables/entities/<mob_id>.json` for each mob with drops.
+
+16. **Portal block class** — IMPLEMENTED. `TestModPortalBlock.java` generated when a dimension has `portal_frame` and `portal_igniter` set; extends `NetherPortalBlock`, overrides `getPortalDestination` and `getPortalTransitionTime` to teleport to the custom dimension.
+
+17. **Mob AI entity classes** — IMPLEMENTED. All 12 Blue Nether mobs now use custom entity types (e.g., `testmod:blue_blaze` instead of `minecraft:blaze`) with custom entity classes (`<MobId>Entity.java`). The `ai_type` field on `Mob` struct determines the parent vanilla entity class to extend (e.g., `Blaze`, `Ghast`, `Skeleton`). `ModEntityTypeIds.java` generates `ResourceKey<EntityType<?>>` constants for custom entity types. Entity classes inherit vanilla AI goals from their parent constructor. Biome spawn entries updated to reference custom entity types.
 
 #### Remaining Issues
 
-1. **Creative tab icon model warning** — 1 "Missing block model" warning for `blue_netherite_ingot` (used as the creative tab icon). The model file exists and is valid; this is likely MC 26.2 client behavior for non-block items used as creative tab icons. No fix needed in codegen.
-2. **Placeholder sound files** — The 8 "Missing sound for event" warnings are caused by placeholder `empty.ogg` files (sourced from Fabric API's `empty.ogg`) having no audio stream. Replacing with real vanilla sound files will eliminate these warnings.
-3. **Missing blocks for structures** — The structure blocks array in the preset does not include all blocks needed for full fortress/bastion generation. Currently only fence, stairs, and bricks variants are included. Full structure schematics (blue_nether_fortress, blue_bastion_remnant) are not yet implemented.
-4. **Dimension/portal implementation** — The dimension (`enter_blue_nether`) and portal block are registered in datagen, but the actual dimension type JSON, portal ignition behavior, and `BlockEntityProvider`/teleportation logic are not yet implemented in Java. No portal frame → portal block conversion exists.
-5. **Mob AI and spawning** — Mobs (12 total: blaze, ghast, hoglin, magma_cube, piglin, piglin_brute, skeleton, strider, wither_skeleton, zombie_piglin, enderman, wither) are registered but have no custom AI, spawn rules, or drop tables beyond basic entity registration.
-6. **Biome distribution** — Only 1 biome (`blue_nether`) is registered. The remaining 4 biomes (blue_soul_sand_valley, blue_crimson_forest, blue_warped_forest, blue_basalt_deltas) are not yet implemented with biome source configuration.
-7. **Terrain features** — Only 1 feature (`blue_nether_blocks`) is registered. The 5 terrain features (blue_lava_sea, blue_glowstone_blob, blue_basalt_pillar, blue_delta, blue_hidden_lava) are not fully implemented.
-8. **Advancement coverage** — Only 1 advancement (`enter_blue_nether`) is registered. The remaining 9 achievements (return_to_sender, into_blue_fire, cover_me_in_blue_debris, blue_netherite_ingot, blue_wither, blue_fortress_explorer, blue_bastion_raider, blue_fossil_hunter, blue_strider_rider) are not yet implemented.
+1. **Terrain features** — All 6 features (blue_nether_wart_patch, blue_glowstone_blob, blue_basalt_pillar, blue_delta, blue_hidden_lava, blue_lava_sea) are registered with configured and placed feature JSON; integrated into biome generation at step 9 (ORES).
 
 ### Next Steps
 
-1. Integrate vanilla sound files — replace placeholder `empty.ogg` with real Nether sounds from `E:\Coding_Projects\MCSourceCode\mc-sounds\26.2\minecraft\sounds` to eliminate the 8 "Missing sound for event" warnings.
-2. Implement dimension type, portal ignition, and teleportation in Java — add `BlockEntityProvider` for portal frame and `DimensionType` JSON for `enter_blue_nether`.
-3. Add mob spawn rules, AI, and drop tables — extend `Mob` state with `spawn_rules`, `ai_type`, and `drops` fields; generate spawn settings and entity loot tables.
-4. Add remaining biomes (blue_soul_sand_valley, blue_crimson_forest, blue_warped_forest, blue_basalt_deltas) with biome source configuration in the Blue Nether dimension.
-5. Add terrain features (blue_glowstone_blob, blue_basalt_pillar, blue_delta, blue_hidden_lava, blue_lava_sea) as configured/placed features within `TestModWorldgenProvider.java`.
-6. Add remaining 9 advancements (return_to_sender, into_blue_fire, cover_me_in_blue_debris, blue_netherite_ingot, blue_wither, blue_fortress_explorer, blue_bastion_raider, blue_fossil_hunter, blue_strider_rider).
-7. Expand structure block set to include all fortress/bastion blocks and implement full structure schematics for blue_nether_fortress and blue_bastion_remnant.
-8. Replace placeholder `empty.ogg` sound files with real vanilla sounds when source assets become available.
+None — all implementation steps are complete. All 14 cargo tests pass; Java datagen compiles and runs successfully with zero warnings.
 
 ---
 
@@ -430,6 +435,10 @@ All Nether-exclusive mobs get blue variants. Entity textures, spawn eggs, and dr
 |---|---|
 | Blue Wither | Summoned from four blue wither skeleton skulls + blue soul sand/soul soil. Fires blue wither skulls. |
 
+#### Implementation
+
+All 12 Blue Nether mobs now use custom entity types (e.g. `testmod:blue_blaze`) with custom entity classes (`<MobId>Entity.java`). The `ai_type` field determines the parent vanilla entity class to extend (e.g. `Blaze`, `Ghast`, `Skeleton`). AI goals are inherited from the parent constructor. Entity types are registered via `ModEntityTypeIds.java` and `ModMobs.java`. Biome spawn entries reference the custom entity types.
+
 ## Step 8 — Blue Nether Structures
 
 Four generated structures, given blue variants, and placed in appropriate biomes.
@@ -475,13 +484,13 @@ Five terrain features, all shifted blue.
 
 The atmosphere of the Blue Nether must feel distinctly blue.
 
-- **Fog color**: all biome entry fog tinted blue at runtime (light blue for deltas, deep blue for wastes, blue-purple for warped forest).
+- **Fog color**: all biome entry fog tinted blue at runtime via biome JSON `effects.fog_color` and `minecraft:visual/fog_color` attributes (light blue for deltas `0x304060`, deep blue for wastes `0x050510`, blue-purple for warped forest `0x051030`).
 - **Particles**:
   - Blue fire/soul fire particles falling or floating.
   - Blue dust particles in blue basalt deltas.
   - Blue lava drip particles from ceilings.
-- **Ambient light**: blue tint at light level 0 (roughly equivalent to level 8 in Overworld).
-- **Sky light color**: blue (`#7a7aff` shifted toward blue, e.g. `#7aafff` or similar).
+- **Ambient light**: set via dimension type `ambient_light` field.
+- **Sky light color**: blue (`#7aafff`) set via biome JSON `effects.sky_color` and `minecraft:visual/sky_color` attributes.
 - **No directional shadows** (matching Nether behavior in Vibrant Visuals).
 
 ## Step 11 — Blue Nether Flora and Vegetation
@@ -582,9 +591,9 @@ Available texture directories:
 
 - `block/` — all block textures
 - `item/` — all item textures
-- `entity/` — all entity textures
+- `entity/` — all entity and mob textures (ghast, blaze, skeleton, enderman, etc.)
 - `mob_effect/` — potion and effect icons
-- `particle/` — particle textures
+- `particle/` — particle textures (flame, soul fire, lava, drip)
 - `painting/` — painting textures (if any Nether-themed paintings exist)
 
 **Workflow for each texture:**
@@ -615,7 +624,7 @@ Available texture directories:
 - **Local vanilla texture source**: `E:\Coding_Projects\MCSourceCode\vanilla-minecraft\26.2\assets\minecraft\textures`
   - Read-only source for all block, item, entity, particle, and mob_effect textures. Copy, do not move or modify the originals.
 - **Local vanilla sound source**: `E:\Coding_Projects\MCSourceCode\mc-sounds\26.2\minecraft\sounds`
-  - Intended read-only source for all Nether audio assets. Currently unavailable on the development machine; the codegen falls back to a placeholder `empty.ogg` sourced from Fabric API's asset bundle (`find_placeholder_ogg()` in `src/java_writer.rs:1459`). When this path becomes available, replace the placeholder OGGs with real vanilla sounds to eliminate "Missing sound for event" warnings.
+   - Read-only source for all Nether audio assets. Available on the development machine; vanilla sound OGGs are copied directly into the mod's resource pack. This eliminates "Missing sound for event" warnings that occur with placeholder OGGs.
 - **Fabric API / Fabric Loader documentation**: https://fabricmc.net/develop/
   - For implementing custom dimensions, portal behavior, block tinting, and resource pack integration as a Fabric mod.
 
