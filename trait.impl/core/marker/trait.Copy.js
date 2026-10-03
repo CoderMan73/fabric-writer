@@ -1,5 +1,5 @@
 (function() {
-    const implementors = Object.fromEntries([["fabric_writer",[["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.98.1/core/marker/trait.Copy.html\" title=\"trait core::marker::Copy\">Copy</a> for <a class=\"struct\" href=\"fabric_writer/java_writer/struct.DirtyFlags.html\" title=\"struct fabric_writer::java_writer::DirtyFlags\">DirtyFlags</a>",0]]]]);
+    const implementors = Object.fromEntries([["fabric_writer",[["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.99.0/core/marker/trait.Copy.html\" title=\"trait core::marker::Copy\">Copy</a> for <a class=\"struct\" href=\"fabric_writer/java_writer/struct.DirtyFlags.html\" title=\"struct fabric_writer::java_writer::DirtyFlags\">DirtyFlags</a>",0]]]]);
     if (window.register_implementors) {
         window.register_implementors(implementors);
     } else {
