@@ -6,6 +6,10 @@
 [![CI](https://github.com/CoderMan73/fabric-writer/actions/workflows/ci.yml/badge.svg)](https://github.com/CoderMan73/fabric-writer/actions/workflows/ci.yml)
 [![Issues](https://img.shields.io/github/issues/CoderMan73/fabric-writer)](https://github.com/CoderMan73/fabric-writer/issues)
 
+> ⚠️ **BRANCH DISTINCTION — READ BEFORE USING:** This repository contains two quality tiers:
+> - **`main`** — reviewed, AI-assisted code verified through CI (tests, clippy, docs all pass). Functional.
+> - **`archived/blue-nether`** — an **experimental proof-of-concept** consisting entirely of **unverified, AI-generated code** with no human review. NOT production-grade, NOT code-reviewed, and may contain bugs or incomplete features. Preserved for reference only. See [ARCHIVED.md](ARCHIVED.md) for the full disclaimer and branch distinction details.
+
 CLI for quickly scaffolding and drafting the basic functionality of a Fabric mod project. It wraps the official Fabric CLI (`fabric init`) to create the project structure, then tracks generated content in `.fw/fabric-writer.yml` so subsequent commands can regenerate Java sources automatically.
 
 ## What it does
@@ -139,7 +143,10 @@ This requires `FABRIC_WRITER_TEST_JAVA` to be set (see `.env.example`).
 
 ## Contributing
 
-Read [CONTRIBUTING.md](CONTRIBUTING.md) to get started. All contributions are welcome.
+This repository is **archived**. The `archived/blue-nether` branch is frozen and no longer
+accepting contributions. The `main` branch remains available for reference of the stable,
+reviewed `fabric-writer` CLI. See [ARCHIVED.md](ARCHIVED.md) for branch distinction details
+and known limitations of the experimental Blue Nether code.
 
 ## License
 
