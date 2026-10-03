@@ -36,6 +36,7 @@ fn build_sound_event(args: &SoundEventAddArgs) -> crate::state::SoundEvent {
     crate::state::SoundEvent {
         id: args.id.clone(),
         sound_path: args.sound_path.clone(),
+        sound_src: None,
     }
 }
 

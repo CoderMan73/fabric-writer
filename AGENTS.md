@@ -35,148 +35,6 @@ cp .env.example .env
 cargo test -- --ignored
 ```
 
-## Project Architecture
-
-### Overview
-
-`fabric-writer` is a Rust CLI (edition 2024) that scaffolds Fabric mod projects.
-It wraps the Fabric CLI (`fabric init` via Deno) to create the project, then
-tracks mod state in `.fw/fabric-writer.yml` and regenerates Java source files
-using `genco`. Every `add`/`remove` command loads state → mutates → saves →
-calls `regenerate_all()` to emit Java.
-
-### Source Layout
-
-```
-src/
-├── main.rs          # clap CLI definition + command dispatch
-├── lib.rs           # crate root, module declarations, re-exports
-├── state.rs         # ModState, Entity, Item, ItemKind, Block, Recipe, load/save
-├── imports.rs       # genco Java import helpers (LazyLock-based)
-├── java_writer.rs   # regenerate_all() + write() — Java file emission
-├── tokengen.rs      # genco quote! templates for Java classes
-├── rustfmt.toml
-└── commands/
-    ├── mod.rs       # module declarations
-    ├── init.rs      # fw init — fabric init wrapper
-    ├── item.rs      # add/remove items
-    ├── block.rs     # add/remove blocks
-    ├── recipe.rs    # add/remove recipes
-    ├── regen.rs     # fw regen — regenerate all Java from state
-    ├── run.rs       # fw run datagen/client/server (gradlew)
-    └── status.rs    # fw status — print mod summary
-```
-
-### The State Flow
-
-1. Each `add`/`remove` command calls `state::load()` → reads `.fw/fabric-writer.yml`
-2. Mutates the `ModState` (adds/removes from `items`, `blocks`, or `recipes` Vec)
-3. Calls `state::save()` → writes YAML back
-4. Calls `regenerate_all(&state, dirty, verbose)` → emits Java files via genco
-
-**Key:** `regenerate_all` takes a `DirtyFlags` bitmask so only affected files are rewritten. `fw regen` passes `DirtyFlags::all()`. When a collection becomes empty, its files are **pruned** (deleted). When non-empty, they're **regenerated**.
-
-### The 10 Generated Java Files
-
-| File | Location | Condition |
-|---|---|---|
-| `<ModName>.java` | `src/main/java/<package>/` | Always exists |
-| `ModItemIds.java` | `src/main/java/<package>/` | Items exist |
-| `ModItems.java` | `src/main/java/<package>/` | Items exist |
-| `ModBlocks.java` | `src/main/java/<package>/` | Blocks exist |
-| `ModBlockIds.java` | `src/main/java/<package>/` | Blocks exist |
-| `ModBlockItemIds.java` | `src/main/java/<package>/` | Blocks exist |
-| `LangProvider.java` | `src/client/java/<package>/client/` | Items or blocks exist |
-| `ModelProvider.java` | `src/client/java/<package>/client/` | Items or blocks exist |
-| `<ModName>DataGenerator.java` | `src/client/java/<package>/client/` | Items or blocks exist |
-| `<ModName>RecipeProvider.java` | `src/client/java/<package>/client/` | Recipes exist |
-
-### genco Code Generation Patterns
-
-- `tokengen.rs` contains `BuildFn` functions (`fn(&ModState) -> Tokens`) that produce Java source via `quote!`
-- `java_writer.rs` manages the file emission: `FileSpec` structs define a path, build function, and `should_exist` predicate
-- **Dynamic identifiers:** Use `format!()` to build Java identifiers, then interpolate as `String` in `quote!`. genco treats `String` as a literal token (raw text, not a quoted string). Example: `$(format!("Items.{}", mc_constant))` → emits `Items.DIRT`
-- **Imports:** Use `Import` types from `imports.rs` for automatic import tracking. Don't `format!` imports — genco won't track them
-- **Repeatable blocks:** Use `$(for item in &collection => ... )` for loops, `$(if condition => ... )` for conditionals
-- **Line endings:** Append `$['\r']` to emit `System.lineSeparator()` in Java (Windows-friendly)
-
-## State Types Reference
-
-Located in `src/state.rs`. The `ModState` struct is serialized to `.fw/fabric-writer.yml`:
-
-```rust
-ModState {
-    mod_name: String,           // Human-readable name
-    mod_id: String,             // Lowercase, alphanumeric + _ + -
-    namespace: String,           // Defaults to mod_id
-    package_name: String,       // Lowercase, drops -, keeps _
-    minecraft_version: String,  // Currently "26.2"
-    advanced_options: Vec<String>, // e.g. ["datagen", "splitSources"]
-    java_path: String,          // JDK path for gradle.properties
-    items: Vec<Item>,
-    blocks: Vec<Block>,
-    recipes: Vec<Recipe>,
-}
-```
-
-```rust
-Block {
-    id: String,  // Lowercase block identifier
-}
-```
-
-## Recipe System
-
-Recipes use `RecipeProvider` (Fabric datagen API) — not raw JSON files.
-
-### Recipe struct
-
-```rust
-Recipe {
-    id: String,                 // e.g. "my_sword"
-    kind: String,               // "crafting_shaped" or "crafting_shapeless"
-    pattern: Vec<String>,       // One string per row (shaped only)
-    ingredients: HashMap<String, String>, // "S" -> "minecraft:stick"
-    result: String,             // "minecraft:diamond" or "mymod:my_item"
-    count: u32,                 // Default: 1
-}
-```
-
-### Generated output pattern
-
-```java
-shaped(RecipeCategory.MISC, Items.DIAMOND, 1)
-    .pattern("S").pattern("S").pattern("S")
-    .define('S', Ingredient.of(Items.STICK))
-    .unlockedBy(getHasName(Items.DIAMOND), has(Items.DIAMOND))
-    .save(exporter, "mymod:my_sword");
-```
-
-### CLI
-
-```bash
-fw add recipe <id> --kind crafting_shaped|crafting_shapeless \
-  --result <item> --count <u32> \
-  --pattern <line>... \
-  --ingredients <key=value>...
-```
-
-- `--pattern` is repeatable — each string is one row of the crafting grid
-- `--ingredients` is `key=value` where key is a single char and value is an item ID
-- Vanilla items use `minecraft:` prefix (e.g. `minecraft:wood`)
-- Mod items use the mod's namespace (e.g. `mymod:ingot`)
-
-## ItemKind / Tool Implementation
-
-Items have a `kind` field (`ItemKind::Basic` or `ItemKind::Tool`). This is **real**, not stubbed:
-
-- `ItemKind::Tool` with a `--material` generates `.sword(ToolMaterials.MATERIAL, damage, speed)` in `Item.Properties`
-- `ItemKind::Basic` generates plain `new Item.Properties()`
-- `--durability` adds `.durability(N)` override
-- Materials are lowercase strings (e.g. `"diamond"`, `"iron"`, `"netherite"`)
-
-The `item_properties()` function in `tokengen.rs` handles this logic.
-
 ## File Editing Guidelines
 
 When making changes, focus on **only what the task needs** — no drive-by refactors.
@@ -206,58 +64,6 @@ cargo test
 cargo build
 ```
 
-> See `spec.md` for the spec workflow (feature tracking, status sections, etc.).
-
-## Blue Nether Mod Implementation
-
-The active feature target is the **Blue Nether Mod** content spec:
-`E:\Coding_Projects\blue_nether_spec.md`
-
-When working on this feature, consult the spec for exact content requirements.
-The implementation approach is to extend `fabric-writer`'s state model and
-codegen templates until the full content set can be generated from state rather
-than hand-written Java.
-
-### Current Blue Nether preset
-
-`src/commands/test_project.rs` exposes:
-- `Preset::BlueNetherBase`
-- `fw test-project --preset blue-nether-base`
-
-This preset adds the base terrain blocks, creative tab, and copies textures
-from:
-`E:\Coding_Projects\MCSourceCode\vanilla-minecraft\26.2\assets\minecraft\textures`
-
-### Codegen extension pattern
-
-New content types follow the same pattern as items/blocks/recipes:
-
-1. **State** (`src/state.rs`): Add entity struct + `Entity` variant
-2. **CLI** (`src/commands/*.rs`): Add parse flags and entity construction
-3. **Dirty flags** (`src/java_writer.rs`): Add bits for any new generated files
-4. **Template** (`src/tokengen.rs`): Add `BuildFn` producing Java source
-5. **Imports** (`src/imports.rs`): Add `Import` entries for new Java types
-6. **Writer** (`src/java_writer.rs`): Add `FileSpec` entries with `build`,
-   `should_exist`, and dirty flag
-
-### Files likely to change for Blue Nether
-
-- `src/state.rs` — new entity types: `Biome`, `Dimension`, `Structure`,
-  `Feature`, `LootTable`, `Advancement`, `Mob`, `SoundEvent`, etc.
-- `src/imports.rs` — new Minecraft/Fabric API imports
-- `src/tokengen.rs` — new Java templates
-- `src/java_writer.rs` — new `FileSpec` entries and dirty flags
-- `src/commands/*.rs` — new CLI commands / flags
-- `src/commands/test_project.rs` — preset expansion as codegen support lands
-- `tests/tests.rs` — integration coverage for new entities
-
-### Reference materials
-
-- Minecraft source: `E:\Coding_Projects\MCSourceCode\26.2`
-- Fabric API source: `E:\Coding_Projects\MCSourceCode\fabric-api\26.2`
-- Fabric docs: `E:\Coding_Projects\MCSourceCode\fabric-docs\develop`
-- Fabric example code: `E:\Coding_Projects\MCSourceCode\fabric-docs\reference\latest\src`
-
 ## Research-First Rule
 
 Always use the docs and reference examples as the primary source of truth.
@@ -267,6 +73,10 @@ Always use the docs and reference examples as the primary source of truth.
 - Do not inspect or edit Fabric-generated files directly.
 - Do not invent parallel workarounds in Java/Rust to bypass documented APIs.
 - If the documented path is unclear or insufficient, stop and surface that instead of hacking around it.
+
+For full architecture details, see [docs/architecture.md](docs/architecture.md).
+For Blue Nether development workflow, see [docs/blue-nether-guide.md](docs/blue-nether-guide.md).
+For codegen patterns, see [docs/codegen-guide.md](docs/codegen-guide.md).
 
 ## Common Pitfalls
 

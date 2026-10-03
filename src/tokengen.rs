@@ -1,7 +1,7 @@
 use crate::imports::*;
 use crate::state::{CreativeTab, Item, ItemKind, ModState, Recipe};
 use genco::lang::java::Tokens;
-use genco::lang::java::import;
+use genco::lang::java::{Import, import};
 use genco::prelude::*;
 use genco::tokens::Register;
 use heck::ToTitleCase;
@@ -170,7 +170,11 @@ pub(crate) fn build_mod_blocks(state: &ModState) -> Tokens {
         .collect();
 
     for cls in &custom_classes {
-        import("net.minecraft.world.level.block", cls).register(&mut class_body);
+        if cls.starts_with(&state.mod_name) {
+            import(&state.mod_id, cls).register(&mut class_body);
+        } else {
+            import("net.minecraft.world.level.block", cls).register(&mut class_body);
+        }
     }
 
     class_body
@@ -1093,6 +1097,96 @@ pub(crate) fn build_mod_mobs(state: &ModState) -> Tokens {
     class_body
 }
 
+pub(crate) fn build_mod_entity_ids(state: &ModState) -> Tokens {
+    let custom_mobs: Vec<&crate::state::Mob> = state
+        .mobs
+        .iter()
+        .filter(|m| !m.entity_type.starts_with("minecraft:"))
+        .collect();
+
+    if custom_mobs.is_empty() {
+        return quote! {
+            public class ModEntityTypeIds {
+                public static void initialize() {
+                }
+            }
+        };
+    }
+
+    quote! {
+        public class ModEntityTypeIds {
+            $("// Custom Entity Type ID Registration")
+            $(for mob in &custom_mobs =>
+                public static final $(resource_key())<$(entity_type())<?>> $(to_upper(&mob.id)) = $(resource_key()).create(
+                    $(registries()).ENTITY_TYPE,
+                    $(identifier()).fromNamespaceAndPath($(&state.mod_name).MOD_ID, $(quoted(&mob.entity_type)))
+                );$['\r']
+            )
+
+            public static void initialize() {
+            }
+        }
+    }
+}
+
+fn parent_class_for_ai(ai_type: &str) -> &'static str {
+    match ai_type {
+        "blaze" => "Blaze",
+        "ghast" => "Ghast",
+        "magma_cube" => "MagmaCube",
+        "skeleton" => "Skeleton",
+        "wither_skeleton" => "WitherSkeleton",
+        "zombie" | "zombified_piglin" => "Zombie",
+        "hoglin" => "Hoglin",
+        "piglin" => "Piglin",
+        "enderman" => "Enderman",
+        "strider" => "Strider",
+        "phantom" => "Phantom",
+        "wither" => "Wither",
+        _ => "Mob",
+    }
+}
+
+fn parent_package_for(parent: &str) -> &'static str {
+    match parent {
+        "Blaze" | "Ghast" | "MagmaCube" | "Skeleton" | "WitherSkeleton" | "Zombie" | "Hoglin"
+        | "Piglin" | "Enderman" | "Phantom" => "net.minecraft.world.entity.monster",
+        "Strider" => "net.minecraft.world.entity.animal",
+        "Wither" => "net.minecraft.world.entity.boss",
+        _ => "net.minecraft.world.entity",
+    }
+}
+
+pub(crate) fn build_mob_entity_class(mob: &crate::state::Mob, _state: &ModState) -> Tokens {
+    let class_name = format!("{}Entity", to_pascal_case(&mob.id));
+    let ai_type = mob.ai_type.as_deref().unwrap_or("mob");
+    let parent = parent_class_for_ai(ai_type);
+    let parent_pkg = parent_package_for(parent);
+    let parent_class = parent.to_string();
+
+    let body = quote! {
+        public class $(format!("{}", class_name)) extends $(parse_type(&parent_class)) {
+            public $(format!("{}", class_name))($(entity_type())<$(format!("{}", class_name))> type, $(level()) level) {
+                super(type, level);
+            }
+        }
+    };
+
+    let mut body = body;
+    import(parent_pkg, &parent_class).register(&mut body);
+    import("net.minecraft.world.entity", "EntityType").register(&mut body);
+    import("net.minecraft.world.level", "Level").register(&mut body);
+    body
+}
+
+fn parse_type(name: &str) -> String {
+    name.to_string()
+}
+
+fn level() -> Import {
+    import("net.minecraft.world.level", "Level")
+}
+
 pub(crate) fn build_mod_biomes(state: &ModState) -> Tokens {
     if state.biomes.is_empty() {
         return quote! {
@@ -1149,6 +1243,76 @@ pub(crate) fn build_mod_dimensions(state: &ModState) -> Tokens {
             }
         }
     }
+}
+
+pub(crate) fn build_mod_portal_block(state: &ModState) -> Tokens {
+    let dimensions: Vec<&crate::state::Dimension> = state
+        .dimensions
+        .iter()
+        .filter(|d| d.portal_frame.is_some() && d.portal_igniter.is_some())
+        .collect();
+
+    if dimensions.is_empty() {
+        return quote! {};
+    }
+
+    let class_name = format!("{}PortalBlock", state.mod_name);
+
+    let mut body = quote! {
+        public class $(format!("{}", class_name)) extends NetherPortalBlock {
+            private static final ResourceKey<Level> DIMENSION = ResourceKey.create(
+                Registries.DIMENSION,
+                Identifier.fromNamespaceAndPath($(mod_class(state)).MOD_ID, "blue_nether")
+            );
+
+            public $(format!("{}", class_name))(BlockBehaviour.Properties properties) {
+                super(properties);
+            }
+
+            @Override
+            public int getPortalTransitionTime(ServerLevel level, Entity entity) {
+                return entity instanceof Player player
+                    ? Math.max(0, level.getGameRules().get(
+                        player.getAbilities().invulnerable
+                            ? GameRules.PLAYERS_NETHER_PORTAL_CREATIVE_DELAY
+                            : GameRules.PLAYERS_NETHER_PORTAL_DEFAULT_DELAY
+                    ))
+                    : 0;
+            }
+
+            @Override
+            public @Nullable TeleportTransition getPortalDestination(ServerLevel currentLevel, Entity entity, BlockPos portalEntryPos) {
+                ServerLevel newLevel = currentLevel.getServer().getLevel(DIMENSION);
+                if (newLevel == null) {
+                    return null;
+                }
+                return new TeleportTransition(
+                    newLevel,
+                    entity.position(),
+                    entity.getForward(),
+                    entity.getYRot(),
+                    entity.getXRot(),
+                    TeleportTransition.PLAY_PORTAL_SOUND
+                );
+            }
+        }
+    };
+
+    import("net.minecraft.resources", "ResourceKey").register(&mut body);
+    import("net.minecraft.resources", "Identifier").register(&mut body);
+    import("net.minecraft.core.registries", "Registries").register(&mut body);
+    import("net.minecraft.world.level", "Level").register(&mut body);
+    import("net.minecraft.server.level", "ServerLevel").register(&mut body);
+    import("net.minecraft.world.entity.player", "Player").register(&mut body);
+    import("net.minecraft.world.entity", "Entity").register(&mut body);
+    import("net.minecraft.world.level.portal", "TeleportTransition").register(&mut body);
+    import("net.minecraft.core", "BlockPos").register(&mut body);
+    import("net.minecraft.world.level.block.state", "BlockBehaviour").register(&mut body);
+    import("net.minecraft.world.level.block", "NetherPortalBlock").register(&mut body);
+    import("net.minecraft.world.level.gamerules", "GameRules").register(&mut body);
+    import("org.jspecify.annotations", "Nullable").register(&mut body);
+
+    body
 }
 
 pub(crate) fn build_mod_structures(state: &ModState) -> Tokens {
@@ -1314,7 +1478,7 @@ pub(crate) fn build_mod_tags(state: &ModState) -> Tokens {
     }
 }
 
-fn to_pascal_case(s: &str) -> String {
+pub(crate) fn to_pascal_case(s: &str) -> String {
     s.split('_')
         .map(|word| {
             let mut chars = word.chars();

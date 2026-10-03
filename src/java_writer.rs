@@ -4,15 +4,22 @@ use genco::lang::java::{self, Java, Tokens};
 use std::collections::{HashMap, HashSet};
 use std::fs::{create_dir_all, read as fs_read, read_dir, remove_file, write as fs_write};
 use std::path::{Path, PathBuf};
+use std::sync::LazyLock;
+
+/// Path to vanilla Minecraft sound assets.
+static VANILLA_SOUNDS: LazyLock<PathBuf> = LazyLock::new(|| {
+    PathBuf::from(r"E:\Coding_Projects\MCSourceCode\mc-sounds\26.2\minecraft\sounds")
+});
 
 use crate::state::{BlockModelKind, Entity, ItemKind, ModState};
 use crate::tokengen::{
     BuildFn, build_datagen_entrypoint, build_item_class, build_lang_provider, build_main_mod_class,
-    build_mod_advancements, build_mod_biomes, build_mod_block_ids, build_mod_block_item_ids,
-    build_mod_blocks, build_mod_creative_tabs, build_mod_dimensions, build_mod_features,
-    build_mod_item_ids, build_mod_items, build_mod_loot_tables, build_mod_mobs,
-    build_mod_sound_events, build_mod_structures, build_mod_tags, build_model_provider,
-    build_recipe_provider, build_worldgen_provider, to_upper,
+    build_mob_entity_class, build_mod_advancements, build_mod_biomes, build_mod_block_ids,
+    build_mod_block_item_ids, build_mod_blocks, build_mod_creative_tabs, build_mod_dimensions,
+    build_mod_entity_ids, build_mod_features, build_mod_item_ids, build_mod_items,
+    build_mod_loot_tables, build_mod_mobs, build_mod_portal_block, build_mod_sound_events,
+    build_mod_structures, build_mod_tags, build_model_provider, build_recipe_provider,
+    build_worldgen_provider, to_pascal_case, to_upper,
 };
 
 const PLACEHOLDER_ITEM: &[u8] = include_bytes!("../assets/placeholder_item.png");
@@ -85,6 +92,15 @@ pub struct DirtyFlags {
 
     /// `<ModName>WorldgenProvider.java`
     pub worldgen_provider: bool,
+
+    /// `<ModName>PortalBlock.java`
+    pub mod_portal_block: bool,
+
+    /// `ModEntityTypeIds.java`
+    pub mod_entity_ids: bool,
+
+    /// `<MobId>Entity.java` (one per custom mob)
+    pub mod_entity_classes: bool,
 }
 
 impl DirtyFlags {
@@ -112,6 +128,9 @@ impl DirtyFlags {
             mod_sound_events: true,
             mod_tags: true,
             worldgen_provider: true,
+            mod_portal_block: true,
+            mod_entity_ids: true,
+            mod_entity_classes: true,
         }
     }
 
@@ -149,6 +168,8 @@ impl DirtyFlags {
             },
             Entity::Mob(_) => Self {
                 mod_mobs: true,
+                mod_entity_ids: true,
+                mod_entity_classes: true,
                 mod_class: true,
                 ..Default::default()
             },
@@ -161,6 +182,8 @@ impl DirtyFlags {
             },
             Entity::Dimension(_) => Self {
                 mod_dimensions: true,
+                mod_blocks: true,
+                mod_portal_block: true,
                 mod_class: true,
                 datagen_entrypoint: true,
                 worldgen_provider: true,
@@ -237,6 +260,9 @@ impl DirtyFlags {
             "mod_sound_events" => self.mod_sound_events,
             "mod_tags" => self.mod_tags,
             "worldgen_provider" => self.worldgen_provider,
+            "mod_portal_block" => self.mod_portal_block,
+            "mod_entity_ids" => self.mod_entity_ids,
+            "mod_entity_classes" => self.mod_entity_classes,
             _ => false,
         }
     }
@@ -446,6 +472,32 @@ fn file_specs() -> &'static [(&'static str, FileSpec)] {
                 should_exist: worldgen_exists,
             },
         ),
+        (
+            "<ModName>PortalBlock.java",
+            FileSpec {
+                field: "mod_portal_block",
+                build: build_mod_portal_block,
+                should_exist: |state| {
+                    state
+                        .dimensions
+                        .iter()
+                        .any(|d| d.portal_frame.is_some() && d.portal_igniter.is_some())
+                },
+            },
+        ),
+        (
+            "ModEntityTypeIds.java",
+            FileSpec {
+                field: "mod_entity_ids",
+                build: build_mod_entity_ids,
+                should_exist: |state| {
+                    state
+                        .mobs
+                        .iter()
+                        .any(|m| !m.entity_type.starts_with("minecraft:"))
+                },
+            },
+        ),
     ]
 }
 
@@ -466,6 +518,7 @@ pub fn regenerate_all(state: &ModState, dirty: DirtyFlags, verbose: bool) -> Res
     let datagen_class_name = format!("{}DataGenerator.java", state.mod_name);
     let recipe_provider_class_name = format!("{}RecipeProvider.java", state.mod_name);
     let worldgen_provider_class_name = format!("{}WorldgenProvider.java", state.mod_name);
+    let portal_block_class_name = format!("{}PortalBlock.java", state.mod_name);
 
     for (name, spec) in file_specs() {
         let path = resolve_path(
@@ -476,6 +529,7 @@ pub fn regenerate_all(state: &ModState, dirty: DirtyFlags, verbose: bool) -> Res
             &datagen_class_name,
             &recipe_provider_class_name,
             &worldgen_provider_class_name,
+            &portal_block_class_name,
         );
         let dirty_bit = dirty.is_set(spec.field);
 
@@ -541,6 +595,23 @@ pub fn regenerate_all(state: &ModState, dirty: DirtyFlags, verbose: bool) -> Res
         }
     }
 
+    for mob in &state.mobs {
+        if mob.entity_type.starts_with("minecraft:") {
+            continue;
+        }
+        let class_name = format!("{}Entity.java", to_pascal_case(&mob.id));
+        let path = java_root.join(&class_name);
+        let dirty_bit = dirty.is_set("mod_entity_classes");
+        if dirty_bit {
+            write(&path, build_mob_entity_class(mob, state), package)?;
+            if verbose {
+                vlog("wrote", &path);
+            }
+        } else if verbose {
+            vlog("skipped", &path);
+        }
+    }
+
     prune_orphaned_java(&java_root, &client_root, state, verbose)?;
 
     Ok(())
@@ -555,6 +626,7 @@ fn resolve_path(
     datagen_class_name: &str,
     recipe_provider_class_name: &str,
     worldgen_provider_class_name: &str,
+    portal_block_class_name: &str,
 ) -> PathBuf {
     match name {
         "ModItemIds.java" => java_root.join(name),
@@ -565,6 +637,7 @@ fn resolve_path(
         "ModelProvider.java" => client_root.join(name),
         "<ModName>RecipeProvider.java" => client_root.join(recipe_provider_class_name),
         "<ModName>WorldgenProvider.java" => client_root.join(worldgen_provider_class_name),
+        "<ModName>PortalBlock.java" => java_root.join(portal_block_class_name),
         "ModBlocks.java" => java_root.join(name),
         "ModBlockIds.java" => java_root.join(name),
         "ModBlockItemIds.java" => java_root.join(name),
@@ -578,6 +651,7 @@ fn resolve_path(
         "ModAdvancements.java" => java_root.join(name),
         "ModSoundEvents.java" => java_root.join(name),
         "ModTags.java" => java_root.join(name),
+        "ModEntityTypeIds.java" => java_root.join(name),
         _ => unreachable!("unknown file spec name: {}", name),
     }
 }
@@ -1310,6 +1384,46 @@ fn generate_loot_table_resources(state: &ModState, _verbose: bool) -> Result<()>
         std::fs::write(path, json)?;
     }
 
+    // Generate entity loot tables from mob drops
+    let entities_dir = data_root.join("entities");
+    for mob in &state.mobs {
+        if mob.drops.is_empty() {
+            continue;
+        }
+        create_dir_all(&entities_dir)?;
+        let path = entities_dir.join(format!("{}.json", mob.id));
+
+        let entries: Vec<String> = mob
+            .drops
+            .iter()
+            .map(|d| {
+                let name = if d.item.contains(':') {
+                    d.item.clone()
+                } else {
+                    format!("{}:{}", state.mod_id, d.item)
+                };
+                let mut entry = format!(r#"{{"type":"minecraft:item","name":"{}""#, name);
+                if d.min_count != d.max_count || d.min_count != 1 {
+                    entry.push_str(&format!(
+                        r#","functions":[{{"function":"minecraft:set_count","count":{{"min":{},"max":{}}}}}]"#,
+                        d.min_count, d.max_count
+                    ));
+                } else if d.min_count != 1 {
+                    entry.push_str(&format!(
+                        r#","functions":[{{"function":"minecraft:set_count","count":{}}}]"#,
+                        d.min_count
+                    ));
+                }
+                entry.push('}');
+                entry
+            })
+            .collect();
+
+        let entries_str = entries.join(",");
+        let json = format!(r#"{{"pools":[{{"rolls":1,"entries":[{}]}}]}}"#, entries_str);
+        std::fs::write(path, json)?;
+    }
+
     Ok(())
 }
 
@@ -1490,19 +1604,31 @@ fn generate_sound_resources(state: &ModState, verbose: bool) -> Result<()> {
             sound.id, subtitle, full_path
         ));
 
-        if let Some(ref ogg_src) = placeholder_ogg {
-            let sound_rel = &sound.sound_path;
-            let ogg_dest = sounds_dir
-                .join(sound_rel.replace(':', "/"))
-                .with_extension("ogg");
-            if let Some(parent) = ogg_dest.parent() {
-                create_dir_all(parent)?;
-            }
-            if !ogg_dest.exists() {
-                std::fs::copy(ogg_src, &ogg_dest)?;
-                if verbose {
-                    vlog("wrote", &ogg_dest);
-                }
+        let sound_rel = &sound.sound_path;
+        let ogg_dest = sounds_dir
+            .join(sound_rel.replace(':', "/"))
+            .with_extension("ogg");
+        if let Some(parent) = ogg_dest.parent() {
+            create_dir_all(parent)?;
+        }
+        if !ogg_dest.exists() {
+            let copied = if let Some(ref src) = sound.sound_src {
+                let vanilla_src = VANILLA_SOUNDS.join(src);
+                std::fs::copy(&vanilla_src, &ogg_dest)
+                    .with_context(|| {
+                        format!(
+                            "Failed to copy vanilla sound from {}",
+                            vanilla_src.display()
+                        )
+                    })
+                    .is_ok()
+            } else if let Some(ref ogg_src) = placeholder_ogg {
+                std::fs::copy(ogg_src, &ogg_dest).is_ok()
+            } else {
+                false
+            };
+            if copied && verbose {
+                vlog("wrote", &ogg_dest);
             }
         }
     }
@@ -1581,10 +1707,21 @@ fn generate_biome_resources(state: &ModState, _verbose: bool) -> Result<()> {
         }
 
         // effects (BiomeSpecialEffects, required)
+        let mut effects = Vec::new();
+        if let Some(fog) = biome.fog_color {
+            effects.push(format!("\"fog_color\":\"#{:06X}\"", fog as u32));
+        }
+        if let Some(sky) = biome.sky_color {
+            effects.push(format!("\"sky_color\":\"#{:06X}\"", sky as u32));
+        }
+        if let Some(wf) = biome.water_fog_color {
+            effects.push(format!("\"water_fog_color\":\"#{:06X}\"", wf as u32));
+        }
         if let Some(wc) = biome.water_color {
-            json.push_str("\"effects\":{\"water_color\":\"#");
-            json.push_str(&format!("{:06X}", wc as u32));
-            json.push_str("\"},");
+            effects.push(format!("\"water_color\":\"#{:06X}\"", wc as u32));
+        }
+        if !effects.is_empty() {
+            json.push_str(&format!(r#""effects":{{{} }},""#, effects.join(",")));
         }
 
         // carvers (BiomeGenerationSettings, required) — string reference in MC 26.2
@@ -1897,6 +2034,7 @@ fn prune_orphaned_java(
             let datagen_class_name = format!("{}DataGenerator.java", state.mod_name);
             let recipe_provider_class_name = format!("{}RecipeProvider.java", state.mod_name);
             let worldgen_provider_class_name = format!("{}WorldgenProvider.java", state.mod_name);
+            let portal_block_class_name = format!("{}PortalBlock.java", state.mod_name);
             let path = resolve_path(
                 name,
                 java_root,
@@ -1905,6 +2043,7 @@ fn prune_orphaned_java(
                 &datagen_class_name,
                 &recipe_provider_class_name,
                 &worldgen_provider_class_name,
+                &portal_block_class_name,
             );
             expected.insert(path);
         }
@@ -1913,6 +2052,12 @@ fn prune_orphaned_java(
     for i in &state.items {
         if !i.tooltip.is_empty() {
             expected.insert(java_root.join(format!("{}Item.java", to_upper(&i.id))));
+        }
+    }
+
+    for mob in &state.mobs {
+        if !mob.entity_type.starts_with("minecraft:") {
+            expected.insert(java_root.join(format!("{}Entity.java", to_pascal_case(&mob.id))));
         }
     }
 

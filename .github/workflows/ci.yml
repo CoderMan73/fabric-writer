@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, 'feature/*', 'bugfix/*', 'hotfix/*' ]
   pull_request:
     branches: [ main ]
 
@@ -21,6 +21,12 @@ jobs:
         with:
           components: rustfmt, clippy
 
+      - name: Cache test fixtures
+        uses: actions/cache@v4
+        with:
+          path: .testing-cache/
+          key: testing-cache-${{ runner.os }}-${{ hashFiles('tests/tests.rs') }}
+
       - name: Check formatting
         run: cargo fmt -- --check
 
@@ -32,8 +38,27 @@ jobs:
         env:
           RUSTDOCFLAGS: "-D rustdoc::all -D missing-docs"
 
-      - name: Test
+      - name: Test (non-ignored)
         run: cargo test
+
+      - name: Test (ignored — requires Deno + JDK 25)
+        if: ${{ runner.os == 'ubuntu-latest' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/feature/') || startsWith(github.ref, 'refs/heads/bugfix/') || startsWith(github.ref, 'refs/heads/hotfix/')) }}
+        run: |
+          echo "FABRIC_WRITER_TEST_JAVA=$(echo $HOME/.cargo/env 2>/dev/null && which java 2>/dev/null || echo 'not found')"
+          if ! command -v deno &>/dev/null || [ ! -x "$(command -v java 2>/dev/null || echo /nonexistent)" ]; then
+            echo "Deno or Java not available — skipping ignored tests"
+            exit 0
+          fi
+          cp .env.example .env
+          cargo test -- --ignored
+        env:
+          PATH: ${{ env.HOME }}/.deno/bin:${{ env.HOME }}/.cargo/bin:${{ env.PATH }}
 
       - name: Build
         run: cargo build
+
+      - name: Verify COMMANDS.md is up to date
+        shell: bash
+        run: |
+          cargo run --bin fabric-writer -- --markdown-help > /tmp/COMMANDS.md.check
+          diff -u COMMANDS.md /tmp/COMMANDS.md.check || (echo "::error::COMMANDS.md is out of date. Run 'make docs' and commit." && exit 1)

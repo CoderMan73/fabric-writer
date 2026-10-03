@@ -159,32 +159,32 @@ enum AddSubcommand {
     #[command(alias = "bm")]
     Biome(BiomeAddArgs),
 
-    /// Add a dimension [alias: d")]
+    /// Add a dimension [alias: d]
     #[command(alias = "d")]
     Dimension(DimensionAddArgs),
 
-    /// Add a feature [alias: f"]
+    /// Add a feature [alias: f]
     #[command(alias = "f")]
     Feature(FeatureAddArgs),
 
-    /// Add a structure [alias: s"]
+    /// Add a structure [alias: s]
     #[command(alias = "s")]
     Structure(StructureAddArgs),
 
-    /// Add a loot table [alias: l"]
+    /// Add a loot table [alias: l]
     #[command(alias = "l")]
     LootTable(LootTableAddArgs),
 
-    /// Add an advancement [alias: a"]
+    /// Add an advancement [alias: a]
     #[command(alias = "a")]
     Advancement(AdvancementAddArgs),
 
-    /// Add a sound event [alias: se"]
+    /// Add a sound event [alias: se]
     #[command(alias = "se")]
     SoundEvent(SoundEventAddArgs),
 
-    /// Add a tag [alias: t"]
-    #[command(alias = "t")]
+    /// Add a tag [alias: tg]
+    #[command(alias = "tg")]
     Tag(TagAddArgs),
 }
 
@@ -214,32 +214,32 @@ enum RemoveSubcommand {
     #[command(alias = "bm")]
     Biome(BiomeRemoveArgs),
 
-    /// Remove a dimension [alias: d")]
+    /// Remove a dimension [alias: d]
     #[command(alias = "d")]
     Dimension(DimensionRemoveArgs),
 
-    /// Remove a feature [alias: f"]
+    /// Remove a feature [alias: f]
     #[command(alias = "f")]
     Feature(FeatureRemoveArgs),
 
-    /// Remove a structure [alias: s"]
+    /// Remove a structure [alias: s]
     #[command(alias = "s")]
     Structure(StructureRemoveArgs),
 
-    /// Remove a loot table [alias: l"]
+    /// Remove a loot table [alias: l]
     #[command(alias = "l")]
     LootTable(LootTableRemoveArgs),
 
-    /// Remove an advancement [alias: a"]
+    /// Remove an advancement [alias: a]
     #[command(alias = "a")]
     Advancement(AdvancementRemoveArgs),
 
-    /// Remove a sound event [alias: se"]
+    /// Remove a sound event [alias: se]
     #[command(alias = "se")]
     SoundEvent(SoundEventRemoveArgs),
 
-    /// Remove a tag [alias: t"]
-    #[command(alias = "t")]
+    /// Remove a tag [alias: tg]
+    #[command(alias = "tg")]
     Tag(TagRemoveArgs),
 }
 

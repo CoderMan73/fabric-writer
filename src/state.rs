@@ -799,6 +799,10 @@ pub struct Mob {
     /// Mob drops.
     #[serde(default)]
     pub drops: Vec<Drop>,
+
+    /// AI behavior type for entity class generation (e.g. "blaze", "ghast", "zombie").
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ai_type: Option<String>,
 }
 
 /// An entity attribute modifier.
@@ -1165,6 +1169,11 @@ pub struct SoundEvent {
 
     /// Sound path relative to sounds directory.
     pub sound_path: String,
+
+    /// Vanilla source sound file to copy from mc-sounds. If set, real audio
+    /// is used instead of a placeholder OGG.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sound_src: Option<String>,
 }
 
 /// A tag definition tracked in [`ModState::tags`].

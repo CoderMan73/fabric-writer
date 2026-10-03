@@ -44,6 +44,7 @@ fn build_mob(args: &MobAddArgs) -> Mob {
         baby_spawn_egg_id: None,
         attributes: Vec::new(),
         drops: Vec::new(),
+        ai_type: args.ai_type.clone(),
     }
 }
 
@@ -61,6 +62,10 @@ pub struct MobAddArgs {
     /// Spawn category (e.g. `monster`, `creature`, `water_creature`)
     #[arg(long)]
     pub spawn_category: Option<String>,
+
+    /// AI behavior type for entity class generation (e.g. `blaze`, `ghast`, `zombie`)
+    #[arg(long)]
+    pub ai_type: Option<String>,
 
     /// Show which files were regenerated, skipped, or pruned
     #[arg(short = 'v', long, default_value_t = false)]

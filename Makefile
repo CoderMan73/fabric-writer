@@ -27,7 +27,12 @@ run:
 test:
 	docker run $(CARGO_CACHE) $(GIT_CACHE) $(TARGET_CACHE) $(SOURCE) fabric-writer sh -c "rm -rf .testing-cache && cargo fmt -- --check && cargo clippy --all-targets --all-features -- -D warnings -W rustdoc::all -W missing_docs && cargo doc --no-deps && cargo test -- --ignored && cargo build"
 
-# Run the build directly without CI checks
-.PHONY: build
-build:
-	docker run $(DOCKER_ARGS) fabric-writer sh -c "cargo build"
+ # Run the build directly without CI checks
+ .PHONY: build
+ build:
+ 	docker run $(DOCKER_ARGS) fabric-writer sh -c "cargo build"
+
+ # Generate COMMANDS.md from clap's --markdown-help output
+ .PHONY: docs
+ docs:
+ 	cargo run --bin fabric-writer -- --markdown-help > COMMANDS.md

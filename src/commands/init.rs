@@ -99,7 +99,8 @@ pub fn run(args: InitArgs) -> Result<()> {
     create_dir_all(&fw_dir).context("Failed to create .fw directory")?;
 
     let gradle_properties = target_dir.join("gradle.properties");
-    let java_home_line = format!("org.gradle.java.home={}", java_path);
+    let java_home_escaped = java_path.replace('\\', "/");
+    let java_home_line = format!("org.gradle.java.home={java_home_escaped}");
 
     let existing = read_to_string(&gradle_properties).unwrap_or_default();
     if !existing.contains("org.gradle.java.home") {
